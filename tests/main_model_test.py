@@ -4,16 +4,13 @@
 
 import os
 from goreverselookup import Cacher
-from goreverselookup import JsonUtil
 from goreverselookup import ReverseLookup
 from goreverselookup import nterms, adv_product_score, binomial_test, fisher_exact_test
+from goreverselookup import LogConfigLoader
 
 # setup logger
 import logging
-from logging import config
-log_config_json_filepath = "app/goreverselookup/src/logging_config.json"
-log_config_dict = JsonUtil.load_json(log_config_json_filepath)
-config.dictConfig(log_config_dict)
+LogConfigLoader.setup_logging_config()
 logger = logging.getLogger(__name__)
 
 logger.info(f"Starting Model Test!")
@@ -21,7 +18,7 @@ logger.info(f"os.getcwd() =  {os.getcwd()}")
 
 Cacher.init(cache_dir="app/goreverselookup/cache")
 
-# load the model from input file and query relevant data
+# load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file("input_files/input.txt")
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=0.1)
 model.fetch_all_go_term_products(web_download=True, run_async=True)
@@ -30,7 +27,7 @@ model.fetch_ortholog_products(run_async=True, max_connections=15, semaphore_conn
 model.prune_products()
 model.save_model("results/data.json")
 
-# perform model scoring and also test model load from json functionality
+# test model load from existing json, perform model scoring
 model = ReverseLookup.load_model("results/data.json")
 nterms_score = nterms(model)
 adv_prod_score = adv_product_score(model)

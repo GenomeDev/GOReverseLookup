@@ -5,7 +5,7 @@ with open("app/Readme.md", "r") as f:
 
 setup(
     name="GOReverseLookup",
-    version="1.0.3",
+    version="1.0.4",
     description="Python library for Gene Ontology Reverse Lookup",
     package_dir={"": "app"},
     packages=find_packages(where="app"),

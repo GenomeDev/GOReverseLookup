@@ -232,7 +232,7 @@ class WorkflowOne(Workflow):
         # Generate report #
         self.add_function(self.generate_report, product_scoring_algorithm = adv_product_score, miRNA_scoring_algorithm = basic_mirna_score)
 
-class WorkflowTwo(Workflow):
+class PrimaryWorkflow(Workflow):
     def __init__(self, input_file_fpath: str = "", save_folder_dir: str = "", model: ReverseLookup = None, name: str = "", debug: bool = False):
         # constructor chooses appropriate method to initialise the Model based on supplied parameters. A ReverseLookup 'model' instance takes precedence over input_file_fpath.
         super().__init__(input_file_fpath, save_folder_dir, model, name)

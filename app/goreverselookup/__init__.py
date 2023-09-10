@@ -3,7 +3,7 @@
 #)
 
 from .src.Model import ReverseLookup
-from .src.Workflows import WorkflowOne, WorkflowTwo
+from .src.Workflows import WorkflowOne, PrimaryWorkflow
 from .src.util.CacheUtil import Cacher
 
 from .src.core.ModelSettings import ModelSettings
@@ -21,6 +21,7 @@ from .src.util.CacheUtil import Cacher, ConnectionCacher
 from .src.util.FileUtil import FileUtil
 from .src.util.JsonUtil import JsonUtil
 from .src.util.Timer import Timer
+from .src.util.LogConfigLoader import LogConfigLoader
 
 from .src.web_apis.EnsemblApi import EnsemblApi
 from .src.web_apis.UniprotApi import UniProtApi
