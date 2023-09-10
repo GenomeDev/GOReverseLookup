@@ -38,7 +38,7 @@ Explanation of the folder structure:
     - `main.py` is the main file, where the Python code will be placed to carry out the analysis.
 
 ### Code
-There are two main algorithms that can be used to achieve the same result. The mentioned scripts should be put in the `main.py` file, which you should execute using a IDE of your choice, preferably Visual Studio Code.
+There are two main algorithms that can be used to achieve the same result. The mentioned scripts should be put in the `main.py` file, which you should execute using an IDE of your choice, preferably Visual Studio Code.
 
 a) ** The Workflows Algorithm**
 Workflows provide a simple and easy-to-use solution to jumpstart your research. All that is needed is that you provide an input file and a save folder to the PrimaryWorkflow class and call workflow.run_workflow():
