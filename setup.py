@@ -1,6 +1,9 @@
 from setuptools import find_packages, setup
+import os
 
-with open("Readme.md", "r") as f:
+# Get the absolute path to the Readme.md file
+readme_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "Readme.md")
+with open(readme_path, "r") as f:
     long_description = f.read()
 
 setup(
