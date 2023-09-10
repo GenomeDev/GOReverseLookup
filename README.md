@@ -113,7 +113,7 @@ There are two main algorithms that can be used to achieve the same result. The m
 
 a) ** The Workflows Algorithm**
 Workflows provide a simple and easy-to-use solution to jumpstart your research. All that is needed is that you provide an input file and a save folder to the PrimaryWorkflow class and call workflow.run_workflow():
-```
+```python
 # import necessary classes
 from goreverselookup import PrimaryWorkflow
 from goreverselookup import Cacher
@@ -143,7 +143,7 @@ If the workflow executes successfully, two files should be saved into `save_fold
 
 b) ** The ReverseLookup Model Algorithm **
 The ReverseLookup (research) model is the core of the analysis. Workflows are actually just a wrapper around the ReverseLookup model, hiding all the complexities from the researcher. To carry out the same full analysis (as is done in the workflows algorithm), you need to construct and run the following `main.py` file:
-```
+```python
 from goreverselookup import ReverseLookup
 from goreverselookup import Cacher
 from goreverselookup import LogConfigLoader
