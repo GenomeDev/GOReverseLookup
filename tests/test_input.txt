@@ -1,0 +1,142 @@
+# --- Input file for GO Reverse Lookup --- #
+#
+# The input file contains the following sections: 
+#   - settings
+#   - processes
+#   - categories
+#   - GO_terms
+# Each section in this file is denoted by ### preceding the section name.
+# The values in each section are TAB-delimited.
+#
+# *** Settings section ***
+# It contains several settings, which are used to change the flow of the algorithm.
+# The possible settings are:
+# 	- homosapiens_only: 
+#			if only homosapiens products should be queried from uniprot and ensembl # TODO: currently, this is hardcoded into requests so this setting does nothing at the moment
+#	- require_product_evidence_codes: 
+#			not implemented at the moment
+# 	- fisher_test_use_online_query:
+#			If True, will query the products of GO Terms (for the num_goterms_products_general inside fisher test) via an online pathway (GOApi.get_goterms).
+#			If False, fisher test will compute num_goterms_products_general (= the number of goterms associated with a product) via an offline pathway using GOAF parsing.
+#	- include_all_goterm_parents:
+#			If True, each GO Term relevant to the analysis will hold a list of it's parents from the go.obo (Gene Ontology .obo) file. Also, the parents of GO Terms will be taken into
+#        	account when performing the fisher exact test. This is because genes are annotated directly only to specific GO Terms, but they are also INDIRECTLY connected to all of the
+#       	parent GO Terms, despite not being annoted directly to the parent GO Terms. The increased amount of GO Term parents indirectly associated with a gene will influence the fisher
+#        	scoring for that gene - specifically, it will increate num_goterms_product_general.
+#			If False, each GO Term relevant to the analysis won't have it's parents computed. During fisher analysis of genes, genes will be scored only using the GO Terms that are
+#           directly annotated to the gene and not all of the indirectly associated parent GO terms.
+#	- uniprotkb_genename_online_query:
+#			When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD).
+#			During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function.
+#			The gene name can be obtained via two pathways:
+#				a) online pathway, using: info_dict = await uniprot_api.get_uniprot_info_async(self.id_synonyms[0], session)
+#				b) offline pathway, using the GO Annotations File: info_dict = {"genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])}
+#			During testing which pathway is more accurate in querying a gene name from a UniProtKB identifier, it was found that querying using the offline pathway (GOAF)
+#			resulted in obtaining more valid gene names that an online query to the uniprotkb servers themselves. Therefore, if using the latest GOAF, it is advisable to set
+#			this setting to False. If using an older GOAF, then have this setting set to True.
+#			If True, will query genename from a UniProtKB id via an online server request.
+#			If False, will query genename from a UniProtKB id via the GO Annotations File.
+#	- pvalue:
+#			Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than
+#			the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes
+#			(eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
+#
+# *** Processes section ***
+# It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
+# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construction processes
+# section as:
+# 	chronic_inflammation	+
+#	cancer	+
+# The processes are also used in the GO_terms section, to specify how a GO Term contributes to a given process.
+#
+# *** Categories section ***
+# Gene Ontology provides three categories of annotations (as known as Gene Ontology Aspects):
+# 	- molecular_activity
+#   - biological_process
+#   - cellular_component
+# The categories section allows you to determine which GO Terms will be queried either from online or from the GO Annotations File.
+# For example, when a researcher is only interested in GO Terms related to molecular activity and biological processes, querying GO Terms
+# related to a cellular component might result in an incorrect gene scoring process, resulting in some genes being scored as statistically insignificant,
+# whereas they should be statistically significant. Thus, a researcher should turn off or on the GO categories according to the research goals.
+# To turn on or off a specific GO category, provide a tab-delimited True or False value next to that category.
+#
+# *** GO_terms section ***
+# It contains all of the GO Terms that will be used in the analysis. Each line in the section contains one GO Term,
+# with the following tab-delimited values:
+#	- [0]: GO Term identifier (eg. GO:0006954)
+#   - [1]: process, which the GO Term supposedly regulates (eg. chronic_inflammation)
+#   - [2]: positive or negative regulation direction of the process (+ or -)
+#   - [3]: weight: the presumed importance of a GO Term in regulating the process. It is used only in the adv_product_score statistical test (a custom implementation of gene importance). If you only intend on using the Fisher's test, the weights are insignificant, just set them to 1.
+#   - [4]: GO Term name: the name of the GO Term (optional)
+#   - [5]: GO Term description: the description of the GO Term (optional)
+# 
+# This input file should be called by one of the two methods:
+# a) Using Workflows:
+# 		from goreverselookuplib.Workflows import WorkflowTwo
+#		from goreverselookuplib.CacheUtils import Cacher
+#		
+#		Cacher.init()
+#		workflow = WorkflowTwo(input_file_fpath="PATH_TO_THIS_INPUT_FILE", save_folder_dir="PATH_TO_SAVE_FOLDER_DIRECTORY")
+#		workflow.run_workflow()
+#
+# b) Using ReverseLookup model
+# 	 	from goreverselookuplib import ReverseLookup
+#		from goreverselookuplib.CacheUtils import Cacher
+#		from goreverselookuplib.Metrics import nterms, adv_product_score, binomial_test, fisher_exact_test
+#
+#		model_save_filepath = "model/data.json"
+#		input_file_filepath = "model/input.txt"
+#		statistically_significant_genes_filepath = "model/stat_significant_genes.json"
+#
+#		# setup cacher and model instance
+#		Cacher.init()
+#		model = ReverseLookup.from_input_file(input_file_filepath)
+#
+#		# query model data
+#		model.fetch_all_go_term_names_descriptions(run_async=True)
+#		model.fetch_all_go_term_products(web_download=True, run_async=True, recalculate=False, max_connections = 60, request_params={"rows":50000}, delay = 0.0)
+#		model.create_products_from_goterms()
+#		model.fetch_ortholog_products(refetch=False, run_async = True, max_connections=15, req_delay=0.1, semaphore_connections=5)
+#		model.prune_products()
+#		model.save_model(model_save_filepath)
+#		
+#		# perform scoring
+#		goaf = GOAnnotiationsFile(go_categories=model.go_categories)
+#		nterms_test = nterms(model)
+#		adv_test = adv_product_score(model)
+#		binomtest = binomial_test(model, goaf)
+#		fishertest = fisher_exact_test(model, goaf)
+#		model.score_products(score_classes=[nterms_test,adv_test,binomtest,fishertest], recalculate=True)
+#		model.save_model(model_save_filepath)
+#		model.perform_statistical_analysis(filepath=statistically_significant_genes_filepath)
+#
+#		# in future runs, you can load up the model using:
+#		model_data_file = "model/data.json"
+#		model = ReverseLookup.load_model(model_data_file)
+###settings
+homosapiens_only	True
+require_product_evidence_codes	False
+fisher_test_use_online_query	False
+include_all_goterm_parents	False
+uniprotkb_genename_online_query	False
+pvalue	0.05
+###filepaths
+go_obo_filepath	data_files/go.obo
+goaf_filepath	data_files/goa_human.gaf
+zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
+mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
+rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
+xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
+###processes [proces name] [to be expressed + or suppressed -]
+chronic_inflammation	+
+cancer	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+GO:0006954	chronic_inflammation	+	1	inflammatory response
+
+# Wnt cascade; # ... leading to actin cytoskeleton rearrangement. In addition, Dvl activates Rac and finally JNK (c-Jun-N-terminal-kinase) thereby modulating cell migration. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5853106/; doi: 10.1016/j.critrevonc.2015.12.005)
+GO:0090263	cancer	+	1	positive regulation of canonical Wnt signaling pathway	
+GO:0090090	cancer	-	1	negative regulation of canonical Wnt signaling pathway

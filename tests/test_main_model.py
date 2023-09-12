@@ -6,20 +6,19 @@ import os
 from goreverselookup import Cacher
 from goreverselookup import ReverseLookup
 from goreverselookup import nterms, adv_product_score, binomial_test, fisher_exact_test
-from goreverselookup import LogConfigLoader
 
 # setup logger
 import logging
-LogConfigLoader.setup_logging_config()
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler)
 
 logger.info(f"Starting Model Test!")
 logger.info(f"os.getcwd() =  {os.getcwd()}")
 
-Cacher.init(cache_dir="app/goreverselookup/cache")
+Cacher.init(cache_dir="cache")
 
 # load the model from input file and query relevant data from the web
-model = ReverseLookup.from_input_file("input_files/input.txt")
+model = ReverseLookup.from_input_file("tests/test_input.txt")
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=0.1)
 model.fetch_all_go_term_products(web_download=True, run_async=True)
 model.create_products_from_goterms()

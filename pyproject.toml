@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "goreverselookup"
+authors = [
+    {name = "Aljoša Škorjanc", email = "skorjanc.aljosa@gmail.com"},
+    {name = "Vladimir Smrkolj", email = "vladimir.smrkolj@gmail.com"},
+]
+description = "Python library for Gene Ontology Reverse Lookup"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["gene ontology", "reverse lookup"]
+license = {text = "Apache License 2.0"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "aiohttp",
+    "tqdm",
+    "requests",
+    "networkx",
+    "tabulate",
+]
+
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "tox"
+]
+
+#
+#[project.urls]
+#Homepage = "https://example.com"
+#Documentation = "https://readthedocs.org"
+#Repository = "https://github.com/me/spam.git"
+#Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
+#
+#[project.scripts]
+#spam-cli = "spam:main_cli"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py{310,311}
+minversion = 3.10.0
+isolated_build = true
+
+[testenv]
+deps =
+    check-manifest >= 0.42
+    pytest
+commands =
+    check-manifest
+#    pytest tests {posargs}
+"""
+
+[tool.check-manifest]
+ignore = ["tests/**", ".vscode/**", "logging_config.json"]
