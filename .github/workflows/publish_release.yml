@@ -21,6 +21,7 @@ jobs:
         run: |
           # Extract the tag version
           TAG_VERSION=${{ steps.vars.outputs.tag }}
+          echo $TAG_VERSION
           
           # Update pyproject.toml with the new version
           sed -i "s/version = .*/version = \"$TAG_VERSION\"/g" pyproject.toml
