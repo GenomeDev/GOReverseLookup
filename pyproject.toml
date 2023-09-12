@@ -69,4 +69,4 @@ commands =
 """
 
 [tool.check-manifest]
-ignore = ["tests/**", ".vscode/**", "logging_config.json"]
+ignore = ["tests/**", ".vscode/**", "logging_config.json", "exe_version/**", "input_files/**"]
