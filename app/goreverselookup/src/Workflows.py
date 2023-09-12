@@ -61,8 +61,9 @@ class Workflow:
         self.execution_sequence = [] # a list of functions to execute in sequence
         self.computed_scores = {} # a dictionary between Metrics: (Metrics) aka metrics class - metrics instance of computed scores, computed scores are saved here from self.scores and cannot be deleted.
         self.scores = [] # a list of scoring algorithms, temporary, can be deleted
-        self.goaf = GOAnnotationsFile(go_categories=self.model.go_categories) # self.model.go_categories to ensure that model is initialised !!!
-        
+        # self.goaf = GOAnnotationsFile(go_categories=self.model.go_categories) # self.model.go_categories to ensure that model is initialised !!!
+        self.goaf = self.model.goaf
+
         self.input_file_fpath = input_file_fpath
         self.save_folder_dir = save_folder_dir
         self.model_save_filepath = os.path.join(save_folder_dir, "data.json")

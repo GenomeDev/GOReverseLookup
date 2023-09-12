@@ -478,7 +478,7 @@ class fisher_exact_test(Metrics):
             logger.warning(f"  - GOAF GO categories: {self.goaf.go_categories}")
             logger.warning(f"  - ReverseLookup GO categories: {self.reverse_lookup.go_categories}")
             logger.info(f"GOAF will be recalculated using the ReverseLookup's GO categories: {self.reverse_lookup.go_categories}")
-            self.goaf = GOAnnotationsFile(go_categories=self.reverse_lookup.go_categories)
+            self.goaf = GOAnnotationsFile(filepath=self.reverse_lookup.datafile_paths['goaf_filepath'], go_categories=self.reverse_lookup.go_categories)
     
     def metric(self, product: Product) -> Dict:
         D_DEBUG_CALCULATE_DESIRED_N_PROD_PROCESS = True # TODO: delete this # calculates num_goterms_product_process which would be sufficient for the product's statistical importance (p < 0.05)

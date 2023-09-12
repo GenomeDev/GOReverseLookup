@@ -1,4 +1,5 @@
 import networkx as nx
+import os
 
 from ..core.GOTerm import GOTerm
 
@@ -32,6 +33,11 @@ class OboParser:
         
         # read all GO terms from the OBO file
         all_goterms = {} # mapping of all go ids to GOTerm objects
+
+        # exe version bugfix:
+        if not os.path.exists(obo_filepath):
+            obo_filepath = "data_files/go.obo"
+
         with open(obo_filepath, 'r') as obo_file:
             term_data = {
                 'id': None, # obo: id
@@ -95,6 +101,7 @@ class OboParser:
                 # nodes are automatically added if they are not yet in the graph when using add_edge
                 dag.add_edge(all_goterms[parent_id].id, goterm.id) # add_edge(PARENT, CHILD) = "from parent to child"
 
+        self.filepath = obo_filepath
         self.dag = dag
         self.all_goterms = all_goterms
         self.previously_computed_parents_cache = {} # cache dictionary between already computed goterms and their parents

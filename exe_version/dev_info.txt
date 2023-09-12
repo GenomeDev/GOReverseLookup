@@ -1,0 +1,2 @@
+To generate the .exe, cd into this directory and run 'pyinstaller to_exe.spec'.
+This will generate the exe inside the 'dist' folder. Then you have to move .exe from the dist folder into this folder (the exe_version folder).

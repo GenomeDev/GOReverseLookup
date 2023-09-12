@@ -2,6 +2,7 @@ import atexit
 import os
 
 from .JsonUtil import JsonUtil
+from .FileUtil import FileUtil
 from .Timer import Timer
 
 import logging
@@ -37,11 +38,18 @@ class Cacher():
         NOTE: WARNING !! In order for the atexit storage to work, you mustn't run the Python program in VSCode in Debug mode. Run
         it in normal mode and finish the program execution with CTRL + C to test the functionality.
         """
+        FileUtil.check_path(cache_dir, is_file=False)
         cls.store_data_atexit = store_data_atexit
         cls.CACHE_FILEPATH_URLS = os.path.join(cache_dir, "connection_cache.json").replace("\\", "/")
         cls.CACHE_FILEPATH_UNIPROT = os.path.join(cache_dir, "uniprot_cache.json").replace("\\", "/")
         cls.CACHE_FILEPATH_ENSEMBL = os.path.join(cache_dir, "ensembl_cache.json").replace("\\", "/")
         cls.CACHE_FILEPATH_GENEONTOLOGY = os.path.join(cache_dir, "geneontology_cache.json").replace("\\", "/")
+        FileUtil.check_paths([
+            cls.CACHE_FILEPATH_URLS,
+            cls.CACHE_FILEPATH_GENEONTOLOGY,
+            cls.CACHE_FILEPATH_UNIPROT,
+            cls.CACHE_FILEPATH_ENSEMBL
+        ])
         cls.cached_urls = JsonUtil.load_json(cls.CACHE_FILEPATH_URLS)
         cls.cached_uniprot = JsonUtil.load_json(cls.CACHE_FILEPATH_UNIPROT)
         cls.cached_ensembl = JsonUtil.load_json(cls.CACHE_FILEPATH_ENSEMBL)
@@ -212,6 +220,48 @@ class Cacher():
         JsonUtil.save_json(cls.cached_ensembl, cls.CACHE_FILEPATH_ENSEMBL)
         JsonUtil.save_json(cls.cached_geneontology, cls.CACHE_FILEPATH_GENEONTOLOGY)
         logger.info(f"Successfully saved url, uniprot, ensembl and geneontology cache.")
+    
+    @classmethod
+    def clear_cache(cls, cache_to_clear:str):
+        """
+        Clears the specified 'cache_to_clear', which must be one of the following:
+          - "url"
+          - "uniprot"
+          - "ensembl"
+          - "go"
+        
+        If cache_to_clear is set to "ALL", every cache will be cleared.
+        """
+        if cache_to_clear == "ALL":
+            FileUtil.clear_file(cls.CACHE_FILEPATH_URLS, replacement_text="{}")
+            FileUtil.clear_file(cls.CACHE_FILEPATH_UNIPROT, replacement_text="{}")
+            FileUtil.clear_file(cls.CACHE_FILEPATH_ENSEMBL, replacement_text="{}")
+            FileUtil.clear_file(cls.CACHE_FILEPATH_GENEONTOLOGY, replacement_text="{}")
+            cls.cached_urls = {}
+            cls.cached_uniprot = {}
+            cls.cached_ensembl = {}
+            cls.cached_geneontology = {}
+            logger.info(f"Cleared entire cache.")
+            return
+        
+        filepath_to_clear = ""
+        match cache_to_clear:
+            case "url":
+                filepath_to_clear = cls.CACHE_FILEPATH_URLS
+                cls.cached_urls = {}
+            case "uniprot":
+                filepath_to_clear = cls.CACHE_FILEPATH_UNIPROT
+                cls.cached_uniprot = {}
+            case "ensembl":
+                filepath_to_clear = cls.CACHE_FILEPATH_ENSEMBL
+                cls.cached_ensembl = {}
+            case "go":
+                filepath_to_clear = cls.CACHE_FILEPATH_GENEONTOLOGY
+                cls.cached_geneontology = {}
+        FileUtil.clear_file(filepath=filepath_to_clear, replacement_text="{}") # set empty json to cache file
+        logger.info(f"Cache '{cache_to_clear}' is cleared.")
+            
+                
 
 
 class ConnectionCacher(Cacher):

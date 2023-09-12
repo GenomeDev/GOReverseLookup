@@ -164,3 +164,72 @@ class FileUtil():
         Checks if 'filepath' is an empty file. Returns True if the file is empty.
         """
         return True if os.path.getsize(filepath) == 0 else False
+    
+    @classmethod
+    def check_paths(cls, paths:list[str], are_files=True, auto_create=True):
+        """
+        Checks if the directories of the given paths exists. If they don't, this function automatically creates the
+        directories (all the folders leading to the path).
+
+        Params:
+          - (list[str]) paths: The paths to the files or folders
+          - (bool) are_files: If True, paths point to a files
+                              If False, paths points to a folders
+          - (bool) auto_create: If True, will automatically create the path if it doesn't exist.
+        
+        Warning: 'path' is by default presumably pointing to files (specified by 'is_file' set to True).
+        If you are passing paths pointing to folders, make sure to set 'is_file' to False. 
+        """
+        for path in paths:
+            cls.check_path(path=path, is_file=are_files, auto_create=auto_create)
+
+    @classmethod
+    def check_path(cls, path:str, is_file=True, auto_create=True):
+        """
+        Checks if the directory of the given path exists and create the path.
+
+        Params:
+          - (str) path: The path to the file or folder
+          - (bool) is_file: If True, path points to a file
+                            If False, path points to a folder
+          - (bool) auto_create: If True, will automatically create the path if it doesn't exist.
+        
+        Warning: 'path' is by default presumably pointing to a file (specified by 'is_file' set to True).
+        If you are passing a path pointing to a directory, make sure to set 'is_file' to False. 
+        """
+        if is_file == True:
+            dir_path = os.path.dirname(path)
+        else:
+            dir_path = path
+        
+        # check if directory exist - if it doesn't create it
+        if not os.path.exists(dir_path) and auto_create == True:
+            os.makedirs(dir_path)
+        
+        # check if the file exists - if it doesn't, create it
+        if is_file == True:
+            if not os.path.exists(path) and auto_create == True:
+                with open(path, 'w') as f: # creates an empty file
+                    pass 
+        
+        if os.path.exists(path):
+            return True
+        else:
+            return False
+    
+    @classmethod
+    def clear_file(cls, filepath:str, replacement_text:str=""):
+        """
+        Clears the file contents while preserving the file. 
+
+        Params:
+          - (str) filepath: the file to clear
+          - (str) replacement_text: any optional text to write to the file after the clear
+        """
+        try:
+            with open(filepath, 'w') as f:
+                f.truncate(0)
+                f.write(replacement_text)
+                return True
+        except FileNotFoundError as e:
+            logger.warning(f"File {filepath} wasn't found!")

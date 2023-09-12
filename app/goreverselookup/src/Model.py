@@ -47,7 +47,7 @@ class TargetProcess:
         self.direction = direction
 
 class ReverseLookup:
-    def __init__(self, goterms: List[GOTerm], target_processes: List[Dict[str, str]], products: List[Product] = [], miRNAs: List[miRNA] = [], miRNA_overlap_treshold: float = 0.6, execution_times: dict = {}, statistically_relevant_products = {}, go_categories:List[str] = ["biological_process", "molecular_activity", "cellular_component"], model_settings:ModelSettings = None, obo_parser:OboParser = None):
+    def __init__(self, goterms: List[GOTerm], target_processes: List[Dict[str, str]], products: List[Product] = [], miRNAs: List[miRNA] = [], miRNA_overlap_treshold: float = 0.6, execution_times: dict = {}, statistically_relevant_products = {}, go_categories:List[str] = ["biological_process", "molecular_activity", "cellular_component"], model_settings:ModelSettings = None, obo_parser:OboParser = None, datafile_paths:dict = {}):
         """
         A class representing a reverse lookup for gene products and their associated Gene Ontology terms.
 
@@ -64,12 +64,30 @@ class ReverseLookup:
                         when researching only GO Terms connected to biological processes and/or molecular activities helps to produce more accurate statistical scores.
             model_settings: used for saving and loading model settings
             obo_parser: Used for parsing the Gene Ontology's .obo file. If it isn't supplied, it will be automatically created
+            datafile_paths: The paths to 3rd party database files. This is a dictionary, each element holds the data file type as key and the data file path as the value.
+                            Datafile paths are queried using (ReverseLookup).get_datafile_path(datafile_type) function, where allowed datafile_types are:
+                            'go_obo_filepath', 'goaf_filepath', 'zfin_human_ortho_mapping_filepath', 'mgi_human_ortho_mapping_filepath', 'rgd_human_ortho_mapping_filepath', 'xenbase_human_ortho_mapping_filepath'
         """
         self.goterms = goterms
         self.products = products
         self.target_processes = target_processes
         self.miRNAs = miRNAs
         self.miRNA_overlap_treshold = miRNA_overlap_treshold
+        self.model_settings = model_settings
+
+        # to enable backwards compatibility
+        if datafile_paths == {}:
+            logger.info(f"NOTE: Model datafile paths are all None!")
+            datafile_paths = {
+                'go_obo_filepath': None,
+                'goaf_filepath': None,
+                'zfin_human_ortho_mapping_filepath': None,
+                'mgi_human_ortho_mapping_filepath': None,
+                'rgd_human_ortho_mapping_filepath': None,
+                'xenbase_human_ortho_mapping_filepath': None,
+            }
+        else:
+            self.datafile_paths = datafile_paths
 
         self.execution_times = execution_times # dict of execution times, logs of runtime for functions
         self.timer = Timer()
@@ -79,12 +97,21 @@ class ReverseLookup:
 
         # GO categories - determines which categories of GO terms are chosen during the Fisher score computation (either from the GO Annotations File or from a gene id to GO Terms API query)
         self.go_categories = go_categories
-        self.goaf = GOAnnotationsFile(go_categories=go_categories)
-
-        self.model_settings = model_settings
+        self.goaf = GOAnnotationsFile(filepath=self.datafile_paths['goaf_filepath'], go_categories=go_categories)
+        if self.goaf == None:
+            logger.warning(f"MODEL COULD NOT CREATE A GO ANNOTATIONS FILE!")
+            logger.warning(f"  - goaf_filepath = {self.datafile_paths['goaf_filepath']}")
 
         self.go_api = GOApi() # this enables us to use go_api inside Metrics.py, as importing GOApi inside Metrics.py creates circular imports.
-        self.obo_parser = obo_parser if obo_parser != None else OboParser()
+        
+        if obo_parser != None:
+            self.obo_parser = obo_parser
+        else:
+            # obo parser is non
+            if self.datafile_paths['go_obo_filepath'] != None and self.datafile_paths['go_obo_filepath'] != "":
+                self.obo_parser = OboParser(obo_filepath=self.datafile_paths['go_obo_filepath'])
+            else:
+                self.obo_parser = OboParser()
 
     def set_model_settings(self, model_settings: ModelSettings):
         """
@@ -101,6 +128,61 @@ class ReverseLookup:
             setattr(self.model_settings, setting, value)
         else:
             logger.warning(f"ModelSettings object has no attribute {setting}!")
+
+    def get_datafile_path(self, datafile_type:str):
+        """
+        Gets the path to a data file specified by datafile_type. Datafile paths are loaded from the 'filepaths' section in input.txt.
+        Allowed datafile types (the values of datafile_type parameter) are:
+          - 'go_obo_filepath'
+          - 'goaf_filepath'
+          - 'zfin_human_ortho_mapping_filepath'
+          - 'mgi_human_ortho_mapping_filepath'
+          - 'rgd_human_ortho_mapping_filepath'
+          - 'xenbase_human_ortho_mapping_filepath'
+        """
+        if self.datafile_paths != []:
+            if datafile_type in self.datafile_paths:
+                return self.datafile_paths[datafile_type]
+            else:
+                logger.warning(f"Datafile type {datafile_type} doesn't exist in self.datafile_paths. Returning None.")
+                return None
+        logger.warning(f"self.datafile_paths wasn't initialised (is empty). Returning None.")
+        return None
+    
+    def get_datafile_paths(self, *datafile_types:str):
+        """
+        Gets the paths to multiple datafile_types. Datafile paths are loaded from the 'filepaths' section in input.txt.
+        Allowed datafile types (the values of datafile_type parameter) are:
+          - 'go_obo_filepath'
+          - 'goaf_filepath'
+          - 'zfin_human_ortho_mapping_filepath'
+          - 'mgi_human_ortho_mapping_filepath'
+          - 'rgd_human_ortho_mapping_filepath'
+          - 'xenbase_human_ortho_mapping_filepath'
+        
+        Returns a dictionary with the keys corresponding to input datafile_types and the values to the found filepaths.
+        
+        Example call:
+        (ReverseLookup).get_datafile_paths('go_obo_filepath', 'goaf_filepath')
+        -> returns: 
+            {
+                'go_obo_filepath': "PATH_TO_GO_OBO_FILE" or None,
+                'goaf_filepath': "PATH_TO_GOAF_FILE" or None
+            }
+
+        Note: You can call this function with only one string parameter "ALL" in order to receive a dictionary of all possible
+        datafile types.
+        """
+        all_keys = ['go_obo_filepath', 'goaf_filepath', 'zfin_human_ortho_mapping_filepath', 'mgi_human_ortho_mapping_filepath', 'rgd_human_ortho_mapping_filepath', 'xenbase_human_ortho_mapping_filepath']
+        if len(datafile_types) == 1 and datafile_types[0] == "ALL":
+            input_keys = all_keys
+        else:
+            input_keys = datafile_types
+
+        result = {}
+        for datafile_type in input_keys:
+            result[datafile_type] = self.get_datafile_path(datafile_type)
+        return result
 
     def fetch_all_go_term_names_descriptions(self, run_async = True, req_delay=0.1):
         """
@@ -462,10 +544,16 @@ class ReverseLookup:
             elif run_async == True:
                 asyncio.run(self._fetch_ortholog_products_async(refetch=refetch, max_connections=max_connections, req_delay=req_delay, semaphore_connections=semaphore_connections))
             else:
-                human_ortholog_finder = HumanOrthologFinder()
+                third_party_db_files = self.get_datafile_paths("ALL")
+                human_ortholog_finder = HumanOrthologFinder(
+                    goaf=self.goaf,
+                    zfin_filepath=third_party_db_files['zfin_human_ortho_mapping_filepath'],
+                    xenbase_filepath=third_party_db_files['xenbase_human_ortho_mapping_filepath'],
+                    mgi_filepath=third_party_db_files['mgi_human_ortho_mapping_filepath'],
+                    rgd_filepath=third_party_db_files['rgd_human_ortho_mapping_filepath'],
+                )
                 uniprot_api = UniProtApi()
                 ensembl_api = EnsemblApi()
-                goaf = GOAnnotationsFile()
 
                 with logging_redirect_tqdm():
                     for product in tqdm(self.products, desc="Fetch ortholog products"):  # Iterate over each Product object in the ReverseLookup object.
@@ -473,7 +561,7 @@ class ReverseLookup:
                         # if product.genename == None or refetch == True: # product.genename was still None for a lot of products, despite calling fetch_orthologs
                         if product.had_orthologs_computed == False or refetch == True:
                             # If it doesn't, fetch UniProt data for the Product object.
-                            product.fetch_ortholog(human_ortholog_finder, uniprot_api, ensembl_api, goaf=goaf)
+                            product.fetch_ortholog(human_ortholog_finder, uniprot_api, ensembl_api, goaf=self.goaf)
                             product.had_orthologs_computed = True
         except Exception as e:
             # If there was an exception while fetching UniProt data, save all the Product objects to a JSON file.
@@ -512,13 +600,20 @@ class ReverseLookup:
             finally:
                 await session.close()
 
-        human_ortholog_finder = HumanOrthologFinder()
+        third_party_db_files = self.get_datafile_paths("ALL")
+        human_ortholog_finder = HumanOrthologFinder(
+            goaf=self.goaf,
+            zfin_filepath=third_party_db_files['zfin_human_ortho_mapping_filepath'],
+            xenbase_filepath=third_party_db_files['xenbase_human_ortho_mapping_filepath'],
+            mgi_filepath=third_party_db_files['mgi_human_ortho_mapping_filepath'],
+            rgd_filepath=third_party_db_files['rgd_human_ortho_mapping_filepath'],
+        )
         uniprot_api = UniProtApi()
         ensembl_api = EnsemblApi()
         ensembl_api.async_request_sleep_delay = req_delay
         uniprot_api.async_request_sleep_delay = req_delay
-        goaf = GOAnnotationsFile()
-
+        # goaf = GOAnnotationsFile(third_party_db_files['goaf_filepath'])
+        
         connector = aiohttp.TCPConnector(limit=max_connections,limit_per_host=max_connections)
         semaphore = asyncio.Semaphore(semaphore_connections)
         async with aiohttp.ClientSession(connector=connector) as session:
@@ -527,7 +622,7 @@ class ReverseLookup:
             for product in self.products:
                 if product.had_orthologs_computed == False or refetch == True:
                     # task = product.fetch_ortholog_async(session, human_ortholog_finder, uniprot_api, ensembl_api)
-                    task = product.fetch_ortholog_async_semaphore(session, semaphore, goaf, human_ortholog_finder, uniprot_api, ensembl_api)
+                    task = product.fetch_ortholog_async_semaphore(session, semaphore, self.goaf, human_ortholog_finder, uniprot_api, ensembl_api)
                     tasks.append(task)
                     product.had_orthologs_computed = True
             await asyncio.gather(*tasks)
@@ -908,6 +1003,7 @@ class ReverseLookup:
         data = {}
         data['target_processes'] = self.target_processes
         data['go_categories'] = self.go_categories
+        data['filepaths'] = self.datafile_paths
         data['model_settings'] = self.model_settings.to_json()
         data['miRNA_overlap_treshold'] = self.miRNA_overlap_treshold
         data['execution_times'] = self.execution_times
@@ -1260,6 +1356,7 @@ class ReverseLookup:
         for product in self.products:
             if hasattr(product, member_field_name):
                 setattr(product, member_field_name, value)
+    
 
     @classmethod
     def load_model(cls, filepath: str) -> 'ReverseLookup':
@@ -1290,6 +1387,11 @@ class ReverseLookup:
             settings = ModelSettings.from_json(data['model_settings'])
         else:
             settings = ModelSettings()
+        
+        if "filepaths" in data:
+            datafile_paths = data['filepaths']
+        else:
+            datafile_paths = {}
 
         goterms = []
         for goterm_dict in data['goterms']:
@@ -1297,7 +1399,11 @@ class ReverseLookup:
         
         obo_parser = None
         if settings.include_all_goterm_parents == True:
-            obo_parser = OboParser()
+            if datafile_paths != {} and 'go_obo_filepath' in datafile_paths:
+                if datafile_paths['go_obo_filepath'] != None and datafile_paths['go_obo_filepath'] != "":
+                    obo_parser = OboParser(datafile_paths['go_obo_filepath'])
+            else:
+                obo_parser = OboParser()
             for goterm in goterms:
                 assert isinstance(goterm, GOTerm)
                 if goterm.parent_term_ids == [] or goterm.parent_term_ids == None:
@@ -1315,7 +1421,7 @@ class ReverseLookup:
         for miRNAs_dict in data.get('miRNAs', []):
             miRNAs.append(miRNA.from_dict(miRNAs_dict))
 
-        return cls(goterms, target_processes, products, miRNAs, miRNA_overlap_treshold, execution_times=execution_times, statistically_relevant_products=statistically_relevant_products, go_categories=go_categories, model_settings=settings, obo_parser=obo_parser)
+        return cls(goterms, target_processes, products, miRNAs, miRNA_overlap_treshold, execution_times=execution_times, statistically_relevant_products=statistically_relevant_products, go_categories=go_categories, model_settings=settings, obo_parser=obo_parser, datafile_paths=datafile_paths)
 
     @classmethod
     def from_input_file(cls, filepath: str) -> 'ReverseLookup':
@@ -1337,6 +1443,7 @@ class ReverseLookup:
         go_categories = []
         go_terms = []
         settings = ModelSettings()
+        datafile_paths = {} # a dictionary between data file types and their filepaths {'go_obo_filepath': "GO_OBO_FILEPATH", {...}, ...}
 
         def process_comment(line):
             """
@@ -1369,6 +1476,9 @@ class ReverseLookup:
                     if "settings" in line:
                         section = "settings"
                         continue
+                    elif "filepaths" in line:
+                        section = "filepaths"
+                        continue
                     elif "processes" in line:
                         section = "process"
                         continue
@@ -1389,6 +1499,9 @@ class ReverseLookup:
                         if setting_name == "pvalue":
                             setting_value = float(chunks[1])
                         settings.set_setting(setting_name=setting_name, setting_value=setting_value)
+                    elif section == "filepaths":
+                        chunks = line.split(LINE_ELEMENT_DELIMITER)
+                        datafile_paths[chunks[0]] = chunks[1]
                     elif section == "process":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
                         target_processes.append({"process": chunks[0], "direction": chunks[1]})
@@ -1414,7 +1527,7 @@ class ReverseLookup:
         except OSError:
             logger.error(f"ERROR while opening filepath {filepath}")
             return
-        
+
         # PROCESS INPUT FILE
         """
         if not os.path.isabs(filepath): # this process with traceback.extract_stack works correctly on mac, but not on windows.
@@ -1440,8 +1553,12 @@ class ReverseLookup:
         obo_parser = None
         if settings.include_all_goterm_parents:
             # update goterms to include all parents
-            logger.info(f"Starting OboParser to find all GO Term parents.")
-            obo_parser = OboParser()
+            if datafile_paths != {} and 'go_obo_filepath' in datafile_paths:
+                if datafile_paths['go_obo_filepath'] != None and datafile_paths['go_obo_filepath'] != "":
+                    obo_parser = OboParser(datafile_paths['go_obo_filepath'])
+            else:
+                obo_parser = OboParser()
+            logger.info(f"Starting OboParser to find all GO Term parents using data file {obo_parser.filepath}")
             for goterm in go_terms:
                 assert isinstance(goterm, GOTerm)
                 if goterm.parent_term_ids == [] or goterm.parent_term_ids == None:
@@ -1451,7 +1568,14 @@ class ReverseLookup:
                     goterm_parent_ids = obo_parser.get_parent_terms(goterm.id) # calculate parent term ids for this goterm
                     goterm.parent_term_ids = goterm_parent_ids # update parent term ids
     
-        return cls(go_terms, target_processes=target_processes, go_categories=go_categories, model_settings=settings, obo_parser=obo_parser)
+        logger.info(f"Creating model from input file with:")
+        logger.info(f"  - count GO Terms: {len(go_terms)} ")
+        logger.info(f"  - target_processes: {target_processes}")
+        logger.info(f"  - GO categories: {go_categories}")
+        logger.info(f"  - model settings: {settings}")
+        logger.info(f"  - obo_parser: {obo_parser}")
+        logger.info(f"  - datafile_paths: {datafile_paths}")
+        return cls(go_terms, target_processes=target_processes, go_categories=go_categories, model_settings=settings, obo_parser=obo_parser, datafile_paths=datafile_paths)
 
     @classmethod
     def from_dict(cls, data: Dict[str, List[Dict]]) -> 'ReverseLookup':
@@ -1474,8 +1598,13 @@ class ReverseLookup:
             settings = ModelSettings.from_json(data['model_settings'])
         else:
             settings = ModelSettings()
+        if "filepaths" in data:
+            datafile_paths = data['filepaths']
+        else:
+            datafile_paths = []
 
-        return cls(goterms, target_processes, go_categories=go_categories, model_settings=settings)
+        logger.info(f"Model creation from input file complete.")
+        return cls(goterms, target_processes, go_categories=go_categories, model_settings=settings, datafile_paths=datafile_paths)
     
     def _debug_shorten_GO_terms(self,count):
         """

@@ -8,7 +8,7 @@ with open(readme_path, "r") as f:
 
 setup(
     name="GOReverseLookup",
-    version="1.0.4",
+    version="1.0.5",
     description="Python library for Gene Ontology Reverse Lookup",
     package_dir={"": "app"},
     packages=find_packages(where="app"),

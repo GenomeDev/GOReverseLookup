@@ -9,12 +9,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 class HumanOrthologFinder:
-    def __init__(self, zfin_filepath:str = "", xenbase_filepath:str = "", mgi_filepath:str = "", rgd_filepath:str="", goaf_filepath:str = ""):
+    def __init__(self, goaf:GOAnnotationsFile, zfin_filepath:str = "", xenbase_filepath:str = "", mgi_filepath:str = "", rgd_filepath:str=""):
         """
         Constructs the HumanOrthologFinder, which uses file-based search on pre-downloaded 3rd party database ortholog mappings to find
         ortholog genes.
 
         Parameters:
+          - (GOAnnotationsFile) goaf: A GOAnnotationsFile instance. Good practice is to pass the goaf from ReverseLookup instance.
           - (str) zfin_filepath: Filepath to the Zebrafish Information Network human ortholog mapping file, found at https://zfin.org/downloads -> Orthology Data -> Human and Zebrafish Orthology -> link = https://zfin.org/downloads/human_orthos.txt
           - (str) xenbase_filepath: Filepath to the Xenbase human ortholog mapping file, found at https://www.xenbase.org/ -> Download -> Data Download (https://www.xenbase.org/xenbase/static-xenbase/ftpDatafiles.jsp) -> Data Reports -> Orthology -> Xenbase genes to Human Entrez Genes -> link: https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt
           - (str) mgi_filepath: Filepath to the Mouse Genome Informatics human ortholog mapping file, found at: https://www.informatics.jax.org/ -> Download (https://www.informatics.jax.org/downloads/reports/index.html) -> Vertebrate homology -> Human and Mouse Homology Classes with Sequence information (tab-delimited) -> link = https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt
@@ -27,7 +28,7 @@ class HumanOrthologFinder:
         self.xenbase = XenbaseHumanOrthologFinder(filepath=xenbase_filepath)
         self.mgi = MGIHumanOrthologFinder(filepath=mgi_filepath)
         self.rgd = RGDHumanOrthologFinder(filepath=rgd_filepath)
-        self.goaf = GOAnnotationsFile()
+        self.goaf = goaf
 
     def find_human_ortholog(self, product):
         """
@@ -63,7 +64,6 @@ class HumanOrthologFinder:
         return human_gene_symbol
     
     async def find_human_ortholog_async(self, product):
-        # TODO: START FROM HERE. Create async file browsing for all other ortholog finders.
         if "ZFIN" in product:
             result = await self.zfin.find_human_ortholog_async(product) # returns [0]: gene symbol, [1]: long name of the gene
             return result[0] if result != None else None

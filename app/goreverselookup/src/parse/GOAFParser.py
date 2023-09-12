@@ -27,7 +27,7 @@ class GOAnnotationsFile:
           - http://current.geneontology.org/products/pages/downloads.html
         """
         self.go_categories = go_categories
-        if filepath == "":
+        if filepath == "" or filepath == None:
             self._filepath = "app/goreverselookup/data_files/goa_human.gaf"
         else:
             self._filepath = filepath
@@ -36,6 +36,7 @@ class GOAnnotationsFile:
 
         self._check_file()
         if self._check_file():
+            logger.info(f"  - GOAF filepath exists.")
             with open(self._filepath, 'r') as read_content:
                 temp_content = read_content.readlines()
                 self._readlines = []
@@ -47,6 +48,7 @@ class GOAnnotationsFile:
                             self._readlines.append(line)
         self.terms_dict = None
         self.products_dict = None
+        logger.info(f"  - GOAF created with {len(self._readlines)} annotations.")
             
     def _check_file(self):
         os.makedirs(os.path.dirname(self._filepath), exist_ok=True)

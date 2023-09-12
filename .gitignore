@@ -2,6 +2,9 @@
 app/goreverselookup/data_files/*
 app/goreverselookup/cache/*
 results/*
+exe_version/data_files/*
+exe_version/cache/*
+exe_version/results/*
 
 
 # Byte-compiled / optimized / DLL files
