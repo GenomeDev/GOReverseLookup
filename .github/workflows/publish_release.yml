@@ -20,7 +20,7 @@ jobs:
       - name: Get the release tag version
         id: vars
         run: |
-          echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       - name: Update pyproject.toml
         run: |
           # Extract the tag version
