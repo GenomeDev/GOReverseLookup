@@ -5,6 +5,8 @@ While Gene Ontology offers valuable insights through gene annotations associated
 
 GOReverseLookup steps in to bridge this gap. It empowers researchers to uncover genes of statistical significance that participate in various interconnected Gene Ontology Terms, shedding light on intricate biological processes.
 
+Note: **For beginners, we strongly advise you to start the usage of this tool from an executable file, please read the section "Usage" -> "Running GOReverseLookup using an executable (.exe) file"**
+
 # Getting started
 This section instructs you how to install the GOReverseLookup package and it's prerequisites.
 ## Prerequisites
@@ -17,6 +19,7 @@ This section instructs you how to install the GOReverseLookup package and it's p
     - RGD human ortholog mapping file: https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt
     - MGI human ortholog mapping file: https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt
     - Xenbase human ortholog mapping file: https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt
+
 ## Installation
 To use the package, install it with pip:
 ```
@@ -24,27 +27,7 @@ pip install goreverselookup
 ```
 
 # Usage
-## Using an IDE (e.g., Visual Studio Code)
-### Folder structure setup
-Firstly, create a folder that will be the root of your Python project. We will refer to the root folder as `root/`. Ideally, you should create the following folder structure:
-```
-root/
-    - input_files
-        - input.txt
-    - results
-        - data.json
-        - statistically_significant_genes.json
-    - main.py
-```
-Explanation of the folder structure:
-    - `input_files` is where input.txt files are stored. These files will server as the entry point for the program and will have to be constructed manually.
-    - `results` is where the results of the analysis will be stored. After the program runs in entirety, two files will be computed: 
-        - `data.json` 
-        - `statistically_significant_genes.json`
-        The contents of the above files are explained in subsequent sections.
-    - `main.py` is the main file, where the Python code will be placed to carry out the analysis.
-
-### Creating the input.txt file
+## Creating the input.txt file
 **input.txt** is the entry to the program. It contains all the relevant data for the program to successfully complete the analysis of statistically important genes that positively or negatively contribute to one or more pathophysiological processes.
 
 An example input.txt file to discover the genes that positively contribute to both the development of chronic inflammation and cancer is:
@@ -107,6 +90,67 @@ The available settings are the following:
 * `include_all_goterm_parents`: In Gene Ontology, genes are annotated only to very specific GO Terms, which might be nested very deep in the GO Terms hierarchy tree. If this setting is true, all indirectly annotated terms (aka parent terms) are also accounted for, besides directly annotated GO Terms. If this setting is false, only directly annotated GO Terms are accounted for.
 * `uniprotkb_genename_online_query`: When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD). During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function. The gene name can be obtained either online via UniProtApi or offline via GO Annotations File. If True, will query genename from a UniProtKB id via an online server request. If False, will query genename from a UniProtKB id via the GO Annotations File.
 * `pvalue`: Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes (eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
+
+## Running GOReverseLookup from an executable (.exe) file
+### GOReverseLookup.exe from existing project template
+This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
+
+Instructions:
+1. Download the zip archive from MEGA and save it to your computer: [todo: link to mega folder]
+2. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
+3. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
+4. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
+5. Run `GOReverseLookup.exe`; this will open the command prompt and the example should run. After approximately 20 minutes (if the internet connection is stable), the analysis should be finished and the resulting files saved into the `results` folder.
+
+Note: If you experience any **issues** when the .exe runs the example, close the command prompt and run `GOReverseLookup.exe` again. The most likely cause of issues is blocking on the web server's end due to too many requests. The code in background relies heavily on asynchronous requests, and if the server is overloaded, it might start blocking incoming requests. However, request caching is implemented in code - if the same requests are resent to the server, they will be loaded from a previously successfully received request (which are saved in the `cache` folder). Therefore, during a subsequent run of the same program, there will be less requests sent to the servers, diminishing the probability of the server blocking the requests.
+
+If you wish to **carry out your own research analysis**, modify the input.txt file inside the `input_files` folder as per instructions on how to create the input.txt file explained above.
+
+Note: Downloading the entire Mega folder comes with pre-downloaded 3rd party database files, which are used heavily in code when you run the research analysis, but may be outdated. The following 3rd party database files exist in the `data_files` folder:
+- `go.obo`
+- `goa_human.gaf`
+- `mgi_human_ortholog_mapping.txt`
+- `rgd_human_ortholog_mapping.txt`
+- `xenbase_human_ortholog_mapping.txt`
+- `zfin_human_ortholog_mapping.txt`
+
+The download links to all of these files are specified above. If you wish to update these files, you must download them from the above-specified download links. Following the download, you have two options:
+a) move the downloaded file into the `data_files` folder and rename it exactly to one of the above names
+b) store the downloaded file anywhere in your file system and provide the filepath to the downloaded file inside `input_fules/input.txt`. For example, if you have downloaded an updated version of a go.obo file and you decided to store the go.obo file at the following filepath: `C:/User/Desktop/research/go.obo`, then you need to update the path to go.obo in the `filepaths` section inside `input_fules/input.txt`, like so:
+```
+...
+###filepaths
+go_obo_filepath	C:/User/Desktop/research/go.obo
+goaf_filepath	data_files/goa_human.gaf
+zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
+mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
+rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
+xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
+...
+```
+
+### GOReverseLookup.exe from scratch
+The 
+
+## Running GOReverseLookup using an IDE (e.g., Visual Studio Code)
+### Folder structure setup
+Firstly, create a folder that will be the root of your Python project. We will refer to the root folder as `root/`. Ideally, you should create the following folder structure:
+```
+root/
+    - input_files
+        - input.txt
+    - results
+        - data.json
+        - statistically_significant_genes.json
+    - main.py
+```
+Explanation of the folder structure:
+    - `input_files` is where input.txt files are stored. These files will server as the entry point for the program and will have to be constructed manually.
+    - `results` is where the results of the analysis will be stored. After the program runs in entirety, two files will be computed: 
+        - `data.json` 
+        - `statistically_significant_genes.json`
+        The contents of the above files are explained in subsequent sections.
+    - `main.py` is the main file, where the Python code will be placed to carry out the analysis.
 
 ### Code
 There are two main algorithms that can be used to achieve the same result. The mentioned scripts should be put in the `main.py` file, which you should execute using an IDE of your choice, preferably Visual Studio Code.
@@ -179,49 +223,6 @@ model.perform_statistical_analysis(test_name="fisher_test", filepath="results/st
 model.save_model("results/data.json")
 ```
 Each function call on the `ReverseLookup` instance called `model` has a descriptive name, highlighting it's task. The functions are heavily commented in code, so we encourage you to explore these comments and the code of our GitHub repository so as to gain a deeper understanding of the inner complexities of our tool.
-
-## Using GOReverseLookup.exe
-### GOReverseLookup.exe from existing project template
-This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
-
-Instructions:
-1. Download the zip archive from MEGA and save it to your computer: [todo: link to mega folder]
-2. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
-3. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
-4. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
-5. Run `GOReverseLookup.exe`; this will open the command prompt and the example should run. After approximately 20 minutes (if the internet connection is stable), the analysis should be finished and the resulting files saved into the `results` folder.
-
-Note: If you experience any **issues** when the .exe runs the example, close the command prompt and run `GOReverseLookup.exe` again. The most likely cause of issues is blocking on the web server's end due to too many requests. The code in background relies heavily on asynchronous requests, and if the server is overloaded, it might start blocking incoming requests. However, request caching is implemented in code - if the same requests are resent to the server, they will be loaded from a previously successfully received request (which are saved in the `cache` folder). Therefore, during a subsequent run of the same program, there will be less requests sent to the servers, diminishing the probability of the server blocking the requests.
-
-If you wish to **carry out your own research analysis**, modify the input.txt file inside the `input_files` folder as per instructions on how to create the input.txt file explained above.
-
-Note: Downloading the entire Mega folder comes with pre-downloaded 3rd party database files, which are used heavily in code when you run the research analysis, but may be outdated. The following 3rd party database files exist in the `data_files` folder:
-- `go.obo`
-- `goa_human.gaf`
-- `mgi_human_ortholog_mapping.txt`
-- `rgd_human_ortholog_mapping.txt`
-- `xenbase_human_ortholog_mapping.txt`
-- `zfin_human_ortholog_mapping.txt`
-The download links to all of these files are specified above. If you wish to update these files, you must download them from the above-specified download links. Following the download, you have two options:
-a) move the downloaded file into the `data_files` folder and rename it exactly to one of the above names
-b) store the downloaded file anywhere in your file system and provide the filepath to the downloaded file inside `input_fules/input.txt`. For example, if you have downloaded an updated version of a go.obo file and you decided to store the go.obo file at the following filepath: `C:/User/Desktop/research/go.obo`, then you need to update the path to go.obo in the `filepaths` section inside `input_fules/input.txt`, like so:
-```
-...
-###filepaths
-go_obo_filepath	C:/User/Desktop/research/go.obo
-goaf_filepath	data_files/goa_human.gaf
-zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
-mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
-rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
-xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
-...
-```
-
-
-
-
-### GOReverseLookup.exe from scratch
-The 
 
 # Roadmap
 [todo]: link github projects here
