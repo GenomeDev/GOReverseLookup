@@ -91,6 +91,49 @@ The available settings are the following:
 * `uniprotkb_genename_online_query`: When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD). During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function. The gene name can be obtained either online via UniProtApi or offline via GO Annotations File. If True, will query genename from a UniProtKB id via an online server request. If False, will query genename from a UniProtKB id via the GO Annotations File.
 * `pvalue`: Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes (eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
 
+The **processes** section contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes section as:
+```
+###processes
+chronic_inflammation	+
+cancer	+
+```
+The processes defined in the processes section are used in the GO_terms section, to specify how a GO Term contributes to a given process.
+
+The **categories** section enables the researcher to choose which Gene Ontology Categories (also known as Gene Ontology Aspects) are important to the researcher. It determines which GO Terms will be queried either from online or from the GO Annotations File.
+
+The three possible GO categories are:
+- molecular_activity
+- biological_process
+- cellular_component
+The categories section defined to include all three GO categories would set all of the values to `True`.
+```
+###categories
+biological_process	True
+molecular_activity	True
+cellular_component	True
+```
+If a researcher wants to exclude any GO category, that category must be labelled as `False`. For example, when a researcher is only interested in GO Terms related to molecular activity and biological processes, querying GO Terms related to a cellular component might result in an incorrect gene scoring process, resulting in some genes being scored as statistically insignificant, whereas they should be statistically significant. Thus, a researcher should turn off or on the GO categories according to the research goals.
+```
+###categories
+biological_process	True
+molecular_activity	True
+cellular_component	False
+```
+
+The **GO_terms** section contains all of the GO Terms that will be used in the analysis. Each line in the section contains one GO Term, with the following tab-delimited values:
+- [0]: GO Term identifier (eg. GO:0006954)
+- [1]: process, which the GO Term supposedly regulates (eg. chronic_inflammation)
+- [2]: positive or negative regulation direction of the process (+ or -)
+- [3]: weight: the presumed importance of a GO Term in regulating the process. It is used only in the adv_product_score statistical test (a custom implementation of gene importance). If you only intend on using the Fisher's test, the weights are insignificant, just set them to 1.
+- [4]: GO Term name: the name of the GO Term (optional)
+- [5]: GO Term description: the description of the GO Term (optional)
+
+An example line in a GO_terms section is:
+```
+GO:0006954	chronic_inflammation	+	1	inflammatory response
+```
+which reads as "GO term with id `GO:0006954` and name `inflammatory response` positively (`+`) contributes to pathophysiological process `chronic_inflammation` and should have a weight of `1`.
+
 ## Running GOReverseLookup from an executable (.exe) file
 ### GOReverseLookup.exe from existing project template
 This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
