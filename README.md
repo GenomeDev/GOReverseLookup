@@ -183,11 +183,12 @@ which reads as "GO term with id `GO:0006954` and name `inflammatory response` po
 This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
 
 Instructions:
-1. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw. If you don't have a MEGA account yet, MEGA will prompt you to create an account on their website. Create an account and select the Free account during the account creation process.
-2. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
-3. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
-4. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
-5. Run `GOReverseLookup.exe`; this will open the command prompt and the example should run. After approximately 20 minutes (if the internet connection is stable), the analysis should be finished and the resulting files saved into the `results` folder.
+1. The 3.10.0 version or later of the Python programming language is required for the program to run. If you haven't installed it yet, you need to install it. See the **Python installation** appendix chapter at the end of this Readme.
+2. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw. If you don't have a MEGA account yet, MEGA will prompt you to create an account on their website. Create an account and select the Free account during the account creation process.
+3. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
+4. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
+5. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
+6. Run `GOReverseLookup.exe`; this will open the command prompt and the example should run. After approximately 20 minutes (if the internet connection is stable), the analysis should be finished and the resulting files saved into the `results` folder.
 
 Note: If you experience any **issues** when the .exe runs the example, close the command prompt and run `GOReverseLookup.exe` again. The most likely cause of issues is blocking on the web server's end due to too many requests. The code in background relies heavily on asynchronous requests, and if the server is overloaded, it might start blocking incoming requests. However, request caching is implemented in code - if the same requests are resent to the server, they will be loaded from a previously successfully received request (which are saved in the `cache` folder). Therefore, during a subsequent run of the same program, there will be less requests sent to the servers, diminishing the probability of the server blocking the requests.
 
@@ -331,3 +332,11 @@ Distributed using Apache 2.0 License. See `LICENSE.txt` for more information.
 # Contact
 Aljoša Škorjanc - skorjanc.aljosa@gmail.com
 Vladimir Smrkolj - smrkolj.vladimir@gmail.com
+
+# Appendix: Python installation
+At the time of writing, Python version 3.11.5 is available for download, which we will be downloading. 
+1. Head to the [Python's website](https://www.python.org/) and hover over the "Downloads" button and click on the latest available Python version number below the text "Download for Windows". This will download a .exe installer for Python.
+2. Run the downloaded .exe installer
+3. On the first window that appears, tick the box "Add python.exe to PATH". Then, click on "Install Now"
+4. Sit back and watch the installation run. After the "Successul installation" message is displayed, you can close the installer.
+
