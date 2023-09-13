@@ -183,7 +183,7 @@ which reads as "GO term with id `GO:0006954` and name `inflammatory response` po
 This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
 
 Instructions:
-1. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw 
+1. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw. If you don't have a MEGA account yet, MEGA will prompt you to create an account on their website. Create an account and select the Free account during the account creation process.
 2. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
 3. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
 4. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
