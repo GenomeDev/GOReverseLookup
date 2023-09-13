@@ -17,6 +17,7 @@ from .util.CacheUtil import Cacher, ConnectionCacher
 from .util.FileUtil import FileUtil
 from .util.JsonUtil import JsonUtil
 from .util.Timer import Timer
+from .util.LogConfigLoader import LogConfigLoader
 
 from .web_apis.EnsemblApi import EnsemblApi
 from .web_apis.UniprotApi import UniProtApi
@@ -27,7 +28,7 @@ __all__ = [
     'ReverseLookup', 'WorkflowOne', 'WorkflowTwo', 
     'ModelSettings', 'GOTerm', 'nterms', 'adv_product_score', 'binomial_test', 'fisher_exact_test', 'miRDB60predictor', 'miRNA', 'Product', 'ReportGenerator',
     'GOAnnotationsFile', 'OboParser', 'HumanOrthologFinder', 'ZFINHumanOrthologFinder', 'XenbaseHumanOrthologFinder', 'MGIHumanOrthologFinder', 'RGDHumanOrthologFinder',
-    'Cacher', 'ConnectionCacher', 'FileUtil', 'JsonUtil', 'Timer',
+    'Cacher', 'ConnectionCacher', 'FileUtil', 'JsonUtil', 'Timer', 'LogConfigLoader',
     'EnsemblApi', 'UniProtApi', 'GOApi'
     ]
 
