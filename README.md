@@ -181,8 +181,47 @@ model.save_model("results/data.json")
 Each function call on the `ReverseLookup` instance called `model` has a descriptive name, highlighting it's task. The functions are heavily commented in code, so we encourage you to explore these comments and the code of our GitHub repository so as to gain a deeper understanding of the inner complexities of our tool.
 
 ## Using GOReverseLookup.exe
-[todo]
+### GOReverseLookup.exe from existing project template
+This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
 
+Instructions:
+1. Download the zip archive from MEGA and save it to your computer: [todo: link to mega folder]
+2. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
+3. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
+4. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
+5. Run `GOReverseLookup.exe`; this will open the command prompt and the example should run. After approximately 20 minutes (if the internet connection is stable), the analysis should be finished and the resulting files saved into the `results` folder.
+
+Note: If you experience any **issues** when the .exe runs the example, close the command prompt and run `GOReverseLookup.exe` again. The most likely cause of issues is blocking on the web server's end due to too many requests. The code in background relies heavily on asynchronous requests, and if the server is overloaded, it might start blocking incoming requests. However, request caching is implemented in code - if the same requests are resent to the server, they will be loaded from a previously successfully received request (which are saved in the `cache` folder). Therefore, during a subsequent run of the same program, there will be less requests sent to the servers, diminishing the probability of the server blocking the requests.
+
+If you wish to **carry out your own research analysis**, modify the input.txt file inside the `input_files` folder as per instructions on how to create the input.txt file explained above.
+
+Note: Downloading the entire Mega folder comes with pre-downloaded 3rd party database files, which are used heavily in code when you run the research analysis, but may be outdated. The following 3rd party database files exist in the `data_files` folder:
+- `go.obo`
+- `goa_human.gaf`
+- `mgi_human_ortholog_mapping.txt`
+- `rgd_human_ortholog_mapping.txt`
+- `xenbase_human_ortholog_mapping.txt`
+- `zfin_human_ortholog_mapping.txt`
+The download links to all of these files are specified above. If you wish to update these files, you must download them from the above-specified download links. Following the download, you have two options:
+a) move the downloaded file into the `data_files` folder and rename it exactly to one of the above names
+b) store the downloaded file anywhere in your file system and provide the filepath to the downloaded file inside `input_fules/input.txt`. For example, if you have downloaded an updated version of a go.obo file and you decided to store the go.obo file at the following filepath: `C:/User/Desktop/research/go.obo`, then you need to update the path to go.obo in the `filepaths` section inside `input_fules/input.txt`, like so:
+```
+...
+###filepaths
+go_obo_filepath	C:/User/Desktop/research/go.obo
+goaf_filepath	data_files/goa_human.gaf
+zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
+mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
+rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
+xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
+...
+```
+
+
+
+
+### GOReverseLookup.exe from scratch
+The 
 
 # Roadmap
 [todo]: link github projects here
