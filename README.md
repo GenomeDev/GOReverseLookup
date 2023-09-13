@@ -12,7 +12,7 @@ This section instructs you how to install the GOReverseLookup package and it's p
 
 ## Prerequisites
 * Python >= 3.10.0
-* Downloading the folder containing the GOReverseLookup.exe (executable) file from MEGA using [this link](TODO) [TODO!]
+* Downloading the folder containing the GOReverseLookup.exe (executable) file from MEGA using [this link](https://mega.nz/fm/BO41VBjI). Never use any other links besides the links provided by this Readme, since links provided by other websites may harm your computer.
 * Downloading several database files (Gene Ontology files and 3rd party database human-ortholog mapping files).
     - Gene Ontology Annotations File for Homo Sapiens proteins: http://current.geneontology.org/products/pages/downloads.html
     - Gene Ontology .obo file: http://current.geneontology.org/ontology/go.obo
@@ -183,7 +183,7 @@ which reads as "GO term with id `GO:0006954` and name `inflammatory response` po
 This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
 
 Instructions:
-1. Download the zip archive from MEGA and save it to your computer: [todo: link to mega folder]
+1. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/fm/BO41VBjI 
 2. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
 3. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
 4. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
