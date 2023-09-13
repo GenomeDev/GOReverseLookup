@@ -105,6 +105,7 @@ The three possible GO categories are:
 - molecular_activity
 - biological_process
 - cellular_component
+
 The categories section defined to include all three GO categories would set all of the values to `True`.
 ```
 ###categories
