@@ -9,9 +9,10 @@ Note: **For beginners, we strongly advise you to start the usage of this tool fr
 
 # Getting started
 This section instructs you how to install the GOReverseLookup package and it's prerequisites.
+
 ## Prerequisites
 * Python >= 3.10.0
-* Integrated Development Application (IDE) - such as Visual Studio Code (VSCode)
+* Downloading the folder containing the GOReverseLookup.exe (executable) file from MEGA using [this link](TODO) [TODO!]
 * Downloading several database files (Gene Ontology files and 3rd party database human-ortholog mapping files).
     - Gene Ontology Annotations File for Homo Sapiens proteins: http://current.geneontology.org/products/pages/downloads.html
     - Gene Ontology .obo file: http://current.geneontology.org/ontology/go.obo
@@ -19,6 +20,7 @@ This section instructs you how to install the GOReverseLookup package and it's p
     - RGD human ortholog mapping file: https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt
     - MGI human ortholog mapping file: https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt
     - Xenbase human ortholog mapping file: https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt
+* (For developers or researchers knowledgeable about Python) Integrated Development Application (IDE) - such as Visual Studio Code (VSCode)
 
 ## Installation
 To use the package, install it with pip:
@@ -91,6 +93,48 @@ The available settings are the following:
 * `uniprotkb_genename_online_query`: When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD). During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function. The gene name can be obtained either online via UniProtApi or offline via GO Annotations File. If True, will query genename from a UniProtKB id via an online server request. If False, will query genename from a UniProtKB id via the GO Annotations File.
 * `pvalue`: Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes (eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
 
+The **filepaths** section contains the relative or absolute filepaths to the 3rd party database files. Each line in the filepaths section has the following tab-delimited structure:
+```
+FILE_TYPE    FILEPATH
+```
+`FILEPATH` points to the relative or absolute path to the 'FILE_TYPE'. 'FILE_TYPE' can be one of the following values:
+- `go_obo_filepath`
+- `goaf_filepath`
+- `zfin_human_ortho_mapping_filepath`
+- `mgi_human_ortho_mapping_filepath`
+- `rgd_human_ortho_mapping_filepath`
+- `xenbase_human_ortho_mapping_filepath`
+
+Absolute paths are file paths that point all the way from the disk letter (such as `C:`) to the file name. An example of an absolute path is `C:/User/Research/GOReverseLookup/data_files/go.obo`. Example of the filepaths section with absolute filepaths:
+```
+###filepaths
+go_obo_filepath	C:/User/Research/GOReverseLookup/data_files/go.obo
+goaf_filepath	C:/User/Research/GOReverseLookup/data_files/goa_human.gaf
+zfin_human_ortho_mapping_filepath	C:/User/Research/GOReverseLookup/data_files/zfin_human_ortholog_mapping.txt
+mgi_human_ortho_mapping_filepath	C:/User/Research/GOReverseLookup/data_files/mgi_human_ortholog_mapping.txt
+rgd_human_ortho_mapping_filepath	C:/User/Research/GOReverseLookup/data_files/rgd_human_ortholog_mapping.txt
+xenbase_human_ortho_mapping_filepath	C:/User/Research/GOReverseLookup/data_files/xenbase_human_ortholog_mapping.txt
+```
+Relative paths are file paths that point from the _current application directory_ to the destination file. If you are using an exe file to run the analysis, then the _current application directory_ is the folder that contains the executable file. Suppose the following folder structure when using GOReverseLookup.exe:
+```
+C:/User/Research/GOReverseLookup/
+  - GOReverseLookup.exe
+  - input_files/
+      - input.txt
+  - data_files/
+      - go.obo
+```
+Then, the relative path to `go.obo` would be `data_files/go.obo` and you could replace an absolute path in the input file with the relative path. An example of the filepaths section with relative filepaths is:
+```
+###filepaths
+go_obo_filepath	data_files/go.obo
+goaf_filepath	data_files/goa_human.gaf
+zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
+mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
+rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
+xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
+```
+
 The **processes** section contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes section as:
 ```
 ###processes
@@ -136,7 +180,6 @@ GO:0006954	chronic_inflammation	+	1	inflammatory response
 which reads as "GO term with id `GO:0006954` and name `inflammatory response` positively (`+`) contributes to pathophysiological process `chronic_inflammation` and should have a weight of `1`.
 
 ## Running GOReverseLookup from an executable (.exe) file
-### GOReverseLookup.exe from existing project template
 This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
 
 Instructions:
@@ -173,10 +216,9 @@ xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.t
 ...
 ```
 
-### GOReverseLookup.exe from scratch
-The 
-
 ## Running GOReverseLookup using an IDE (e.g., Visual Studio Code)
+This section teaches you how to set up an Integrated Development Environment, such as Visual Studio Code, in order to run the GOReverseLookup tool. Intermediate knowledge of the Python programming language is required.
+
 ### Folder structure setup
 Firstly, create a folder that will be the root of your Python project. We will refer to the root folder as `root/`. Ideally, you should create the following folder structure:
 ```
