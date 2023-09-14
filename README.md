@@ -184,11 +184,12 @@ This section shows you how to start the GOReverseLookup by downloading and (if n
 
 Instructions:
 1. The 3.10.0 version or later of the Python programming language is required for the program to run. If you haven't installed it yet, you need to install it. See the **Python installation** appendix chapter at the end of this Readme.
-2. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw. If you don't have a MEGA account yet, MEGA will prompt you to create an account on their website. Create an account and select the Free account during the account creation process.
-3. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
-4. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
-5. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
-6. Run `GOReverseLookup.exe`; this will open the command prompt and the example should run. After approximately 20 minutes (if the internet connection is stable), the analysis should be finished and the resulting files saved into the `results` folder.
+2. Install the GOReverseLookup Python package as specified in the Installation chapter of this Readme
+3. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw. If you don't have a MEGA account yet, MEGA will prompt you to create an account on their website. Create an account and select the Free account during the account creation process.
+4. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
+5. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
+6. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
+7. Run `GOReverseLookup.exe`; this will open the command prompt and the example should run. After approximately 20 minutes (if the internet connection is stable), the analysis should be finished and the resulting files saved into the `results` folder.
 
 Note: If you experience any **issues** when the .exe runs the example, close the command prompt and run `GOReverseLookup.exe` again. The most likely cause of issues is blocking on the web server's end due to too many requests. The code in background relies heavily on asynchronous requests, and if the server is overloaded, it might start blocking incoming requests. However, request caching is implemented in code - if the same requests are resent to the server, they will be loaded from a previously successfully received request (which are saved in the `cache` folder). Therefore, during a subsequent run of the same program, there will be less requests sent to the servers, diminishing the probability of the server blocking the requests.
 
