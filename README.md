@@ -185,7 +185,7 @@ This section shows you how to start the GOReverseLookup by downloading and (if n
 Instructions:
 1. The 3.10.0 version or later of the Python programming language is required for the program to run. If you haven't installed it yet, you need to install it. See the **Python installation** appendix chapter at the end of this Readme.
 2. Install the GOReverseLookup Python package as specified in the Installation chapter of this Readme
-3. Download the zip archive from MEGA (use only the link provided to you by this Readme file) and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw. If you don't have a MEGA account yet, MEGA will prompt you to create an account on their website. Create an account and select the Free account during the account creation process.
+3. Download the zip archive from MEGA (click on the _three dots_ icon next to the .zip file in the MEGA folder and choose "standard download") and save it to your computer: https://mega.nz/folder/NCYngR7I#HhKapraV-wP97IbxQm8hGw. If you don't have a MEGA account yet, MEGA will prompt you to create an account on their website. Create an account and select the Free account during the account creation process.
 4. Place the zip archive into any folder in File Explorer on your computer. We suggest giving the folder a meaningful name, such as GOReverseLookup.
 5. Extract the zip archive using WinRar or 7zip (or other extractor utilities): `Right click on the zip file` -> `WinRar` -> `Extract Here`
 6. Make sure you are connected to the internet, since web requests will be sent to different servers during the analysis
