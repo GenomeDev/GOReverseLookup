@@ -23,7 +23,7 @@ This section instructs you how to install the GOReverseLookup package and it's p
 * (For developers or researchers knowledgeable about Python) Integrated Development Application (IDE) - such as Visual Studio Code (VSCode)
 
 ## Installation
-To use the package, install it with pip:
+To use the package, you need to install it with a tool called **pip**. You need to install the Python programming language to your computer first, so if you haven't already, refer to the _Appendix: Python Installation_ chapter at the end of this Readme file. When you have installed Python, open Command Prompt and run the command:
 ```
 pip install goreverselookup
 ```
