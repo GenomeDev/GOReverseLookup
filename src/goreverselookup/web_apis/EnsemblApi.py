@@ -415,7 +415,7 @@ class EnsemblApi:
                 # ConnectionCacher.store_url(url, response_json)
                 Cacher.store_data("url", url, response_json)
                 await asyncio.sleep(self.async_request_sleep_delay)
-        except (requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ClientResponseError):
+        except (requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ClientResponseError, aiohttp.ClientOSError):
             # If the request fails, try the xrefs URL instead
             try:
                 # TODO: 19.08.2023: the below link doesn't work for any other {species} in endpoint other than human. Ie.

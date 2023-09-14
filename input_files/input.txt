@@ -43,7 +43,7 @@
 #
 # *** Processes section ***
 # It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
-# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construction processes
+# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes
 # section as:
 # 	chronic_inflammation	+
 #	cancer	+

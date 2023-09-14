@@ -511,7 +511,7 @@ class fisher_exact_test(Metrics):
             # determine number of parents:
             if self.reverse_lookup.model_settings.include_all_goterm_parents == True:
                 # include all parent goterms in the scoring
-                directly_associated_goterms = list(goterms_product_general) # to create two different entities !
+                directly_associated_goterms = list(goterms_product_general) # calling list constructor creates two separate entities !
                 for directly_associated_goterm in directly_associated_goterms: # WARNING: don't iterate over goterms_product_general, since this list is being updated in the for loop !!
                     parent_goterms = self.reverse_lookup.obo_parser.get_parent_terms(directly_associated_goterm) # indirectly associated goterms
                     goterms_product_general+=parent_goterms # expand goterms_product_general by the parent goterms

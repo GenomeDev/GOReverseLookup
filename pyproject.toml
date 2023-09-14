@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools", "setuptools-scm", "aiohttp", "asyncio", "tqdm", "requests", "scipy", "networkx", "tabulate"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -34,7 +34,7 @@ dependencies = [
     "tabulate",
 ]
 
-version = "0.1.0"
+version = "1.0.5"
 #dynamic = ["version"]
 
 [project.optional-dependencies]

@@ -121,12 +121,12 @@ include_all_goterm_parents	False
 uniprotkb_genename_online_query	False
 pvalue	0.05
 ###filepaths
-go_obo_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/go.obo
-goaf_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/goa_human.gaf
-zfin_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/zfin_human_ortholog_mapping.txt
-mgi_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/mgi_human_ortholog_mapping.txt
-rgd_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/rgd_human_ortholog_mapping.txt
-xenbase_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/xenbase_human_ortholog_mapping.txt
+go_obo_filepath	data_files/go.obo
+goaf_filepath	data_files/goa_human.gaf
+zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
+mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
+rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
+xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
 ###processes [proces name] [to be expressed + or suppressed -]
 chronic_inflammation	+
 cancer	+
