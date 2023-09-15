@@ -251,7 +251,7 @@ class PrimaryWorkflow(Workflow):
         self.add_function(self.model.prune_products)
         self.add_function(self.model.save_model, self.model_save_filepath)
         # Fetch product information (from UniprotAPI or EnsemblAPI)
-        self.add_function(self.model.fetch_product_infos, refetch=False, run_async=True, max_connections=15, semaphore_connections=10, req_delay=0.1)
+        self.add_function(self.model.fetch_product_infos, refetch=False, run_async=True, max_connections=12, semaphore_connections=10, req_delay=0.1)
         self.add_function(self.model.prune_products)
         self.add_function(self.model.save_model, self.model_save_filepath)
 

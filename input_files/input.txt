@@ -114,8 +114,8 @@
 #		model_data_file = "model/data.json"
 #		model = ReverseLookup.load_model(model_data_file)
 ###settings
-homosapiens_only	True
-require_product_evidence_codes	False
+#homosapiens_only	True
+#require_product_evidence_codes	False
 fisher_test_use_online_query	False
 include_all_goterm_parents	False
 uniprotkb_genename_online_query	False
@@ -151,8 +151,6 @@ GO:1900408	chronic_inflammation	-	1	negative regulation of cellular response to 
 GO:1900409	chronic_inflammation	+	1	positive regulation of cellular response to oxidative stress
 GO:2000524	chronic_inflammation	-	1	negative regulation of T cell costimulation
 GO:2000525	chronic_inflammation	+	1	positive regulation of T cell costimulation
-#GO:0070240	chronic_inflammation	?	1	negative regulation of activated T cell autonomous cell death
-#GO:0070241	chronic_inflammation	?	1	positive regulation of activated T cell autonomous cell death
 GO:0002578	chronic_inflammation	-	1	negative regulation of antigen processing and presentation
 GO:0002579	chronic_inflammation	+	1	positive regulation of antigen processing and presentation
 GO:0050858	chronic_inflammation	-	1	negative regulation of antigen receptor-mediated signaling pathway
@@ -165,14 +163,28 @@ GO:0001819	chronic_inflammation	+	1	positive regulation of cytokine production
 GO:0001818	chronic_inflammation	-	1	negative regulation of cytokine production
 GO:0032731	chronic_inflammation	+	1	positive regulation of interleukin-1 beta production
 GO:0032691	chronic_inflammation	-	1	negative regulation of interleukin-1 beta production
+GO:0032743	chronic_inflammation	+	1	positive regulation of interleukin-2 production
+GO:0032703	chronic_inflammation	-	1	negative regulation of interleukin-2 production
+GO:0032753	chronic_inflammation	+	1	positive regulation of interleukin-4 production
+GO:0032713	chronic_inflammation	-	1	negative regulation of interleukin-4 production
 GO:0032755	chronic_inflammation	+	1	positive regulation of interleukin-6 production
-GO:0032757	chronic_inflammation	+	1	positive regulation of interleukin-8 production
 GO:0032715	chronic_inflammation	-	1	negative regulation of interleukin-6 production
+GO:0032757	chronic_inflammation	+	1	positive regulation of interleukin-8 production
 GO:0032717	chronic_inflammation	-	1	negative regulation of interleukin-8 production
+GO:0032758	chronic_inflammation	+	1	positive regulation of interleukin-9 production
+GO:0032718	chronic_inflammation	-	1	negative regulation of interleukin-9 production
+GO:0032733	chronic_inflammation	-	1	positive regulation of interleukin-10 production
+GO:0032693	chronic_inflammation	+	1	negative regulation of interleukin-10 production
+GO:0032734	chronic_inflammation	+	1	positive regulation of interleukin-11 production
+GO:0032694	chronic_inflammation	-	1	negative regulation of interleukin-11 production
+GO:0032735	chronic_inflammation	+	1	positive regulation of interleukin-12 production
+GO:0032695	chronic_inflammation	-	1	negative regulation of interleukin-12 production
+GO:0032740	chronic_inflammation	+	1	positive regulation of interleukin-17 production
+GO:0032700	chronic_inflammation	-	1	negative regulation of interleukin-17 production
 GO:0032741	chronic_inflammation	+	1	positive regulation of interleukin-18 production
 GO:0032701	chronic_inflammation	-	1	negative regulation of interleukin-18 production
-GO:0150129	chronic_inflammation	+	1	positive regulation of interleukin-33 production
-GO:0150128	chronic_inflammation	-	1	negative regulation of interleukin-33 production
+GO:0150191	chronic_inflammation	+	1	positive regulation of interleukin-32 production
+GO:0150190	chronic_inflammation	-	1	negative regulation of interleukin-32 production
 GO:0051092	chronic_inflammation	+	1	positive regulation of NF-kappaB transcription factor activity
 GO:0032088	chronic_inflammation	-	1	negative regulation of NF-kappaB transcription factor activity
 GO:0001774	chronic_inflammation	+	1	microglial cell activation
@@ -200,7 +212,6 @@ GO:2000510	chronic_inflammation	+	1	positive regulation of dendritic cell chemot
 GO:2000509	chronic_inflammation	-	1	negative regulation of dendritic cell chemotaxis
 
 # immune effector process parent node
-# TODO: all of the shifted terms are a child of either "negative/positive regulation of immune effector process" -> include only the parent term?
 GO:0002698	chronic_inflammation	-	1	negative regulation of immune effector process
 GO:0002699	chronic_inflammation	+	1	positive regulation of immune effector process
     GO:0032833	chronic_inflammation	-	1	negative regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
@@ -281,9 +292,18 @@ GO:0002615	chronic_inflammation	+	1	positive regulation of monocyte antigen proc
 GO:0002439	chronic_inflammation	+	1	chronic inflammatory response to antigenic stimulus
 GO:0002876	chronic_inflammation	+	1	positive regulation of chronic inflammatory response to antigenic stimulus
 GO:0002875	chronic_inflammation	-	1	negative regulation of chronic inflammatory response to antigenic stimulus
-GO:0097398	chronic_inflammation	+	1	cellular response to interleukin-17
-GO:0071354	chronic_inflammation	+	1	cellular response to interleukin-6
 GO:0071347	chronic_inflammation	+	1	cellular response to interleukin-1
+GO:0071352	chronic_inflammation	+	1	cellular response to interleukin-2
+GO:0071353	chronic_inflammation	+	1	cellular response to interleukin-4
+GO:0071354	chronic_inflammation	+	1	cellular response to interleukin-6
+GO:0098759	chronic_inflammation	+	1	cellular response to interleukin-8
+GO:0071355	chronic_inflammation	+	1	cellular response to interleukin-9
+# Gene Ontology is missing cellular response to IL-10 !?
+GO:0071348	chronic_inflammation	-	1	cellular response to interleukin-11 # https://doi.org/10.1016/j.cyto.2021.155750: "consistent with this, recombinant human IL-11 has been shown to down-regulate serum TNFα and IL-1β levels in a murine model of endotoxemia. These observations suggest that IL-11 acts as an anti-inflammatory cytokine through modulation of the effector function of macrophages."
+GO:0071349	chronic_inflammation	+	1	cellular response to interleukin-12
+GO:0097398	chronic_inflammation	+	1	cellular response to interleukin-17
+GO:0071351	chronic_inflammation	+	1	cellular response to interleukin-18
+GO:0097397	chronic_inflammation	+	1	cellular response to interleukin-32
 
 GO:0007162	cancer	+	1	negative regulation of cell adhesion
 GO:0045785	cancer	-	1	positive regulation of cell adhesion
