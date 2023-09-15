@@ -243,7 +243,7 @@ class PrimaryWorkflow(Workflow):
         # Fetch all GO term names and descriptions
         self.add_function(self.model.fetch_all_go_term_names_descriptions, run_async=True)
         # Fetch all GO term products
-        self.add_function(self.model.fetch_all_go_term_products, web_download=True, run_async=True, recalculate=False, max_connections = 60, request_params={"rows":50000}, delay = 0.0)
+        self.add_function(self.model.fetch_all_go_term_products, web_download=True, run_async=True, recalculate=False, max_connections = 40, request_params={"rows":50000}, delay = 0.0)
         # Create product instances from GO terms
         self.add_function(self.model.create_products_from_goterms)
         # Fetch human ortholog for products (either UniProtID, ENSG or genename)

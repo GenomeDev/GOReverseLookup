@@ -19,6 +19,6 @@ logger.info(f"os.getcwd() =  {os.getcwd()}")
 # setup and run workflows
 Cacher.init(cache_dir="cache")
 # Cacher.clear_cache("ALL")
-workflow = PrimaryWorkflow(input_file_fpath="tests/test_input.txt", save_folder_dir="results")
+workflow = PrimaryWorkflow(input_file_fpath="input_files/input.txt", save_folder_dir="results")
 workflow.run_workflow()
 
