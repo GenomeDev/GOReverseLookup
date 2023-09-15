@@ -515,6 +515,8 @@ class fisher_exact_test(Metrics):
                 for directly_associated_goterm in directly_associated_goterms: # WARNING: don't iterate over goterms_product_general, since this list is being updated in the for loop !!
                     parent_goterms = self.reverse_lookup.obo_parser.get_parent_terms(directly_associated_goterm) # indirectly associated goterms
                     goterms_product_general+=parent_goterms # expand goterms_product_general by the parent goterms
+                # delete duplicate parents by converting a list to set
+                goterms_product_general = set(goterms_product_general)
                 num_goterms_product_general = len(goterms_product_general) # calculate new num_goterms_product_general
 
             for direction in ['+', '-']:

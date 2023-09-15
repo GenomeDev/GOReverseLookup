@@ -117,7 +117,7 @@
 #homosapiens_only	True
 #require_product_evidence_codes	False
 fisher_test_use_online_query	False
-include_all_goterm_parents	False
+include_all_goterm_parents	True
 uniprotkb_genename_online_query	False
 pvalue	0.05
 ###filepaths
@@ -245,20 +245,20 @@ GO:0002699	chronic_inflammation	+	1	positive regulation of immune effector proce
 
 GO:0050777	chronic_inflammation	-	1	negative regulation of immune response
 GO:0050778	chronic_inflammation	+	1	positive regulation of immune response
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002695	chronic_inflammation	-	1	negative regulation of leukocyte activation
 GO:0002696	chronic_inflammation	+	1	positive regulation of leukocyte activation
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002523	chronic_inflammation	+	1	leukocyte migration involved in inflammatory response
 GO:0002686	chronic_inflammation	-	1	negative regulation of leukocyte migration
 GO:0002687	chronic_inflammation	+	1	positive regulation of leukocyte migration
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002578	chronic_inflammation	-	1	negative regulation of antigen processing and presentation
 GO:0002579	chronic_inflammation	+	1	positive regulation of antigen processing and presentation
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002623	chronic_inflammation	-	1	negative regulation of B cell antigen processing and presentation
 GO:0002624	chronic_inflammation	+	1	positive regulation of B cell antigen processing and presentation

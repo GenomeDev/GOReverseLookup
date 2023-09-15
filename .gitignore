@@ -1,10 +1,13 @@
 # Project files
 app/goreverselookup/data_files/*
 app/goreverselookup/cache/*
+data_files/*
+cache/*
 results/*
 exe_version/data_files/*
 exe_version/cache/*
 exe_version/results/*
+.vscode
 
 
 # Byte-compiled / optimized / DLL files
