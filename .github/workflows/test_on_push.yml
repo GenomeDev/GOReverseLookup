@@ -40,8 +40,8 @@ jobs:
         run: check-manifest
 
   pytest:
+    if: success() || failure()
     needs: lint-format-type-checkmanifest
-    if: true
     runs-on: ubuntu-latest
 
     strategy:
