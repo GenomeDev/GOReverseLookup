@@ -18,13 +18,16 @@
 # 	- fisher_test_use_online_query:
 #			If True, will query the products of GO Terms (for the num_goterms_products_general inside fisher test) via an online pathway (GOApi.get_goterms).
 #			If False, fisher test will compute num_goterms_products_general (= the number of goterms associated with a product) via an offline pathway using GOAF parsing.
-#	- include_all_goterm_parents:
-#			If True, each GO Term relevant to the analysis will hold a list of it's parents from the go.obo (Gene Ontology .obo) file. Also, the parents of GO Terms will be taken into
-#        	account when performing the fisher exact test. This is because genes are annotated directly only to specific GO Terms, but they are also INDIRECTLY connected to all of the
-#       	parent GO Terms, despite not being annoted directly to the parent GO Terms. The increased amount of GO Term parents indirectly associated with a gene will influence the fisher
-#        	scoring for that gene - specifically, it will increate num_goterms_product_general.
-#			If False, each GO Term relevant to the analysis won't have it's parents computed. During fisher analysis of genes, genes will be scored only using the GO Terms that are
-#           directly annotated to the gene and not all of the indirectly associated parent GO terms.
+#	- include_indirect_annotations:
+#			When querying GO terms associated with genes, only specific directly annotated GO Terms are returned (this is a direct annotation).
+#			However, all of the parents of a directly annotated GO Term are also indirectly connected to the gene in question (these are indirect annotations).
+#
+#			Likewise, when computing the number of GO Terms associated with a user-defined pathophysiological process, the GO Terms that the user defines count as direct annotations.
+#			However, all the children of the directly annotated GO Terms (indirect annotations) to a pathophysiological process should also count towards the modulation of that pathophysiological process.
+#
+#			If this setting is set to True, each each GO Term relevant to the analysis will have a list of it's parents and child term ids computed (using go.obo). These ids will be taken
+#			into account when performing the fisher exact test. 
+#			If this setting is set to False, only directly annotated GO Terms will be accounted for during the scoring process.
 #	- uniprotkb_genename_online_query:
 #			When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD).
 #			During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function.
@@ -117,7 +120,7 @@
 #homosapiens_only	True
 #require_product_evidence_codes	False
 fisher_test_use_online_query	False
-include_all_goterm_parents	True
+include_indirect_annotations	True
 uniprotkb_genename_online_query	False
 pvalue	0.05
 ###filepaths

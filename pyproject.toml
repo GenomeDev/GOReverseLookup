@@ -35,7 +35,7 @@ dependencies = [
     "statsmodels"
 ]
 
-version = "1.0.6"
+version = "1.0.7"
 #dynamic = ["version"]
 
 [project.optional-dependencies]

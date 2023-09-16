@@ -494,7 +494,7 @@ class fisher_exact_test(Metrics):
 
             # num_goterms_product_general ... # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
             #   - can be queried either via online or offline pathway (determined by model_settings.fisher_test_use_online_query)
-            #   - can have all parent terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_all_goterm_parents
+            #   - can have all parent terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_indirect_annotations
             if self.reverse_lookup.model_settings.fisher_test_use_online_query == True: # online pathway: get goterms associated with this product via a web query
                 goterms_product_general = self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories)
                 if goterms_product_general != None:
@@ -509,7 +509,7 @@ class fisher_exact_test(Metrics):
                 num_goterms_product_general = len(goterms_product_general) # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
             
             # determine number of parents:
-            if self.reverse_lookup.model_settings.include_all_goterm_parents == True:
+            if self.reverse_lookup.model_settings.include_indirect_annotations == True:
                 # include all parent goterms in the scoring
                 directly_associated_goterms = list(goterms_product_general) # calling list constructor creates two separate entities !
                 for directly_associated_goterm in directly_associated_goterms: # WARNING: don't iterate over goterms_product_general, since this list is being updated in the for loop !!
@@ -523,20 +523,36 @@ class fisher_exact_test(Metrics):
                 # num_goterms_product_process = sum(1 for goterm in process_goterms_list if (any(goterm_process['direction'] == direction for goterm_process in goterm.processes) and (any(product_id in goterm.products for product_id in product.id_synonyms) or product.genename in goterm.products)))
                 # the above line is a single-line implementation of the below nested for loops
                 num_goterms_product_process = 0 # all GO Terms which are associated with the current 'process' and the current 'direction' of regulation and are also associated with the current gene (product)
-                goterms_product_process = []
+                goterms_product_process = [] # used for the results dict to be readable by the user
+                goterms_product_process_ids = [] # used for calculation of child terms
                 for goterm in process_goterms_list: # iterate through each GO Term associated with the current pathophysiological process
                     for goterm_process in goterm.processes: # goterm.processes holds which pathophysiological processes (eg. {'process': "cancer", 'direction': "-"}) the GO Term is associated with (this is determined by the user in the input.txt file)
                         if goterm_process['direction'] == direction:
                             if product.genename in goterm.products: # attemp genename search first
                                 num_goterms_product_process += 1
                                 goterms_product_process.append(f"{goterm.id}: {goterm.name}")
+                                goterms_product_process_ids.append(goterm.id)
                                 break
                             for product_id in product.id_synonyms: # if genename is not found, also look into product.id_synonyms
                                 if product_id in goterm.products:
                                     num_goterms_product_process += 1
                                     goterms_product_process.append(f"{goterm.id}: {goterm.name}")
+                                    goterms_product_process_ids.append(goterm.id)
                                     break
-                        
+                
+                # find all go term children of num_goterms_product_process here
+                if self.reverse_lookup.model_settings.include_indirect_annotations == True:
+                    all_indirect_children = [] # list of ids
+                    for id in goterms_product_process_ids:
+                        child_goterms = self.reverse_lookup.obo_parser.get_child_terms(id)
+                        all_indirect_children += child_goterms
+                    all_indirect_children = set(all_indirect_children) # to remove duplicates
+                    # append to goterms product process so the user can see the results in data.json
+                    for child_id in all_indirect_children:
+                        goterms_product_process.append(f"indirect: {child_id}")
+                    # update num_goterms_product_process
+                    num_goterms_product_process += len(all_indirect_children)
+        
                 num_goterms_all_process = sum(1 for goterm in process_goterms_list if any(goterm_process['direction'] == direction for goterm_process in goterm.processes)) # all of the GO Terms from input.txt file associated with the current process (and the process' regulation direction)
                 
                 #time for Binomial test and "risk ratio"

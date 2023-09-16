@@ -2,6 +2,7 @@ import networkx as nx
 import os
 
 from ..core.GOTerm import GOTerm
+from ..util.Timer import Timer
 
 import logging
 #from logging import config
@@ -16,7 +17,7 @@ class OboParser:
         Params:
           - (str) obo_filepath: the filepath to the obo file
         """
-        dag = nx.MultiDiGraph() # DiGraph cannot store multiple edges !!!
+        dag = nx.MultiDiGraph() # DiGraph cannot store multiple edges, therefore use MiltiDiGraph!!!
 
         def _reset_term_data():
             """
@@ -96,15 +97,17 @@ class OboParser:
         for goid,goterm in all_goterms.items():
             assert isinstance(goterm, GOTerm)
             if dag.has_node(goterm.id) == False:
-                dag.add_node(goterm.id) # add this goterm id as a node
+                dag.add_node(goterm.id)
             for parent_id in goterm.parent_term_ids:
                 # nodes are automatically added if they are not yet in the graph when using add_edge
-                dag.add_edge(all_goterms[parent_id].id, goterm.id) # add_edge(PARENT, CHILD) = "from parent to child"
+                dag.add_edge(all_goterms[parent_id].id, goterm.id)
 
         self.filepath = obo_filepath
         self.dag = dag
         self.all_goterms = all_goterms
         self.previously_computed_parents_cache = {} # cache dictionary between already computed goterms and their parents
+        self.previously_computed_children_cache = {} # cache dictionary between already computed goterms and their children
+        logger.info(f"Obo parser init completed.")
 
     def get_parent_terms(self, term_id:str, return_as_class:bool = False, ordered:bool = True):
         """
@@ -122,8 +125,10 @@ class OboParser:
         if term_id in self.previously_computed_parents_cache:
             return self.previously_computed_parents_cache[term_id]
         
+        timer = Timer(millisecond_init=True)
         parents = [] # WARNRING!! Using set() DESTROYS THE ORDER OF PARENTS !!!
         ancestors = nx.ancestors(self.dag, term_id)
+        #logger.debug(f"nx.ancestors elapsed: {timer.get_elapsed_formatted('milliseconds', reset_start_time=True)}")
 
         if ordered == True:
             # Calculate the distance from each ancestor to the given node
@@ -131,6 +136,7 @@ class OboParser:
             # Sort ancestors by distance in ascending order
             sorted_distances = dict(sorted(distances.items(), key=lambda item: item[1]))
             ancestors = sorted_distances.keys()
+        #logger.debug(f"ancestors ordering elapsed: {timer.get_elapsed_formatted('milliseconds', reset_start_time=True)}")
 
         for parent_id in ancestors:
             if return_as_class == True:
@@ -142,3 +148,42 @@ class OboParser:
         self.previously_computed_parents_cache[term_id] = parents
         
         return parents
+
+    def get_child_terms(self, term_id:str, return_as_class:bool = False, ordered:bool = True):
+        """
+        Gets all of GO Term children of 'term_id'.
+
+        Parameters:
+          - (str) term_id: The GO Term whose children you wish to obtain
+          - (bool) return_as_class: If False, will return a list of string ids of parent GO Terms.
+                                    If True, will return a list of GO Term parent classes.
+          - (bool) ordered: If True, parents will be returned topologically (closest children will be listed first in the returned list)
+        
+        Returns: A list of children GO Terms (either ids or classes)
+        """
+        # attempt to cache old data
+        if term_id in self.previously_computed_children_cache:
+            return self.previously_computed_children_cache[term_id]
+        
+        timer = Timer(millisecond_init=True)
+        children = [] # WARNRING!! Using set() DESTROYS THE ORDER OF PARENTS !!!
+        descendants = nx.descendants(self.dag, term_id)
+        #logger.debug(f"nx.descendants elapsed: {timer.get_elapsed_formatted('milliseconds', reset_start_time=True)}")
+
+        if ordered == True:
+            # Calculate the distance from each ancestor to the given node
+            distances = {descendant: nx.shortest_path_length(self.dag, source=term_id, target=descendant) for descendant in descendants}
+            # Sort ancestors by distance in ascending order
+            sorted_distances = dict(sorted(distances.items(), key=lambda item: item[1]))
+            descendants = sorted_distances.keys()
+        #logger.debug(f"descendants ordering elapsed: {timer.get_elapsed_formatted('milliseconds', reset_start_time=True)}")
+
+        for child_id in descendants:
+            if return_as_class == True:
+                children.append(self.all_goterms[child_id])
+            else:
+                children.append(child_id)
+        
+        # cache and return
+        self.previously_computed_children_cache[term_id] = children
+        return children
