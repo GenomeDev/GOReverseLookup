@@ -203,7 +203,7 @@ class ReverseLookup:
                         goterm.fetch_name_description(api)
         
         if "fetch_all_go_term_names_descriptions" not in self.execution_times: # to prevent overwriting on additional runs of the same model name
-            self.execution_times["fetch_all_go_term_names_descriptions"] = self.timer.get_elapsed_time()
+            self.execution_times["fetch_all_go_term_names_descriptions"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     async def _fetch_all_go_term_names_descriptions_async(self, api:GOApi, req_delay = 0.1):
@@ -330,7 +330,7 @@ class ReverseLookup:
         #         goterm.fetch_products(api)
 
         if "fetch_all_go_term_products" not in self.execution_times:
-            self.execution_times["fetch_all_go_term_products"] = self.timer.get_elapsed_time()
+            self.execution_times["fetch_all_go_term_products"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     async def _fetch_all_go_term_products_async_v1(self, recalculate: bool = False, delay:float = 0.0):
@@ -444,7 +444,7 @@ class ReverseLookup:
         logger.info(f"Created Product objects from GOTerm object definitions")
 
         if "create_products_from_goterms" not in self.execution_times:
-            self.execution_times["create_products_from_goterms"] = self.timer.get_elapsed_time()
+            self.execution_times["create_products_from_goterms"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
         def check_exists(product_id: str) -> bool:
@@ -485,7 +485,7 @@ class ReverseLookup:
         logger.info(f"Created {i} Product objects from GOTerm object definitions")
 
         if "create_products_from_goterms" not in self.execution_times:
-            self.execution_times["create_products_from_goterms"] = self.timer.get_elapsed_time()
+            self.execution_times["create_products_from_goterms"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     def fetch_ortholog_products(self, refetch:bool = False, run_async = True, use_goaf = False, max_connections=15, req_delay=0.1, semaphore_connections = 5) -> None:
@@ -570,7 +570,7 @@ class ReverseLookup:
             raise e
         
         if "fetch_ortholog_products" not in self.execution_times:
-            self.execution_times["fetch_ortholog_products"] = self.timer.get_elapsed_time()
+            self.execution_times["fetch_ortholog_products"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
     
     async def _fetch_ortholog_products_async(self, refetch:bool = True, max_connections = 100, req_delay = 0.5, semaphore_connections = 10):
@@ -659,7 +659,7 @@ class ReverseLookup:
                 self.products.append(Product(id_synonyms, product_list[0].genename, product_list[0].uniprot_id, product_list[0].description, product_list[0].ensg_id, product_list[0].enst_id, product_list[0].refseq_nt_id, product_list[0].mRNA, {}, product_list[0].had_orthologs_computed, product_list[0].had_fetch_info_computed))
 
         if "prune_products" not in self.execution_times:
-            self.execution_times["prune_products"] = self.timer.get_elapsed_time()
+            self.execution_times["prune_products"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     def fetch_product_infos(self, refetch: bool = False, run_async = True, max_connections = 15, semaphore_connections = 5, req_delay = 0.1, required_keys = ["genename", "description", "ensg_id", "enst_id", "refseq_nt_id"]) -> None:
@@ -691,7 +691,7 @@ class ReverseLookup:
                 raise e
         
         if "fetch_product_infos" not in self.execution_times:
-            self.execution_times["fetch_product_infos"] = self.timer.get_elapsed_time()
+            self.execution_times["fetch_product_infos"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     async def _fetch_product_infos_async(self, required_keys = ["genename", "description", "ensg_id", "enst_id", "refseq_nt_id"], refetch:bool = False, max_connections = 50, req_delay = 0.1, semaphore_connections = 5):
@@ -796,7 +796,7 @@ class ReverseLookup:
                                 i += 1
         
         if "score_products" not in self.execution_times:
-            self.execution_times["score_products"] = self.timer.get_elapsed_time()
+            self.execution_times["score_products"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
                             
     def fetch_mRNA_sequences(self, refetch = False) -> None:
@@ -818,7 +818,7 @@ class ReverseLookup:
             raise e
 
         if "fetch_mRNA_sequences" not in self.execution_times:
-            self.execution_times["fetch_mRNA_sequences"] = self.timer.get_elapsed_time()
+            self.execution_times["fetch_mRNA_sequences"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     def predict_miRNAs(self, prediction_type: str = 'miRDB') -> None:
@@ -853,7 +853,7 @@ class ReverseLookup:
             raise ValueError("Invalid prediction type")
 
         if "predict_miRNAs" not in self.execution_times:
-            self.execution_times["predict_miRNAs"] = self.timer.get_elapsed_time()
+            self.execution_times["predict_miRNAs"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     def change_miRNA_overlap_treshold(self, treshold: float, safety: bool = False) -> None:
@@ -928,7 +928,7 @@ class ReverseLookup:
                         mirna.scores[_score_class.name] = _score_class.metric(mirna)
         
         if "score_miRNAs" not in self.execution_times:
-            self.execution_times["score_miRNAs"] = self.timer.get_elapsed_time()
+            self.execution_times["score_miRNAs"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
 # housekeeping functions
@@ -1363,7 +1363,7 @@ class ReverseLookup:
         """
         # TODO: method explanation
 
-        This method also parses GO Term parents for GO Terms, if setting include_all_goterm_parents is True.
+        This method also parses GO Term parents for GO Terms, if setting include_indirect_annotations is True.
         """
         data = JsonUtil.load_json(filepath)
         target_processes = data['target_processes']
@@ -1398,7 +1398,7 @@ class ReverseLookup:
             goterms.append(GOTerm.from_dict(goterm_dict))
         
         obo_parser = None
-        if settings.include_all_goterm_parents == True:
+        if settings.include_indirect_annotations == True:
             if datafile_paths != {} and 'go_obo_filepath' in datafile_paths:
                 if datafile_paths['go_obo_filepath'] != None and datafile_paths['go_obo_filepath'] != "":
                     obo_parser = OboParser(datafile_paths['go_obo_filepath'])
@@ -1549,16 +1549,30 @@ class ReverseLookup:
                 logger.error(f"ERROR while opening win filepath {win_filepath}")
                 return
         """
-
         obo_parser = None
-        if settings.include_all_goterm_parents:
-            # update goterms to include all parents
+        if settings.include_indirect_annotations:
             if datafile_paths != {} and 'go_obo_filepath' in datafile_paths:
                 if datafile_paths['go_obo_filepath'] != None and datafile_paths['go_obo_filepath'] != "":
                     obo_parser = OboParser(datafile_paths['go_obo_filepath'])
             else:
                 obo_parser = OboParser()
-            logger.info(f"Starting OboParser to find all GO Term parents using data file {obo_parser.filepath}")
+            logger.info(f"Starting OboParser to find all GO Term parents and children using data file {obo_parser.filepath}")
+
+            # update goterms to include all parents and children
+            with logging_redirect_tqdm():
+                for goterm in tqdm(go_terms, desc="Compute indirect nodes"):
+                    assert isinstance(goterm, GOTerm)
+                    if goterm.parent_term_ids == [] or goterm.parent_term_ids == None:
+                        goterm_obo = obo_parser.all_goterms[goterm.id] # obo representation of this goterm
+                        goterm.update(goterm_obo) # update current goterm with information from .obo file
+
+                        goterm_parent_ids = obo_parser.get_parent_terms(goterm.id) # calculate parent term ids for this goterm
+                        goterm_children_ids = obo_parser.get_child_terms(goterm.id) # calculdate child term ids for this goterm
+                        goterm.parent_term_ids = goterm_parent_ids # update parent term ids
+                        goterm.child_term_ids = goterm_children_ids # update child term ids
+            logger.info(f"Indirect annotations have been computed.")
+
+            """      
             for goterm in go_terms:
                 assert isinstance(goterm, GOTerm)
                 if goterm.parent_term_ids == [] or goterm.parent_term_ids == None:
@@ -1566,8 +1580,11 @@ class ReverseLookup:
                     goterm.update(goterm_obo) # update current goterm with information from .obo file
 
                     goterm_parent_ids = obo_parser.get_parent_terms(goterm.id) # calculate parent term ids for this goterm
+                    goterm_children_ids = obo_parser.get_child_terms(goterm.id) # calculdate child term ids for this goterm
                     goterm.parent_term_ids = goterm_parent_ids # update parent term ids
-    
+                    goterm.child_term_ids = goterm_children_ids # update child term ids
+            """
+
         logger.info(f"Creating model from input file with:")
         logger.info(f"  - count GO Terms: {len(go_terms)} ")
         logger.info(f"  - target_processes: {target_processes}")

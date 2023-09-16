@@ -18,13 +18,16 @@
 # 	- fisher_test_use_online_query:
 #			If True, will query the products of GO Terms (for the num_goterms_products_general inside fisher test) via an online pathway (GOApi.get_goterms).
 #			If False, fisher test will compute num_goterms_products_general (= the number of goterms associated with a product) via an offline pathway using GOAF parsing.
-#	- include_all_goterm_parents:
-#			If True, each GO Term relevant to the analysis will hold a list of it's parents from the go.obo (Gene Ontology .obo) file. Also, the parents of GO Terms will be taken into
-#        	account when performing the fisher exact test. This is because genes are annotated directly only to specific GO Terms, but they are also INDIRECTLY connected to all of the
-#       	parent GO Terms, despite not being annoted directly to the parent GO Terms. The increased amount of GO Term parents indirectly associated with a gene will influence the fisher
-#        	scoring for that gene - specifically, it will increate num_goterms_product_general.
-#			If False, each GO Term relevant to the analysis won't have it's parents computed. During fisher analysis of genes, genes will be scored only using the GO Terms that are
-#           directly annotated to the gene and not all of the indirectly associated parent GO terms.
+#	- include_indirect_annotations:
+#			When querying GO terms associated with genes, only specific directly annotated GO Terms are returned (this is a direct annotation).
+#			However, all of the parents of a directly annotated GO Term are also indirectly connected to the gene in question (these are indirect annotations).
+#
+#			Likewise, when computing the number of GO Terms associated with a user-defined pathophysiological process, the GO Terms that the user defines count as direct annotations.
+#			However, all the children of the directly annotated GO Terms (indirect annotations) to a pathophysiological process should also count towards the modulation of that pathophysiological process.
+#
+#			If this setting is set to True, each each GO Term relevant to the analysis will have a list of it's parents and child term ids computed (using go.obo). These ids will be taken
+#			into account when performing the fisher exact test. 
+#			If this setting is set to False, only directly annotated GO Terms will be accounted for during the scoring process.
 #	- uniprotkb_genename_online_query:
 #			When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD).
 #			During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function.
@@ -43,7 +46,7 @@
 #
 # *** Processes section ***
 # It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
-# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construction processes
+# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes
 # section as:
 # 	chronic_inflammation	+
 #	cancer	+
@@ -114,19 +117,19 @@
 #		model_data_file = "model/data.json"
 #		model = ReverseLookup.load_model(model_data_file)
 ###settings
-homosapiens_only	True
-require_product_evidence_codes	False
+#homosapiens_only	True
+#require_product_evidence_codes	False
 fisher_test_use_online_query	False
-include_all_goterm_parents	False
+include_indirect_annotations	True
 uniprotkb_genename_online_query	False
 pvalue	0.05
 ###filepaths
-go_obo_filepath	data_files/go.obo
-goaf_filepath	data_files/goa_human.gaf
-zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
-mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
-rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
-xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
+go_obo_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/go.obo
+goaf_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/goa_human.gaf
+zfin_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/zfin_human_ortholog_mapping.txt
+mgi_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/mgi_human_ortholog_mapping.txt
+rgd_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/rgd_human_ortholog_mapping.txt
+xenbase_human_ortho_mapping_filepath	C:/Aljosa/Development/GOReverseLookup/app/goreverselookup/data_files/xenbase_human_ortholog_mapping.txt
 ###processes [proces name] [to be expressed + or suppressed -]
 chronic_inflammation	+
 cancer	+
@@ -151,8 +154,6 @@ GO:1900408	chronic_inflammation	-	1	negative regulation of cellular response to 
 GO:1900409	chronic_inflammation	+	1	positive regulation of cellular response to oxidative stress
 GO:2000524	chronic_inflammation	-	1	negative regulation of T cell costimulation
 GO:2000525	chronic_inflammation	+	1	positive regulation of T cell costimulation
-#GO:0070240	chronic_inflammation	?	1	negative regulation of activated T cell autonomous cell death
-#GO:0070241	chronic_inflammation	?	1	positive regulation of activated T cell autonomous cell death
 GO:0002578	chronic_inflammation	-	1	negative regulation of antigen processing and presentation
 GO:0002579	chronic_inflammation	+	1	positive regulation of antigen processing and presentation
 GO:0050858	chronic_inflammation	-	1	negative regulation of antigen receptor-mediated signaling pathway
@@ -165,14 +166,28 @@ GO:0001819	chronic_inflammation	+	1	positive regulation of cytokine production
 GO:0001818	chronic_inflammation	-	1	negative regulation of cytokine production
 GO:0032731	chronic_inflammation	+	1	positive regulation of interleukin-1 beta production
 GO:0032691	chronic_inflammation	-	1	negative regulation of interleukin-1 beta production
+GO:0032743	chronic_inflammation	+	1	positive regulation of interleukin-2 production
+GO:0032703	chronic_inflammation	-	1	negative regulation of interleukin-2 production
+GO:0032753	chronic_inflammation	+	1	positive regulation of interleukin-4 production
+GO:0032713	chronic_inflammation	-	1	negative regulation of interleukin-4 production
 GO:0032755	chronic_inflammation	+	1	positive regulation of interleukin-6 production
-GO:0032757	chronic_inflammation	+	1	positive regulation of interleukin-8 production
 GO:0032715	chronic_inflammation	-	1	negative regulation of interleukin-6 production
+GO:0032757	chronic_inflammation	+	1	positive regulation of interleukin-8 production
 GO:0032717	chronic_inflammation	-	1	negative regulation of interleukin-8 production
+GO:0032758	chronic_inflammation	+	1	positive regulation of interleukin-9 production
+GO:0032718	chronic_inflammation	-	1	negative regulation of interleukin-9 production
+GO:0032733	chronic_inflammation	-	1	positive regulation of interleukin-10 production
+GO:0032693	chronic_inflammation	+	1	negative regulation of interleukin-10 production
+GO:0032734	chronic_inflammation	+	1	positive regulation of interleukin-11 production
+GO:0032694	chronic_inflammation	-	1	negative regulation of interleukin-11 production
+GO:0032735	chronic_inflammation	+	1	positive regulation of interleukin-12 production
+GO:0032695	chronic_inflammation	-	1	negative regulation of interleukin-12 production
+GO:0032740	chronic_inflammation	+	1	positive regulation of interleukin-17 production
+GO:0032700	chronic_inflammation	-	1	negative regulation of interleukin-17 production
 GO:0032741	chronic_inflammation	+	1	positive regulation of interleukin-18 production
 GO:0032701	chronic_inflammation	-	1	negative regulation of interleukin-18 production
-GO:0150129	chronic_inflammation	+	1	positive regulation of interleukin-33 production
-GO:0150128	chronic_inflammation	-	1	negative regulation of interleukin-33 production
+GO:0150191	chronic_inflammation	+	1	positive regulation of interleukin-32 production
+GO:0150190	chronic_inflammation	-	1	negative regulation of interleukin-32 production
 GO:0051092	chronic_inflammation	+	1	positive regulation of NF-kappaB transcription factor activity
 GO:0032088	chronic_inflammation	-	1	negative regulation of NF-kappaB transcription factor activity
 GO:0001774	chronic_inflammation	+	1	microglial cell activation
@@ -200,7 +215,6 @@ GO:2000510	chronic_inflammation	+	1	positive regulation of dendritic cell chemot
 GO:2000509	chronic_inflammation	-	1	negative regulation of dendritic cell chemotaxis
 
 # immune effector process parent node
-# TODO: all of the shifted terms are a child of either "negative/positive regulation of immune effector process" -> include only the parent term?
 GO:0002698	chronic_inflammation	-	1	negative regulation of immune effector process
 GO:0002699	chronic_inflammation	+	1	positive regulation of immune effector process
     GO:0032833	chronic_inflammation	-	1	negative regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
@@ -234,20 +248,20 @@ GO:0002699	chronic_inflammation	+	1	positive regulation of immune effector proce
 
 GO:0050777	chronic_inflammation	-	1	negative regulation of immune response
 GO:0050778	chronic_inflammation	+	1	positive regulation of immune response
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002695	chronic_inflammation	-	1	negative regulation of leukocyte activation
 GO:0002696	chronic_inflammation	+	1	positive regulation of leukocyte activation
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002523	chronic_inflammation	+	1	leukocyte migration involved in inflammatory response
 GO:0002686	chronic_inflammation	-	1	negative regulation of leukocyte migration
 GO:0002687	chronic_inflammation	+	1	positive regulation of leukocyte migration
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002578	chronic_inflammation	-	1	negative regulation of antigen processing and presentation
 GO:0002579	chronic_inflammation	+	1	positive regulation of antigen processing and presentation
-    # TODO: check children nodes
+    # check children nodes
 
 GO:0002623	chronic_inflammation	-	1	negative regulation of B cell antigen processing and presentation
 GO:0002624	chronic_inflammation	+	1	positive regulation of B cell antigen processing and presentation
@@ -281,9 +295,18 @@ GO:0002615	chronic_inflammation	+	1	positive regulation of monocyte antigen proc
 GO:0002439	chronic_inflammation	+	1	chronic inflammatory response to antigenic stimulus
 GO:0002876	chronic_inflammation	+	1	positive regulation of chronic inflammatory response to antigenic stimulus
 GO:0002875	chronic_inflammation	-	1	negative regulation of chronic inflammatory response to antigenic stimulus
-GO:0097398	chronic_inflammation	+	1	cellular response to interleukin-17
-GO:0071354	chronic_inflammation	+	1	cellular response to interleukin-6
 GO:0071347	chronic_inflammation	+	1	cellular response to interleukin-1
+GO:0071352	chronic_inflammation	+	1	cellular response to interleukin-2
+GO:0071353	chronic_inflammation	+	1	cellular response to interleukin-4
+GO:0071354	chronic_inflammation	+	1	cellular response to interleukin-6
+GO:0098759	chronic_inflammation	+	1	cellular response to interleukin-8
+GO:0071355	chronic_inflammation	+	1	cellular response to interleukin-9
+# Gene Ontology is missing cellular response to IL-10 !?
+GO:0071348	chronic_inflammation	-	1	cellular response to interleukin-11 # https://doi.org/10.1016/j.cyto.2021.155750: "consistent with this, recombinant human IL-11 has been shown to down-regulate serum TNFα and IL-1β levels in a murine model of endotoxemia. These observations suggest that IL-11 acts as an anti-inflammatory cytokine through modulation of the effector function of macrophages."
+GO:0071349	chronic_inflammation	+	1	cellular response to interleukin-12
+GO:0097398	chronic_inflammation	+	1	cellular response to interleukin-17
+GO:0071351	chronic_inflammation	+	1	cellular response to interleukin-18
+GO:0097397	chronic_inflammation	+	1	cellular response to interleukin-32
 
 GO:0007162	cancer	+	1	negative regulation of cell adhesion
 GO:0045785	cancer	-	1	positive regulation of cell adhesion
