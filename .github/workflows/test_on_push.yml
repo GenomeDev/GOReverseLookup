@@ -41,7 +41,7 @@ jobs:
 
   pytest:
     needs: lint-format-type-checkmanifest
-    if: true()
+    if: true
     runs-on: ubuntu-latest
 
     strategy:
