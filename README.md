@@ -1,4 +1,9 @@
 # GOReverseLookup
+
+[![PyPI package](https://img.shields.io/badge/pip%20install-goreverselookup-brightgreen)](https://pypi.org/project/goreverselookup/) [![version number](https://img.shields.io/github/v/release/MediWizards/GOReverseLookup)](https://github.com/MediWizards/GOReverseLookup/releases) [![Actions Status](https://img.shields.io/github/actions/workflow/status/MediWizards/GOReverseLookup/test_on_push.yml)](https://github.com/MediWizards/GOReverseLookup/actions/workflows/test_on_push.yml) [![License](https://img.shields.io/github/license/MediWizards/GOReverseLookup)](https://github.com/MediWizards/GOReverseLookup/blob/main/LICENSE)
+
+
+
 **GOReverseLookup** is a Python package designed for Gene Ontology Reverse Lookup. It serves the purpose of identifying statistically significant genes within a set of selected Gene Ontology Terms.
 
 While Gene Ontology offers valuable insights through gene annotations associated with individual terms, the biological reality often involves the complex interaction of multiple terms that either promote or inhibit a specific pathophysiological process. Unfortunately, Gene Ontology does not provide a built-in mechanism for computing statistically significant genes that are shared across multiple terms.
