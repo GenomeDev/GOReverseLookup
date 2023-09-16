@@ -312,7 +312,8 @@ class GOAnnotationsFile:
             ]  # gets the raw id; UniProtKB:XXXXX -> XXXXX
         else:
             logger.warning(
-                f"get_uniprotkb_genename unsucessful for {product_id}. Product id must be supplied in the UniProtKB:XXXXX format!"
+                f"get_uniprotkb_genename unsucessful for {product_id}. Product id must"
+                " be supplied in the UniProtKB:XXXXX format!"
             )
             return None
 

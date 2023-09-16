@@ -27,20 +27,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff black mypy check-manifest
 
-      - name: Lint Code
+      - name: Lint Code (ruff)
         run: ruff check .
 
-      - name: Format Code
+      - name: Format Code (black)
         run: black --check --diff .
 
-      - name: Type Check
+      - name: Type Check (mypy)
         run: mypy --strict src tests
 
-      - name: Check Manifest
+      - name: Check Manifest (check-manifest)
         run: check-manifest
 
   pytest:
     needs: lint-format-type-checkmanifest
+    if: true()
     runs-on: ubuntu-latest
 
     strategy:

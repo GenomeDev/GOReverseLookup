@@ -485,7 +485,9 @@ class binomial_test(Metrics):
                         if num_goterms_all_general != 0
                         else 0
                     ),
-                    "fold_enrichment": fold_enrichment_score,  # bugfix: ZeroDivisionError
+                    "fold_enrichment": (
+                        fold_enrichment_score
+                    ),  # bugfix: ZeroDivisionError
                     "pvalue": binom_pvalue,
                     "risk_ratio": risk_ratio,
                 }
@@ -603,7 +605,8 @@ class fisher_exact_test(Metrics):
                 f"  - ReverseLookup GO categories: {self.reverse_lookup.go_categories}"
             )
             logger.info(
-                f"GOAF will be recalculated using the ReverseLookup's GO categories: {self.reverse_lookup.go_categories}"
+                "GOAF will be recalculated using the ReverseLookup's GO categories:"
+                f" {self.reverse_lookup.go_categories}"
             )
             self.goaf = GOAnnotationsFile(
                 filepath=self.reverse_lookup.datafile_paths["goaf_filepath"],
@@ -646,7 +649,8 @@ class fisher_exact_test(Metrics):
                     continue
                 # num_goterms_product_general = len(self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories))
                 logger.debug(
-                    f"Fisher test online num_goterms_product_general query: {num_goterms_product_general}"
+                    "Fisher test online num_goterms_product_general query:"
+                    f" {num_goterms_product_general}"
                 )
             else:  # offline pathway: get goterms from GOAF
                 goterms_product_general = self.goaf.get_all_terms_for_product(
@@ -765,16 +769,27 @@ class fisher_exact_test(Metrics):
                 for x in cont_table:
                     for y in x:
                         if y < 0:
-                            stat_error = f"Element of contingency table in class fisher_exact_test is negative. All elements must be non-negative. Contingency table: {cont_table}. This might be because a gene_name, which belongs to a certain GO Term (obtained via web-download), isn't found in the GO Annotations File."
+                            stat_error = (
+                                "Element of contingency table in class"
+                                " fisher_exact_test is negative. All elements must be"
+                                f" non-negative. Contingency table: {cont_table}. This"
+                                " might be because a gene_name, which belongs to a"
+                                " certain GO Term (obtained via web-download), isn't"
+                                " found in the GO Annotations File."
+                            )
                             results_dict[f"{process['process']}{direction}"] = {
                                 # "n_prod_process" : num_goterms_product_process,
                                 # "n_all_process" : num_goterms_all_process,
                                 # "n_prod_general" : num_goterms_product_general,
                                 # "n_all_general" : num_goterms_all_general,
                                 "error": f"{stat_error}",
-                                "num_terms_product_process": num_goterms_product_process,
+                                "num_terms_product_process": (
+                                    num_goterms_product_process
+                                ),
                                 "num_terms_all_process": num_goterms_all_process,
-                                "num_terms_product_general": num_goterms_product_general,
+                                "num_terms_product_general": (
+                                    num_goterms_product_general
+                                ),
                                 "fold_enrichment": None,
                                 "pvalue": None,
                                 "odds_ratio": None,
@@ -824,7 +839,8 @@ class fisher_exact_test(Metrics):
                         new_pvalue = new_fisher.pvalue
                         if new_pvalue > previous_pvalue:
                             logger.warning(
-                                f"Newly calculated pvalue is greater! prev_pvalue = {previous_pvalue}, new_pvalue = {new_pvalue}"
+                                "Newly calculated pvalue is greater! prev_pvalue ="
+                                f" {previous_pvalue}, new_pvalue = {new_pvalue}"
                             )
                             success = False
                             break
@@ -857,14 +873,18 @@ class fisher_exact_test(Metrics):
                     "n_prod_general": num_goterms_product_general,
                     "n_all_general": num_goterms_all_general,
                     "num": num_goterms_product_process,
-                    "required_n_prod_process_for_statistical_relevance": required_n_prod_process_for_stat_relevance,
+                    "required_n_prod_process_for_statistical_relevance": (
+                        required_n_prod_process_for_stat_relevance
+                    ),
                     "expected": num_goterms_all_process
                     * (
                         num_goterms_product_general / num_goterms_all_general
                         if num_goterms_all_general != 0
                         else 0
                     ),
-                    "fold_enrichment": fold_enrichment_score,  # BUGFIX: ZeroDivisionError
+                    "fold_enrichment": (
+                        fold_enrichment_score
+                    ),  # BUGFIX: ZeroDivisionError
                     "pvalue": fisher_pvalue,
                     "odds_ratio": odds_ratio,
                     "goterms_prod_process": goterms_product_process,
@@ -1017,7 +1037,8 @@ class miRDB60predictor:
                         time.sleep(_retry_delay)
                     else:
                         raise Exception(
-                            f"Failed to download file from {url} after {self._max_retries} attempts"
+                            f"Failed to download file from {url} after"
+                            f" {self._max_retries} attempts"
                         ) from e
 
     def predict_from_product(

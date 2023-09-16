@@ -272,7 +272,8 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
                 human_symbol = e[0]
                 human_gene_name = e[1]
                 logger.info(
-                    f"Found human ortholog {human_symbol}, name = {human_gene_name} for xenbase gene {product_id}"
+                    f"Found human ortholog {human_symbol}, name = {human_gene_name} for"
+                    f" xenbase gene {product_id}"
                 )
                 return human_symbol, human_gene_name
         return None
@@ -306,7 +307,8 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
                 human_symbol = e[0]
                 human_gene_name = e[1]
                 logger.info(
-                    f"Found human ortholog {human_symbol}, name = {human_gene_name} for xenbase gene {product_id}"
+                    f"Found human ortholog {human_symbol}, name = {human_gene_name} for"
+                    f" xenbase gene {product_id}"
                 )
                 return human_symbol, human_gene_name
         return None
@@ -531,7 +533,8 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                 return result_list[3]
             else:
                 logger.warning(
-                    f"FAULTY LINE IN RGD while searching for {product_id}, linesplit =: {linesplit}"
+                    f"FAULTY LINE IN RGD while searching for {product_id}, linesplit =:"
+                    f" {linesplit}"
                 )
                 return None
 
@@ -573,7 +576,8 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                 return result_list[3]
             else:
                 logger.warning(
-                    f"FAULTY LINE IN RGD while searching for {product_id}, linesplit =: {linesplit}"
+                    f"FAULTY LINE IN RGD while searching for {product_id}, linesplit =:"
+                    f" {linesplit}"
                 )
                 return None
 

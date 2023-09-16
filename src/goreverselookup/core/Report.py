@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 import os
-import tabulate
 from tabulate import tabulate
 import traceback
 
@@ -233,7 +232,10 @@ class ReportGenerator:
                 max(products_per_goterm),
                 sum(products_per_goterm) / len(products_per_goterm),
             )
-            string += f"Products per GO Term (min - avg - max): {min_g} - {avg_g:.0f} - {max_g}\n"
+            string += (
+                f"Products per GO Term (min - avg - max): {min_g} - {avg_g:.0f} -"
+                f" {max_g}\n"
+            )
 
         return string
 
@@ -349,11 +351,8 @@ class ReportGenerator:
             # Add the details for the top products
             for product in top_products:
                 string += (
-                    " " * 10
-                    + f"{product.genename} - {product.scores[score_key]:.2f} - {product.description}".center(
-                        100
-                    )
-                    + "\n"
+                    " " * 10 + f"{product.genename} - {product.scores[score_key]:.2f} -"
+                    f" {product.description}".center(100) + "\n"
                 )
                 string += (
                     tabulate(
@@ -369,11 +368,8 @@ class ReportGenerator:
             string += ("-" * 30) + "\n\n"
             for product in bottom_products:
                 string += (
-                    " " * 10
-                    + f"{product.genename} - {product.scores[score_key]:.2f} - {product.description}".center(
-                        100
-                    )
-                    + "\n"
+                    " " * 10 + f"{product.genename} - {product.scores[score_key]:.2f} -"
+                    f" {product.description}".center(100) + "\n"
                 )
                 string += (
                     tabulate(
@@ -393,7 +389,10 @@ class ReportGenerator:
         """
         # Create the header string.
         string = f"TOP {self.top_n} miRNAs" + "\n"
-        string += f"+ annotates Product which is in top {self.top_n}, and - annotates Product which is in bottom {self.top_n}\n\n"
+        string += (
+            f"+ annotates Product which is in top {self.top_n}, and - annotates Product"
+            f" which is in bottom {self.top_n}\n\n"
+        )
 
         # Get the top and bottom products based on the advanced score
         sorted_products = sorted(

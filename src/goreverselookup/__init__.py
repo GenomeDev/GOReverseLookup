@@ -1,6 +1,5 @@
 from .Model import ReverseLookup
 from .Workflows import WorkflowOne
-from .util.CacheUtil import Cacher
 
 from .core.ModelSettings import ModelSettings
 from .core.GOTerm import GOTerm

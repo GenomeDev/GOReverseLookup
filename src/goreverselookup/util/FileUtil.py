@@ -112,7 +112,8 @@ class FileUtil:
                             base_path = os.path.join(base_path, folder)
                         else:
                             logger.info(
-                                f"ERROR during file search. Base path {base_path} doesn't contain folder {folder}"
+                                "ERROR during file search. Base path"
+                                f" {base_path} doesn't contain folder {folder}"
                             )
                     # finally, append the file
                     return os.path.join(base_path, file)
@@ -145,14 +146,6 @@ class FileUtil:
         Returns the workspace-specific directory using os.getcwd().
         """
         return os.getcwd()
-
-    def write_to_txt_file(self, list: list, filepath="", filename=""):
-        """
-        Writes the input list, line by line to the specified filepath. If no filepath is specified,
-        file is written to self.project_root_path/filename.txt. If filename is also not specified, then
-        the lines are written to self.project_root_path/text.txt
-        """
-        # TODO: implement
 
     @classmethod
     def write_to_txt_file(cls, list: list, filepath: str):

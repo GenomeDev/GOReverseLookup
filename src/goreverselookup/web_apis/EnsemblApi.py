@@ -1,6 +1,7 @@
 import requests
 from requests.adapters import HTTPAdapter, Retry
-import aiohttp, asyncio
+import aiohttp
+import asyncio
 
 from ..util.CacheUtil import Cacher
 
@@ -152,7 +153,9 @@ class EnsemblApi:
             # except (requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ClientResponseError) as e:
             except Exception as e:
                 logger.warning(
-                    f"Exception for {id_url} for request: https://rest.ensembl.org/homology/symbol/{species}/{id_url}?target_species=human;type=orthologues;sequence=none. Exception: {str(e)}"
+                    f"Exception for {id_url} for request:"
+                    f" https://rest.ensembl.org/homology/symbol/{species}/{id_url}?target_species=human;type=orthologues;sequence=none."
+                    f" Exception: {str(e)}"
                 )
                 self.ortholog_query_exceptions.append({f"{id}": f"{str(e)}"})
                 return None
@@ -215,7 +218,8 @@ class EnsemblApi:
             "Error" in id
         ):  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
             logger.debug(
-                f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene does not have a human ortholog and you are safe to ignore it."
+                f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene"
+                " does not have a human ortholog and you are safe to ignore it."
             )
             return {}
 
@@ -410,7 +414,8 @@ class EnsemblApi:
             "Error" in id
         ):  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
             logger.debug(
-                f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene does not have a human ortholog and you are safe to ignore it."
+                f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene"
+                " does not have a human ortholog and you are safe to ignore it."
             )
             return {}
 
@@ -475,7 +480,9 @@ class EnsemblApi:
                 ensembl_id = ""
                 if "ENS" not in id:
                     # parameter id is not ensembl, attempt to find ensembl id
-                    url = f"https://rest.ensembl.org/xrefs/{endpoint}?"  # cross references
+                    url = (  # cross references
+                        f"https://rest.ensembl.org/xrefs/{endpoint}?"
+                    )
                     previous_response = Cacher.get_data("url", url)
                     if previous_response is not None:
                         response_json = previous_response

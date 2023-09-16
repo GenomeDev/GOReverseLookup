@@ -1,6 +1,7 @@
 import requests
 from requests.adapters import HTTPAdapter, Retry
-import aiohttp, asyncio
+import aiohttp
+import asyncio
 
 from ..util.CacheUtil import Cacher
 
@@ -113,7 +114,8 @@ class UniProtApi:
         elif len(reviewed_ids) == 1:
             uniprot_id = reviewed_ids[0]["primaryAccession"]
             logger.info(
-                f"Auto accepted {gene_name} -> {uniprot_id}. Reason: Only 1 reviewed result."
+                f"Auto accepted {gene_name} -> {uniprot_id}. Reason: Only 1 reviewed"
+                " result."
             )
             return_value = "UniProtKB:" + uniprot_id
             Cacher.store_data("uniprot", uniprot_data_key, return_value)
@@ -121,7 +123,8 @@ class UniProtApi:
 
         # If multiple reviewed results were found, ask the user to choose one
         logger.info(
-            f"Multiple reviewed results found for {gene_name}. Please choose the correct UniProt ID from the following list:"
+            f"Multiple reviewed results found for {gene_name}. Please choose the"
+            " correct UniProt ID from the following list:"
         )
         for i, result in enumerate(reviewed_ids):
             genes = result["genes"]
@@ -454,7 +457,8 @@ class UniProtApi:
             else:
                 description = "ERROR: Couldn't fetch description."
                 logger.warning(
-                    f"proteinDescription, recommendedName, fullName or value not found when querying for uniprot info for the id: {uniprot_id}"
+                    "proteinDescription, recommendedName, fullName or value not found"
+                    f" when querying for uniprot info for the id: {uniprot_id}"
                 )
                 logger.warning(f"result: {result}")
             (
@@ -621,7 +625,8 @@ class UniProtApi:
                 # except(requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ServerDisconnectedError, aiohttp.ClientResponseError) as e:
                 except Exception as e:
                     logger.warning(
-                        f"Exception when querying info for {uniprot_id}. Exception: {str(e)}"
+                        f"Exception when querying info for {uniprot_id}. Exception:"
+                        f" {str(e)}"
                     )
                     self.uniprot_query_exceptions.append({f"{uniprot_id}": f"{str(e)}"})
                     await asyncio.sleep(2)  # sleep before retrying

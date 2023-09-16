@@ -1,6 +1,4 @@
 from __future__ import annotations
-import os
-from os import path
 import asyncio
 import aiohttp
 from contextlib import asynccontextmanager
@@ -21,9 +19,6 @@ from .parse.OrthologParsers import HumanOrthologFinder
 from .parse.OBOParser import OboParser
 from .util.JsonUtil import JsonUtil, JsonToClass
 from .util.Timer import Timer
-
-print(f"cwd = {os.getcwd()}")
-print(f"path dirname of abs path of this file: {path.dirname(path.abspath(__file__))}")
 
 import logging
 
@@ -175,7 +170,8 @@ class ReverseLookup:
                 return self.datafile_paths[datafile_type]
             else:
                 logger.warning(
-                    f"Datafile type {datafile_type} doesn't exist in self.datafile_paths. Returning None."
+                    f"Datafile type {datafile_type} doesn't exist in"
+                    " self.datafile_paths. Returning None."
                 )
                 return None
         logger.warning(
@@ -472,11 +468,13 @@ class ReverseLookup:
                     response.status != 200
                 ):  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
                     logger.warning(
-                        f"HTTP Error when parsing {goterm.id}. Response status = {response.status}"
+                        f"HTTP Error when parsing {goterm.id}. Response status ="
+                        f" {response.status}"
                     )
-                    goterm.http_error_codes[
-                        "products"
-                    ] = f"HTTP Error: status = {response.status}, reason = {response.reason}"
+                    goterm.http_error_codes["products"] = (
+                        f"HTTP Error: status = {response.status}, reason ="
+                        f" {response.reason}"
+                    )
 
                 data = await response.json()
                 products_set = set()
@@ -813,7 +811,9 @@ class ReverseLookup:
             await asyncio.gather(*tasks)
 
         logger.info(
-            f"During ortholog query, there were {len(ensembl_api.ortholog_query_exceptions)} ensembl api exceptions and {len(uniprot_api.uniprot_query_exceptions)} uniprot api exceptions."
+            "During ortholog query, there were"
+            f" {len(ensembl_api.ortholog_query_exceptions)} ensembl api exceptions and"
+            f" {len(uniprot_api.uniprot_query_exceptions)} uniprot api exceptions."
         )
 
         # logger.debug(f"Printing exceptions:")
@@ -908,7 +908,9 @@ class ReverseLookup:
                             product.had_fetch_info_computed = True
                             if product.had_fetch_info_computed is False:
                                 logger.warning(
-                                    f"had_fetch_info_computed IS FALSE despite being called for {product.id_synonyms}, genename = {product.genename}"
+                                    "had_fetch_info_computed IS FALSE despite being"
+                                    f" called for {product.id_synonyms}, genename ="
+                                    f" {product.genename}"
                                 )
             except Exception as e:
                 raise e
@@ -1149,7 +1151,8 @@ class ReverseLookup:
         """
         self.miRNA_overlap_treshold = treshold
         logger.warning(
-            "Sorry, but changing the treshold will delete all the calculated miRNA scores. You will have to calculate them again!"
+            "Sorry, but changing the treshold will delete all the calculated miRNA"
+            " scores. You will have to calculate them again!"
         )
         if not safety:
             confirmation = input("Are you sure you want to proceed? (y/n)")
@@ -1330,8 +1333,8 @@ class ReverseLookup:
         for product in self.products:
             data.setdefault("products", []).append(product.__dict__)
         # save miRNAs
-        for miRNA in self.miRNAs:
-            data.setdefault("miRNAs", []).append(miRNA.__dict__)
+        for mirna in self.miRNAs:
+            data.setdefault("miRNAs", []).append(mirna.__dict__)
 
         JsonUtil.save_json(data, filepath)
 
@@ -1496,7 +1499,14 @@ class ReverseLookup:
                                 or missing_src_elements_in_ref != []
                             ):
                                 current_mismatches.append(
-                                    f"Compare field array mismatch for '{_compare_subfield}'\\n   - missing reference elements in src: {missing_ref_elements_in_src}\\n    - missing source elements in reference: {missing_src_elements_in_ref}\\n    - ref = {_ref_element_attr_value}\\n    - src = {_src_element_attr_value}"
+                                    "Compare field array mismatch for"
+                                    f" '{_compare_subfield}'\\n   - missing reference"
+                                    " elements in src:"
+                                    f" {missing_ref_elements_in_src}\\n    - missing"
+                                    " source elements in reference:"
+                                    f" {missing_src_elements_in_ref}\\n    - ref ="
+                                    f" {_ref_element_attr_value}\\n    - src ="
+                                    f" {_src_element_attr_value}"
                                 )
 
                         elif _ref_element_attr_value == _src_element_attr_value:
@@ -1504,7 +1514,9 @@ class ReverseLookup:
 
                         else:  # compare field mismatch, values are different
                             current_mismatches.append(
-                                f"Compare field mismatch for '{_compare_subfield}': ref = '{_ref_element_attr_value}', src = '{_src_element_attr_value}'"
+                                f"Compare field mismatch for '{_compare_subfield}': ref"
+                                f" = '{_ref_element_attr_value}', src ="
+                                f" '{_src_element_attr_value}'"
                             )
                     elif not (
                         hasattr(_ref_element, _compare_subfield)
@@ -1519,7 +1531,10 @@ class ReverseLookup:
                             _src_element, _compare_subfield
                         )
                         current_mismatches.append(
-                            f"Compare field '{_compare_subfield}' doesn't exist in reference or source element. Source element: '{compare_field_in_src_element}', Reference element: '{compare_field_in_ref_element}'"
+                            f"Compare field '{_compare_subfield}' doesn't exist in"
+                            " reference or source element. Source element:"
+                            f" '{compare_field_in_src_element}', Reference element:"
+                            f" '{compare_field_in_ref_element}'"
                         )
 
                     """ # A JSON-like approach to solving the above class-based approach (which uses hasattr and getattr)
@@ -1577,7 +1592,10 @@ class ReverseLookup:
                 return goterms_diff  # the difference in all _compare_subfields across src_json and ref_json goterms
             else:
                 logger.error(
-                    f"Error: one of the supplied compare_subfields ({compare_subfields}) is not allowed for compare field '{compare_field}'. Allowed compare subfields for '{compare_field}' are {allowed_goterms_subfields}"
+                    "Error: one of the supplied compare_subfields"
+                    f" ({compare_subfields}) is not allowed for compare field"
+                    f" '{compare_field}'. Allowed compare subfields for"
+                    f" '{compare_field}' are {allowed_goterms_subfields}"
                 )
         elif compare_field == "products":
             # if all compare_subfields are from allowed_products_subfields
@@ -1612,7 +1630,10 @@ class ReverseLookup:
                 return products_diff  # the difference in all _compare_subfields across src_json and ref_json products
             else:
                 logger.error(
-                    f"Error: one of the supplied compare_subfields ({compare_subfields}) is not allowed for compare field '{compare_field}'. Allowed compare subfields for '{compare_field}' are {allowed_products_subfields}"
+                    "Error: one of the supplied compare_subfields"
+                    f" ({compare_subfields}) is not allowed for compare field"
+                    f" '{compare_field}'. Allowed compare subfields for"
+                    f" '{compare_field}' are {allowed_products_subfields}"
                 )
         elif (
             compare_field == ""
@@ -1811,7 +1832,8 @@ class ReverseLookup:
             statistically_relevant_products_final_sorted
         )
         logger.info(
-            f"Finished with product statistical analysis. Found {len(statistically_relevant_products)} statistically relevant products."
+            "Finished with product statistical analysis. Found"
+            f" {len(statistically_relevant_products)} statistically relevant products."
         )
         JsonUtil.save_json(
             data_dictionary=statistically_relevant_products_final_sorted,
@@ -1936,8 +1958,8 @@ class ReverseLookup:
         # Define constants used in parsing the file
         LINE_ELEMENT_DELIMITER = "\t"  # Data is tab separated
         COMMENT_DELIMITER = "#"  # Character used to denote a comment
-        LOGIC_LINE_DELIMITER = (
-            "###"  # Special set of characters to denote a "logic line"
+        LOGIC_LINE_DELIMITER = (  # Special set of characters to denote a "logic line"
+            "###"
         )
 
         target_processes = []
@@ -2088,7 +2110,8 @@ class ReverseLookup:
             else:
                 obo_parser = OboParser()
             logger.info(
-                f"Starting OboParser to find all GO Term parents and children using data file {obo_parser.filepath}"
+                "Starting OboParser to find all GO Term parents and children using"
+                f" data file {obo_parser.filepath}"
             )
 
             # update goterms to include all parents and children

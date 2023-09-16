@@ -42,6 +42,10 @@ version = "0.0.0"
 dev = [
     "pytest",
     "tox",
+    "ruff",
+    "black",
+    "mypy",
+    "check-manifest"
 ]
 
 #
@@ -72,3 +76,7 @@ commands =
 
 [tool.check-manifest]
 ignore = ["tests/**", ".vscode/**", "logging_config.json", "exe_version/**", "input_files/**"]
+
+[tool.ruff]
+# Avoid enforcing line-length violations (`E501`). Black already checks for that, but it leaves comments unchanged - this makes errors in ruff.
+ignore = ["E501"]

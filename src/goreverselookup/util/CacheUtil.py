@@ -13,12 +13,18 @@ logger = logging.getLogger(__name__)
 
 
 class Cacher:
-    CACHE_FILEPATH_URLS = (
-        ""  # filepath to the file containing online url queries and the URL RESPONSES
+    CACHE_FILEPATH_URLS = (  # filepath to the file containing online url queries and the URL RESPONSES
+        ""
     )
-    CACHE_FILEPATH_UNIPROT = ""  # filepath to the file containing uniprot api queries and their final results (after processing of the url responses)
-    CACHE_FILEPATH_ENSEMBL = ""  # filepath to the file containing ensembl api queries and their final results (after processing of the url responses)
-    CACHE_FILEPATH_GENEONTOLOGY = ""  # filepath to the file containing gene ontology api queries and their final results (after processing of the url responses)
+    CACHE_FILEPATH_UNIPROT = (  # filepath to the file containing uniprot api queries and their final results (after processing of the url responses)
+        ""
+    )
+    CACHE_FILEPATH_ENSEMBL = (  # filepath to the file containing ensembl api queries and their final results (after processing of the url responses)
+        ""
+    )
+    CACHE_FILEPATH_GENEONTOLOGY = (  # filepath to the file containing gene ontology api queries and their final results (after processing of the url responses)
+        ""
+    )
     cached_urls = {}
     cached_uniprot = {}
     cached_ensembl = {}
@@ -371,7 +377,8 @@ class ConnectionCacher(Cacher):
         """
         if cls.cached_urls == {}:
             logger.warning(
-                "Cached_urls variable is empty! Did you forget to call ConnectionCacher.init()?"
+                "Cached_urls variable is empty! Did you forget to call"
+                " ConnectionCacher.init()?"
             )
             cls.init()
 

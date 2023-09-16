@@ -90,7 +90,9 @@ class Workflow:
 
     def create_workflow():
         raise NotImplementedError(
-            "You shouldn't call create_workflow on superclass Workflow. Create a subclass implementation of Workflow instead. using class WORKFLOW_NAME(Workflow)"
+            "You shouldn't call create_workflow on superclass Workflow. Create a"
+            " subclass implementation of Workflow instead. using class"
+            " WORKFLOW_NAME(Workflow)"
         )
 
     def add_function(self, function, *args, **kwargs):

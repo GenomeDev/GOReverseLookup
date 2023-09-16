@@ -1,5 +1,6 @@
 from typing import Optional, List
-import asyncio, aiohttp
+import asyncio
+import aiohttp
 
 from .ModelSettings import ModelSettings
 from ..parse.OrthologParsers import HumanOrthologFinder
@@ -121,7 +122,8 @@ class Product:
                     self.genename = goaf.get_uniprotkb_genename(self.id_synonyms[0])
                 else:
                     logger.warning(
-                        "GOAF wasn't supplied as parameter to the (Product).fetch_ortholog function!"
+                        "GOAF wasn't supplied as parameter to the"
+                        " (Product).fetch_ortholog function!"
                     )
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
                 # do a file-based ortholog search using HumanOrthologFinder
@@ -157,10 +159,16 @@ class Product:
                 if _d_compare_goaf is True:
                     if self.genename != info_dict.get("genename"):
                         logger.warning(
-                            f"GOAF-obtained genename ({self.genename}) is not the same as UniProtKB-obtained genename ({info_dict.get('genename')}) for {self.id_synonyms}"
+                            f"GOAF-obtained genename ({self.genename}) is not the same"
+                            " as UniProtKB-obtained genename"
+                            f" ({info_dict.get('genename')}) for {self.id_synonyms}"
                         )
                         self._d_offline_online_ortholog_mismatch = True
-                        self._d_offline_online_ortholog_mismatch_values = f"[{self.id_synonyms[0]}]: online = {info_dict.get('genename')}, offline = {self.genename}; type = uniprot query"
+                        self._d_offline_online_ortholog_mismatch_values = (
+                            f"[{self.id_synonyms[0]}]: online ="
+                            f" {info_dict.get('genename')}, offline = {self.genename};"
+                            " type = uniprot query"
+                        )
                 else:
                     self.genename = info_dict.get("genename")
 
@@ -177,7 +185,8 @@ class Product:
                     human_ortholog_gene_id is None
                 ):  # if file-based search finds no ortholog
                     logger.warning(
-                        f"human ortholog finder did not find ortholog for {self.id_synonyms[0]}"
+                        "human ortholog finder did not find ortholog for"
+                        f" {self.id_synonyms[0]}"
                     )
                     human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(
                         self.id_synonyms[0]
@@ -196,10 +205,17 @@ class Product:
                         if _d_compare_goaf is True:
                             if self.genename != human_ortholog_gene_id:
                                 logger.warning(
-                                    f"GOAF-obtained genename ({self.genename}) is not the same as Ensembl-obtained genename ({human_ortholog_gene_id}) for {self.id_synonyms}"
+                                    f"GOAF-obtained genename ({self.genename}) is not"
+                                    " the same as Ensembl-obtained genename"
+                                    f" ({human_ortholog_gene_id}) for"
+                                    f" {self.id_synonyms}"
                                 )
                                 self._d_offline_online_ortholog_mismatch = True
-                                self._d_offline_online_ortholog_mismatch_values = f"[{self.id_synonyms[0]}]: online = {human_ortholog_gene_id}, offline = {self.genename}, type = ensembl query"
+                                self._d_offline_online_ortholog_mismatch_values = (
+                                    f"[{self.id_synonyms[0]}]: online ="
+                                    f" {human_ortholog_gene_id}, offline ="
+                                    f" {self.genename}, type = ensembl query"
+                                )
                         else:
                             self.genename = enst_dict.get("genename")
                             # update 19.08.2023: attempt to obtain as many values as possible for this Product already from
@@ -222,7 +238,9 @@ class Product:
                             self.genename != human_ortholog_gene_id
                         ):  # with the current workflow, these will always be the same
                             logger.warning(
-                                f"GOAF-obtained genename ({self.genename}) is not the same as file-search-obtained-genename ({human_ortholog_gene_id}) for {self.id_synonyms}"
+                                f"GOAF-obtained genename ({self.genename}) is not the"
+                                " same as file-search-obtained-genename"
+                                f" ({human_ortholog_gene_id}) for {self.id_synonyms}"
                             )
                     else:
                         self.genename = human_ortholog_gene_id
@@ -313,7 +331,8 @@ class Product:
             )
             if human_ortholog_gene_id is None:
                 logger.warning(
-                    f"human ortholog finder did not find ortholog for {self.id_synonyms[0]}"
+                    "human ortholog finder did not find ortholog for"
+                    f" {self.id_synonyms[0]}"
                 )
                 human_ortholog_gene_ensg_id = (
                     await ensembl_api.get_human_ortholog_async(
@@ -390,7 +409,8 @@ class Product:
         self.had_fetch_info_computed = True
         if not (self.uniprot_id or self.genename or self.ensg_id):
             logger.debug(
-                f"Product with id synonyms {self.id_synonyms} did not have an uniprot_id, gene name or ensg id. Aborting fetch info operation."
+                f"Product with id synonyms {self.id_synonyms} did not have an"
+                " uniprot_id, gene name or ensg id. Aborting fetch info operation."
             )
             return
         if not uniprot_api:
@@ -477,7 +497,8 @@ class Product:
         self.had_fetch_info_computed = True
         if not (self.uniprot_id or self.genename or self.ensg_id):
             logger.debug(
-                f"Product with id synonyms {self.id_synonyms} did not have an uniprot_id, gene name or ensg id. Aborting fetch info operation."
+                f"Product with id synonyms {self.id_synonyms} did not have an"
+                " uniprot_id, gene name or ensg id. Aborting fetch info operation."
             )
             return
         if not uniprot_api:
@@ -601,7 +622,9 @@ class Product:
             d.get("mRNA"),
             d.get("scores") if "scores" in d else None,
             d.get("had_orthologs_computed") if "had_orthologs_computed" in d else False,
-            d.get("had_fetch_info_computed")
-            if "had_fetch_info_computed" in d
-            else False,
+            (
+                d.get("had_fetch_info_computed")
+                if "had_fetch_info_computed" in d
+                else False
+            ),
         )

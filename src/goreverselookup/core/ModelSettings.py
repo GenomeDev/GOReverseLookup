@@ -53,7 +53,8 @@ class ModelSettings:
                     )  # set the attribute
                 else:
                     logger.warning(
-                        f"Attribute {attr_name} doesn't exist in json_data for ModelSettings!"
+                        f"Attribute {attr_name} doesn't exist in json_data for"
+                        " ModelSettings!"
                     )
         return instance
 
@@ -72,7 +73,8 @@ class ModelSettings:
             setattr(self, setting_name, setting_value)
         else:
             logger.warning(
-                f"ModelSettings has no attribute {setting_name}! Make sure to programmatically define the attribute."
+                f"ModelSettings has no attribute {setting_name}! Make sure to"
+                " programmatically define the attribute."
             )
 
     def get_setting(self, setting_name: str):

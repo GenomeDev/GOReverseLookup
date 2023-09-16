@@ -2,7 +2,8 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from json import JSONDecodeError
 import time
-import aiohttp, asyncio
+import aiohttp
+import asyncio
 
 from ..util.FileUtil import FileUtil
 
@@ -116,7 +117,8 @@ class GOApi:
             except (requests.exceptions.RequestException, JSONDecodeError) as e:
                 if i == (max_retries - 1):  # this was the last http request, it failed
                     logger.error(
-                        f"Experienced an http exception or a JSONDecodeError while fetching products for {term_id}"
+                        "Experienced an http exception or a JSONDecodeError while"
+                        f" fetching products for {term_id}"
                     )
                     error_log_filepath = FileUtil.find_win_abs_filepath(
                         "log_output/error_log"
@@ -219,7 +221,8 @@ class GOApi:
                         # logger.error(f"Exception text: {error_text}")
                         # logger.error(f"Debug report was written to: {error_log_filepath}")
                         logger.error(
-                            f"https error for {term_id}, error_type = {error_type}, error_text = {error_text}"
+                            f"https error for {term_id}, error_type = {error_type},"
+                            f" error_text = {error_text}"
                         )
 
                         with open(error_log_filepath, "a+") as f:
@@ -281,9 +284,13 @@ class GOApi:
                 response.status != 200
             ):  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
                 logger.warning(
-                    f"HTTP Error when parsing {term_id}. Response status = {response.status}"
+                    f"HTTP Error when parsing {term_id}. Response status ="
+                    f" {response.status}"
                 )
-                return f"HTTP Error: status = {response.status}, reason = {response.reason}"
+                return (
+                    f"HTTP Error: status = {response.status}, reason ="
+                    f" {response.reason}"
+                )
 
             data = await response.json()
             products_set = set()

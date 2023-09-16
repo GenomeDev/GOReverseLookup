@@ -31,7 +31,8 @@ class JsonUtil:
 
                 if filepath is None:
                     raise Exception(
-                        f"Filepath when attempting load JSON is None! Initial filepath was {initial_filepath}"
+                        "Filepath when attempting load JSON is None! Initial filepath"
+                        f" was {initial_filepath}"
                     )
 
                 # current_dir = os.path.dirname(os.path.abspath(traceback.extract_stack()[0].filename))

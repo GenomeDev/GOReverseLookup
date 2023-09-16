@@ -1,4 +1,5 @@
-import aiohttp, asyncio
+import aiohttp
+import asyncio
 from typing import List, Dict, Optional
 
 from ..web_apis.GOApi import GOApi
@@ -94,7 +95,8 @@ class GOTerm:
             overwrite_attributes(goterm=goterm)
         else:
             raise Exception(
-                f"Input GOTerm id {goterm.id} doesn't match with current instance GOTerm id {self.id}"
+                f"Input GOTerm id {goterm.id} doesn't match with current instance"
+                f" GOTerm id {self.id}"
             )
 
     def copy(self):
@@ -180,7 +182,8 @@ class GOTerm:
                 # logger.info(f"Fetched name and description for GO term {self.id}")
                 # print out only 15 desc chars not to clutter console
                 logger.info(
-                    f"GOid {self.id}: name = {self.name}, description = {self.description[:15]}..."
+                    f"GOid {self.id}: name = {self.name}, description ="
+                    f" {self.description[:15]}..."
                 )
             else:
                 logger.info(
@@ -283,7 +286,8 @@ class GOTerm:
             if retries == (max_retries - 1):
                 logger.warning(f"Exceeded max retries when parsing {self.id}")
                 raise Exception(
-                    f"Exceeded max retries when parsing {self.id}. HTTP error text = {possible_http_error_text}"
+                    f"Exceeded max retries when parsing {self.id}. HTTP error text ="
+                    f" {possible_http_error_text}"
                 )
             retries += 1
 
@@ -297,7 +301,10 @@ class GOTerm:
                 if (
                     response.status != 200
                 ):  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
-                    possible_http_error_text = f"HTTP Error when parsing {self.id}. Response status = {response.status}"
+                    possible_http_error_text = (
+                        f"HTTP Error when parsing {self.id}. Response status ="
+                        f" {response.status}"
+                    )
                     logger.warning(possible_http_error_text)
                     # return f"HTTP Error: status = {response.status}, reason = {response.reason}"
                     continue
