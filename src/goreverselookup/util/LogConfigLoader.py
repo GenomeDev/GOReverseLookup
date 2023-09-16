@@ -22,16 +22,19 @@ from logging import config
 from .JsonUtil import JsonUtil
 
 import logging
+
 logger = logging.getLogger(__name__)
 
-class LogConfigLoader():
+
+class LogConfigLoader:
     def __init__():
-        """ 
-        """
+        """ """
         pass
 
     @classmethod
-    def setup_logging_config(cls, log_config_json_filepath = "app/goreverselookup/src/logging_config.json"):
+    def setup_logging_config(
+        cls, log_config_json_filepath="app/goreverselookup/src/logging_config.json"
+    ):
         """
         Performs the following function calls in order to setup the logging configuration:
             log_config_dict = JsonUtil.load_json(log_config_json_filepath)

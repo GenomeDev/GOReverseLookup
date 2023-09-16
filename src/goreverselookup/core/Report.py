@@ -11,45 +11,57 @@ if TYPE_CHECKING:
 from ..util.FileUtil import FileUtil
 
 import logging
-#from logging import config
-#config.fileConfig("../logging_config.py")
+
+# from logging import config
+# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
 
+
 class ReportGenerator:
-    def __init__(self, reverse_lookup: ReverseLookup, verbosity: int = 1, top_n: int = 5, width: int = 80):
+    def __init__(
+        self,
+        reverse_lookup: ReverseLookup,
+        verbosity: int = 1,
+        top_n: int = 5,
+        width: int = 80,
+    ):
         # initialize the report generator with a reverse lookup object and parameters for verbosity, top_n, and width
-        self.reverse_lookup = reverse_lookup  # the reverse lookup object to use for generating the report
+        self.reverse_lookup = (
+            reverse_lookup  # the reverse lookup object to use for generating the report
+        )
         self.width = width  # the width of the report output
         self.top_n = top_n  # the number of top results to display in the report
         self.verbosity = verbosity  # the level of detail to include in the report
 
-    
     def _generate_header(self) -> str:
         """
         Generates the header part of the Report.py, currently hardcoded.
         """
-        header = "Gene Ontology Reverse Lookup Tool".center(self.width)+"\n"
-        header += "Authors: Vladimir Smrkolj (SI), Aljosa Skorjanc (SI)".center(self.width)+"\n"
+        header = "Gene Ontology Reverse Lookup Tool".center(self.width) + "\n"
+        header += (
+            "Authors: Vladimir Smrkolj (SI), Aljosa Skorjanc (SI)".center(self.width)
+            + "\n"
+        )
         header += "March 2023".center(self.width) + "\n"
         return header
-    
+
     def _generate_section(self, text: str) -> str:
         """
-        Generates a specific section. 
+        Generates a specific section.
         Parameters:
           - (str) text: The section's heading text
-    
+
         Returns:
           - (str) string: The formatted section heading text as displayed in the example.
-    
+
         Example: The following is generated in the report:
         --------------------------------------------------------------------------------
-                                    {text}                                    
+                                    {text}
         --------------------------------------------------------------------------------
         """
-        string = "-"*self.width+"\n"
-        string += text.center(self.width)+"\n"
-        string += "-"*self.width+"\n"
+        string = "-" * self.width + "\n"
+        string += text.center(self.width) + "\n"
+        string += "-" * self.width + "\n"
         return string
 
     def _generate_goterm_per_process_table(self) -> str:
@@ -85,7 +97,7 @@ class ReportGenerator:
         |           | GO:0038014 - negative regulation of insulin receptor signaling pathway by insulin receptor internalization         | GO:0035774 - positive regulation of insulin secretion involved in cellular response to glucose stimulus            | GO:1901143 - insulin catabolic process                                                                    |
         |           |                                                                                                                    |                                                                                                                    | GO:1901142 - insulin metabolic process                                                                    |
         |           |                                                                                                                    |                                                                                                                    | GO:0005899 - insulin receptor complex                                                                     |
-        / ... / 
+        / ... /
         +-----------+--------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
         | angio     | GO:1903589 - positive regulation of blood vessel endothelial cell proliferation involved in sprouting angiogenesis | GO:1903588 - negative regulation of blood vessel endothelial cell proliferation involved in sprouting angiogenesis | GO:0001525 - angiogenesis                                                                                 |
         |           | GO:1903672 - positive regulation of sprouting angiogenesis                                                         | GO:1903671 - negative regulation of sprouting angiogenesis                                                         | GO:1903587 - regulation of blood vessel endothelial cell proliferation involved in sprouting angiogenesis |
@@ -94,12 +106,16 @@ class ReportGenerator:
         |           | GO:0090050 - positive regulation of cell migration involved in sprouting angiogenesis                              | GO:0090051 - negative regulation of cell migration involved in sprouting angiogenesis                              | GO:0060055 - angiogenesis involved in wound healing                                                       |
         |           | GO:0001935 - endothelial cell proliferation                                                                        | GO:0043532 - angiostatin binding                                                                                   | GO:0002040 - sprouting angiogenesis                                                                       |
         |           |                                                                                                                    | GO:0032311 - angiogenin-PRI complex                                                                                | GO:0002041 - intussusceptive angiogenesis                                                                 |
-        / ... / 
+        / ... /
         +-----------+--------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
         """
         # Use a dictionary comprehension for the grouped_goterms initialization
-        grouped_goterms = {(target["process"], direction): [] for target in self.reverse_lookup.target_processes for direction in ("+", "-", "0")}
-        
+        grouped_goterms = {
+            (target["process"], direction): []
+            for target in self.reverse_lookup.target_processes
+            for direction in ("+", "-", "0")
+        }
+
         # Use a for-loop to populate the grouped_goterms dictionary
         for goterm in self.reverse_lookup.goterms:
             for goterm_process in goterm.processes:
@@ -110,38 +126,84 @@ class ReportGenerator:
 
         if self.verbosity >= 1:
             table = [["Process", "+", "-", "0", "Total"]]
-            table.extend([
-                [target["process"],
-                len(grouped_goterms[(target["process"], "+")]),
-                len(grouped_goterms[(target["process"], "-")]),
-                len(grouped_goterms[(target["process"], "0")]),
-                sum([len(grouped_goterms[(target["process"], "+")]), len(grouped_goterms[(target["process"], "-")]), len(grouped_goterms[(target["process"], "0")])])
+            table.extend(
+                [
+                    [
+                        target["process"],
+                        len(grouped_goterms[(target["process"], "+")]),
+                        len(grouped_goterms[(target["process"], "-")]),
+                        len(grouped_goterms[(target["process"], "0")]),
+                        sum(
+                            [
+                                len(grouped_goterms[(target["process"], "+")]),
+                                len(grouped_goterms[(target["process"], "-")]),
+                                len(grouped_goterms[(target["process"], "0")]),
+                            ]
+                        ),
+                    ]
+                    for target in self.reverse_lookup.target_processes
                 ]
-                for target in self.reverse_lookup.target_processes
-            ])
-            table.append(["Total", sum([a[1] for a in table[1:]]), sum([a[2] for a in table[1:]]), sum([a[3] for a in table[1:]]), sum([a[4] for a in table[1:]])])
-            string += tabulate(table, headers="firstrow", tablefmt="grid").center(self.width) + "\n"
+            )
+            table.append(
+                [
+                    "Total",
+                    sum([a[1] for a in table[1:]]),
+                    sum([a[2] for a in table[1:]]),
+                    sum([a[3] for a in table[1:]]),
+                    sum([a[4] for a in table[1:]]),
+                ]
+            )
+            string += (
+                tabulate(table, headers="firstrow", tablefmt="grid").center(self.width)
+                + "\n"
+            )
 
         if self.verbosity == 2:
             table = [["Process", "+", "-", "0"]]
-            table.extend([
-                [target["process"],
-                '\n'.join(str(g.id) for g in grouped_goterms[(target["process"], "+")]),
-                '\n'.join(str(g.id) for g in grouped_goterms[(target["process"], "-")]),
-                '\n'.join(str(g.id) for g in grouped_goterms[(target["process"], "0")]) ]
-                for target in self.reverse_lookup.target_processes
-            ])
-            string += tabulate(table, headers="firstrow", tablefmt="grid").center(self.width) + "\n"
+            table.extend(
+                [
+                    [
+                        target["process"],
+                        "\n".join(
+                            str(g.id) for g in grouped_goterms[(target["process"], "+")]
+                        ),
+                        "\n".join(
+                            str(g.id) for g in grouped_goterms[(target["process"], "-")]
+                        ),
+                        "\n".join(
+                            str(g.id) for g in grouped_goterms[(target["process"], "0")]
+                        ),
+                    ]
+                    for target in self.reverse_lookup.target_processes
+                ]
+            )
+            string += (
+                tabulate(table, headers="firstrow", tablefmt="grid").center(self.width)
+                + "\n"
+            )
 
         if self.verbosity == 3:
             table = [["Process", "+", "-", "0"]]
-            table.extend([
-                [target["process"],
-                '\n'.join(str(f"{g.id} - {g.name}") for g in grouped_goterms[(target["process"], "+")]),
-                '\n'.join(str(f"{g.id} - {g.name}") for g in grouped_goterms[(target["process"], "-")]),
-                '\n'.join(str(f"{g.id} - {g.name}") for g in grouped_goterms[(target["process"], "0")]) ]
-                for target in self.reverse_lookup.target_processes
-            ])
+            table.extend(
+                [
+                    [
+                        target["process"],
+                        "\n".join(
+                            str(f"{g.id} - {g.name}")
+                            for g in grouped_goterms[(target["process"], "+")]
+                        ),
+                        "\n".join(
+                            str(f"{g.id} - {g.name}")
+                            for g in grouped_goterms[(target["process"], "-")]
+                        ),
+                        "\n".join(
+                            str(f"{g.id} - {g.name}")
+                            for g in grouped_goterms[(target["process"], "0")]
+                        ),
+                    ]
+                    for target in self.reverse_lookup.target_processes
+                ]
+            )
             string += tabulate(table, headers="firstrow", tablefmt="grid") + "\n"
 
         return string
@@ -152,7 +214,7 @@ class ReportGenerator:
 
         Parameters:
           - None
-    
+
         Returns:
           - (str) string: overall statistics for the model's GO Terms
 
@@ -160,31 +222,35 @@ class ReportGenerator:
             GO TERMS STATISTICS
             Products per GO Term (min - avg - max): 0 - 63 - 501
         """
-        
+
         string = "GO TERMS STATISTICS\n"
-        
+
         # Calculate statistics and format the string
         if self.verbosity >= 1:
             products_per_goterm = [len(g.products) for g in self.reverse_lookup.goterms]
-            min_g, max_g, avg_g = min(products_per_goterm), max(products_per_goterm), sum(products_per_goterm) / len(products_per_goterm)
+            min_g, max_g, avg_g = (
+                min(products_per_goterm),
+                max(products_per_goterm),
+                sum(products_per_goterm) / len(products_per_goterm),
+            )
             string += f"Products per GO Term (min - avg - max): {min_g} - {avg_g:.0f} - {max_g}\n"
 
         return string
-    
+
     def _generate_top_bottom_products_summary(self, score_key) -> str:
         """
         Generates (ReverseLookup).top_n (preset to 5) top-scored and bottom-scored products. The result is an overview table, where each of the
         top and bottom products are presented with their Gene Name, Score and Description. Then, (ReverseLookup).top_n * 2 tabels are also generated,
         one table per each presented top or bottom product, with all of it's GO Terms listed below, the GO Term Labels and GO Term Descriptions.
 
-        The score_key corresponds to a scoring algorithm's name and is obtained from the product_score parameter supplied to the 'generate_report' 
-        function of this class, which should be one of the Metrics scoring implementations that was used to score the model. 
-        [TODO]: implement this more cleanly, this can be also pulled from the model's products after they are scored 
+        The score_key corresponds to a scoring algorithm's name and is obtained from the product_score parameter supplied to the 'generate_report'
+        function of this class, which should be one of the Metrics scoring implementations that was used to score the model.
+        [TODO]: implement this more cleanly, this can be also pulled from the model's products after they are scored
         (eg. score_key = self.reverse_lookup.products[0].scores <- get the key of the scores dict !!)
 
         Returns:
           - (str) string: formatted result of top and bottom products
-    
+
         Example:
         TOP and BOTTOM 5 PRODUCTS
         +-------------+---------+-------------------------------------------------------------+
@@ -213,7 +279,7 @@ class ReportGenerator:
         | ACAT2       | -15.40  | acetyl-CoA acetyltransferase 2                              |
         +-------------+---------+-------------------------------------------------------------+
 
-                         LAMTOR4 - 18.20 - late endosomal/lysosomal adaptor, MAPK and MTOR activator 4            
+                         LAMTOR4 - 18.20 - late endosomal/lysosomal adaptor, MAPK and MTOR activator 4
         +------------+-----------------------------------------------------------+---------------------------------------------------------------------------------------------------+
         | GO term    | GO label                                                  | GO description                                                                                    |
         +============+===========================================================+===================================================================================================+
@@ -231,27 +297,43 @@ class ReportGenerator:
         +------------+-----------------------------------------------------------+---------------------------------------------------------------------------------------------------+
         | GO:0001938 | positive regulation of endothelial cell proliferation     | Any process that activates or increases the rate or extent of endothelial cell proliferation.     |
         +------------+-----------------------------------------------------------+---------------------------------------------------------------------------------------------------+
-        / ... / 
+        / ... /
         """
 
         # Initialize the summary string with the header
         string = f"TOP and BOTTOM {self.top_n} PRODUCTS\n"
 
         # Get the top and bottom products based on the advanced score
-        sorted_products = sorted(self.reverse_lookup.products, key=lambda x: x.scores[score_key], reverse=True)
-        top_products = sorted_products[:self.top_n]
-        bottom_products = sorted_products[-self.top_n:]
+        sorted_products = sorted(
+            self.reverse_lookup.products,
+            key=lambda x: x.scores[score_key],
+            reverse=True,
+        )
+        top_products = sorted_products[: self.top_n]
+        bottom_products = sorted_products[-self.top_n :]
 
         # If verbosity is at least 1, create a table of the top and bottom products with their scores and descriptions
         if self.verbosity >= 1:
             # Create the table as a list of lists and append each row
             table = [["Gene Name", "Score", "Description"]]
             for product in top_products:
-                table.append([product.genename, f"{product.scores[score_key]:.2f}", product.description])
+                table.append(
+                    [
+                        product.genename,
+                        f"{product.scores[score_key]:.2f}",
+                        product.description,
+                    ]
+                )
             # Add a separator row and append each row for the bottom products
             table.append(["----", "----", "----"])
             for product in bottom_products:
-                table.append([product.genename, f"{product.scores[score_key]:.2f}", product.description])
+                table.append(
+                    [
+                        product.genename,
+                        f"{product.scores[score_key]:.2f}",
+                        product.description,
+                    ]
+                )
             # Add the table to the summary string
             string += tabulate(table, headers="firstrow", tablefmt="grid") + "\n\n"
 
@@ -266,14 +348,42 @@ class ReportGenerator:
 
             # Add the details for the top products
             for product in top_products:
-                string += " "*10+f"{product.genename} - {product.scores[score_key]:.2f} - {product.description}".center(100)+"\n"
-                string += tabulate(create_go_table(product), headers="firstrow", tablefmt="grid", maxcolwidths=100) + "\n\n"
+                string += (
+                    " " * 10
+                    + f"{product.genename} - {product.scores[score_key]:.2f} - {product.description}".center(
+                        100
+                    )
+                    + "\n"
+                )
+                string += (
+                    tabulate(
+                        create_go_table(product),
+                        headers="firstrow",
+                        tablefmt="grid",
+                        maxcolwidths=100,
+                    )
+                    + "\n\n"
+                )
 
             # Add a separator and add the details for the bottom products
-            string += ("-"*30)+"\n\n"
+            string += ("-" * 30) + "\n\n"
             for product in bottom_products:
-                string += " "*10+f"{product.genename} - {product.scores[score_key]:.2f} - {product.description}".center(100)+"\n"
-                string += tabulate(create_go_table(product), headers="firstrow", tablefmt="grid", maxcolwidths=100) + "\n\n"
+                string += (
+                    " " * 10
+                    + f"{product.genename} - {product.scores[score_key]:.2f} - {product.description}".center(
+                        100
+                    )
+                    + "\n"
+                )
+                string += (
+                    tabulate(
+                        create_go_table(product),
+                        headers="firstrow",
+                        tablefmt="grid",
+                        maxcolwidths=100,
+                    )
+                    + "\n\n"
+                )
 
         return string
 
@@ -283,15 +393,23 @@ class ReportGenerator:
         """
         # Create the header string.
         string = f"TOP {self.top_n} miRNAs" + "\n"
-        string += f"+ annotates Product which is in top {self.top_n}, and - annotates Product which is in bottom {self.top_n}\n\n" 
+        string += f"+ annotates Product which is in top {self.top_n}, and - annotates Product which is in bottom {self.top_n}\n\n"
 
         # Get the top and bottom products based on the advanced score
-        sorted_products = sorted(self.reverse_lookup.products, key=lambda x: x.scores[products_score_key], reverse=True)
-        top_products = sorted_products[:self.top_n]
-        bottom_products = sorted_products[-self.top_n:]
+        sorted_products = sorted(
+            self.reverse_lookup.products,
+            key=lambda x: x.scores[products_score_key],
+            reverse=True,
+        )
+        top_products = sorted_products[: self.top_n]
+        bottom_products = sorted_products[-self.top_n :]
 
         # Get the top miRNAs.
-        top_miRNAs = sorted(self.reverse_lookup.miRNAs, key=lambda x: x.scores[mirna_score_key], reverse=True)[:self.top_n]
+        top_miRNAs = sorted(
+            self.reverse_lookup.miRNAs,
+            key=lambda x: x.scores[mirna_score_key],
+            reverse=True,
+        )[: self.top_n]
 
         # If verbosity is set to 1, create a table with the top miRNAs and their scores.
         if self.verbosity == 1:
@@ -309,12 +427,14 @@ class ReportGenerator:
                 for product_id, overlap in _miRNA.mRNA_overlaps.items():
                     if overlap >= self.reverse_lookup.miRNA_overlap_treshold:
                         inhibited_product_id.append(product_id)
-                
-                temp_list=[]
+
+                temp_list = []
                 temp_t_list = []
                 temp_b_list = []
                 for product_id in inhibited_product_id:
-                    if product_id == None or product_id == 'null': # TODO: CONTINUE FROM HERE! CHECK THAT THIS DOESN'T BREAK THE REPORT / CAUSE THE REPORT GENERATOR TO REPORT 0 SUPPRESSED ELEMENTS.
+                    if (
+                        product_id is None or product_id == "null"
+                    ):  # TODO: CONTINUE FROM HERE! CHECK THAT THIS DOESN'T BREAK THE REPORT / CAUSE THE REPORT GENERATOR TO REPORT 0 SUPPRESSED ELEMENTS.
                         continue
                     if any(product_id in sub.uniprot_id for sub in top_products):
                         temp_t_list.append(f"+{product_id}")
@@ -322,15 +442,28 @@ class ReportGenerator:
                         temp_b_list.append(f"-{product_id}")
                     else:
                         temp_list.append(f"{product_id}")
-                temp_list = temp_t_list + temp_list #To nsure the top/bottom products are displyed on top.
+                temp_list = (
+                    temp_t_list + temp_list
+                )  # To nsure the top/bottom products are displyed on top.
                 temp_list = temp_b_list + temp_list
-                table.append([_miRNA.id, _miRNA.scores[mirna_score_key], "\n".join(item for item in temp_list)])
+                table.append(
+                    [
+                        _miRNA.id,
+                        _miRNA.scores[mirna_score_key],
+                        "\n".join(item for item in temp_list),
+                    ]
+                )
             string += tabulate(table, headers="firstrow", tablefmt="grid") + "\n\n"
 
         # Return the summary string.
         return string
 
-    def general_report(self, filepath:str, product_score: Optional[Metrics] = None, miRNA_score: Optional[Metrics] = None):
+    def general_report(
+        self,
+        filepath: str,
+        product_score: Optional[Metrics] = None,
+        miRNA_score: Optional[Metrics] = None,
+    ):
         """
         Generates the general report and writes it to a file.
 
@@ -338,7 +471,7 @@ class ReportGenerator:
           - (str) filepath: The path to the output file.
           - (list(Metrics)) product_score: one or more Metrics implementations, which were used for the scoring of products
           - (list(Metrics)) miRNA_score: one ore more Metrics implementations, which were used for the scoring of miRNAs
-        
+
         Example usage:
             # Pull GO data #
             model = ReverseLookup.load_model("diabetes_angio_2/data.json")
@@ -368,45 +501,58 @@ class ReportGenerator:
             report = ReportGenerator(model, verbosity=3)
             report.general_report("diabetes_angio_1/general.txt", product_score=adv_score)
         """
-        filepath = filepath.replace("/", os.sep) # # replace any '/' to avoid having both \\ and / in a single filepath
-        
+        filepath = filepath.replace(
+            "/", os.sep
+        )  # # replace any '/' to avoid having both \\ and / in a single filepath
+
         # Generate header of the report
-        report = self._generate_header()+"\n\n"
+        report = self._generate_header() + "\n\n"
 
         # Generate section on GOTerms
         if len(self.reverse_lookup.goterms) > 0:
             report += self._generate_section("GO TERMS")
-            report += self._generate_goterms_statistics() + "\n" 
-            report += self._generate_goterm_per_process_table() + "\n" 
-        
+            report += self._generate_goterms_statistics() + "\n"
+            report += self._generate_goterm_per_process_table() + "\n"
+
         # Generate section on Products
         if len(self.reverse_lookup.products) > 0:
             report += self._generate_section("PRODUCTS")
             # TODO: bottom line results in error, if no product_score is supplied !!!
-            report += self._generate_top_bottom_products_summary(product_score.name) + "\n"
+            report += (
+                self._generate_top_bottom_products_summary(product_score.name) + "\n"
+            )
 
         # Generate section on miRNAs
         if len(self.reverse_lookup.miRNAs) > 0:
             report += self._generate_section("miRNAs")
-            report += self._generate_top_miRNAs_summary(product_score.name, miRNA_score.name) + "\n" 
+            report += (
+                self._generate_top_miRNAs_summary(product_score.name, miRNA_score.name)
+                + "\n"
+            )
 
         if not os.path.isabs(filepath):
-            current_dir = os.path.dirname(os.path.abspath(traceback.extract_stack()[0].filename))
-            mac_filepath = os.path.join(current_dir, filepath) # mac_filepath, since this approach works on a mac computer
+            current_dir = os.path.dirname(
+                os.path.abspath(traceback.extract_stack()[0].filename)
+            )
+            mac_filepath = os.path.join(
+                current_dir, filepath
+            )  # mac_filepath, since this approach works on a mac computer
 
         # Create directory for the report file, if it does not exist
         try:
-            os.makedirs(os.path.dirname(mac_filepath), exist_ok=True) # this approach works on a mac computer
-        
+            os.makedirs(
+                os.path.dirname(mac_filepath), exist_ok=True
+            )  # this approach works on a mac computer
+
             # Write the report to the output file
-            with open(mac_filepath, 'w') as f:
+            with open(mac_filepath, "w") as f:
                 f.write(report)
         except OSError:
             # TODO
-            # first pass is allowed, on Windows 10 this tries to create a file at 
+            # first pass is allowed, on Windows 10 this tries to create a file at
             # 'C:\\Program Files\\Python310\\lib\\diabetes_angio_1/general.txt'
             # which raises a permission error.
-            pass  
+            pass
 
         # fallback if the above fails
         try:
@@ -415,7 +561,7 @@ class ReportGenerator:
             win_filepath = FileUtil.find_win_abs_filepath(filepath)
             os.makedirs(os.path.dirname(win_filepath), exist_ok=True)
 
-            with open(win_filepath, 'w') as f:
+            with open(win_filepath, "w") as f:
                 f.write(report)
         except OSError:
             logger.info(f"ERROR! Cannot make directory at {os.path.dirname(filepath)}")
