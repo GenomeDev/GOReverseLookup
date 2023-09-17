@@ -550,7 +550,7 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                 )
                 return human_symbol
         logger.info(
-            f"DID NOT find human ortholog {human_symbol} for RGD gene {product_id}"
+            f"DID NOT find human ortholog for RGD gene {product_id}"
         )
         return None
         # return f"[RgdError_No-human-ortholog-found:product_id={product_id}"
@@ -596,6 +596,6 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                 )
                 return human_symbol
         logger.info(
-            f"DID NOT find human ortholog {human_symbol} for RGD gene {product_id}"
+            f"DID NOT find human ortholog for RGD gene {product_id}"
         )
         return None

@@ -263,7 +263,7 @@ class GOTerm:
         # data key is in the format [class_name][function_name][function_params]
         data_key = f"[{self.__class__.__name__}][{self.fetch_products_async_v3.__name__}][go_id={self.id}]"
         previous_data = Cacher.get_data("go", data_key)
-        if previous_data is not None:
+        if previous_data is not None and previous_data != {}:
             logger.debug(f"Cached previous product fetch data for {self.id}")
             self.products = previous_data
             return previous_data
@@ -307,7 +307,6 @@ class GOTerm:
                             f" {response.status}"
                         )
                         logger.warning(possible_http_error_text)
-                        # return f"HTTP Error: status = {response.status}, reason = {response.reason}"
                         continue
                     data = await response.json()
                     if data is not None:
@@ -339,11 +338,12 @@ class GOTerm:
             logger.warning(
                 f"Found no products for GO Term {self.id} (name = {self.name})!"
             )
+            logger.warning(f"  - response.json(): {data}")
             # if len(data) < 500:
             #    logger.debug(f"Response json: {data}")
 
         self.products = products
-        logger.info(f"Fetched products for GO term {self.id}")
+        logger.info(f"Fetched {len(products)} products for GO term {self.id}")
         Cacher.store_data("go", data_key, products)
         return products
 

@@ -33,7 +33,7 @@ class Cacher:
     @classmethod
     def init(
         cls,
-        cache_dir: str = "app/goreverselookup/cache",
+        cache_dir: str = "cache",
         store_data_atexit: bool = True,
     ):
         """
