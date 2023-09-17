@@ -120,9 +120,7 @@ class ReverseLookup:
                 f"  - goaf_filepath = {self.datafile_paths['goaf_filepath']}"
             )
 
-        self.go_api = (
-            GOApi()
-        )  # this enables us to use go_api inside Metrics.py, as importing GOApi inside Metrics.py creates circular imports.
+        self.go_api = GOApi() # this enables us to use go_api inside Metrics.py, as importing GOApi inside Metrics.py creates circular imports.
 
         if obo_parser is not None:
             self.obo_parser = obo_parser
@@ -501,7 +499,7 @@ class ReverseLookup:
     async def _fetch_all_goterm_products_async_v3(
         self,
         max_connections=100,
-        request_params={"rows": 20000},
+        request_params={"rows": 50000},
         req_delay=0.5,
         recalculate: bool = False,
     ):
@@ -1956,17 +1954,13 @@ class ReverseLookup:
         # Define constants used in parsing the file
         LINE_ELEMENT_DELIMITER = "\t"  # Data is tab separated
         COMMENT_DELIMITER = "#"  # Character used to denote a comment
-        LOGIC_LINE_DELIMITER = (  # Special set of characters to denote a "logic line"
-            "###"
-        )
+        LOGIC_LINE_DELIMITER = "###" # Special set of characters to denote a "logic line"
 
         target_processes = []
         go_categories = []
         go_terms = []
         settings = ModelSettings()
-        datafile_paths = (
-            {}
-        )  # a dictionary between data file types and their filepaths {'go_obo_filepath': "GO_OBO_FILEPATH", {...}, ...}
+        datafile_paths = {} # a dictionary between data file types and their filepaths {'go_obo_filepath': "GO_OBO_FILEPATH", {...}, ...}
 
         def process_comment(line):
             """
@@ -1986,6 +1980,10 @@ class ReverseLookup:
                 return line.split(COMMENT_DELIMITER)[0]
             else:
                 return line
+
+        filepath_readlines = 0
+        with open(filepath, 'r') as f:
+            filepath_readlines = len(f.readlines())
 
         def process_file(filepath: str):
             with open(filepath, "r") as read_content:
@@ -2152,10 +2150,12 @@ class ReverseLookup:
             """
 
         logger.info("Creating model from input file with:")
+        logger.info(f"  - input file filepath: {filepath}")
+        logger.info(f"  - input file line count: {filepath_readlines}")
         logger.info(f"  - count GO Terms: {len(go_terms)} ")
         logger.info(f"  - target_processes: {target_processes}")
         logger.info(f"  - GO categories: {go_categories}")
-        logger.info(f"  - model settings: {settings}")
+        logger.info(f"  - model settings: {settings.to_json()}")
         logger.info(f"  - obo_parser: {obo_parser}")
         logger.info(f"  - datafile_paths: {datafile_paths}")
         return cls(

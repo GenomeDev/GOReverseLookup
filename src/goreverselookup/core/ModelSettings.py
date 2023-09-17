@@ -28,9 +28,8 @@ class ModelSettings:
         self.homosapiens_only = False
         self.require_product_evidence_codes = False
         self.fisher_test_use_online_query = False
-        self.include_indirect_annotations = (
-            False  # previously: include_all_goterm_parents
-        )
+        self.include_indirect_annotations = False  # previously: include_all_goterm_parents
+        
         self.uniprotkb_genename_online_query = False
         self.pvalue = 0.05
 

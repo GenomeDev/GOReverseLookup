@@ -286,7 +286,7 @@ class Product:
 
             TODO: If there are multiple id_synonym(s), currently only the first is browsed. Implement logic for many id_synonyms / check if there are any products with multiple id synonyms.
         """
-        logger.info(f"Async fetch orthologs for: {self.id_synonyms}")
+        # logger.info(f"Async fetch orthologs for: {self.id_synonyms}")
 
         if not human_ortholog_finder:
             human_ortholog_finder = HumanOrthologFinder()
@@ -362,6 +362,11 @@ class Product:
             else:
                 self.genename = human_ortholog_gene_id
 
+        if self.genename != None:
+            logger.info(f"Fetched orthologs for: {self.genename}")
+        elif self.uniprot_id != None:
+            logger.info(f"Fetched orthologs for: {self.uniprot_id}")
+            
         self.had_orthologs_computed = True
 
     async def fetch_ortholog_async_semaphore(

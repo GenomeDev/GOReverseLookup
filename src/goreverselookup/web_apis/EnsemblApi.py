@@ -229,7 +229,7 @@ class EnsemblApi:
         )
         previous_result = Cacher.get_data("ensembl", ensembl_data_key)
         if previous_result is not None:
-            logger.debug(f"Returning cached ortholog for id {id}: {previous_result}")
+            logger.debug(f"Returning cached info for id {id}: {previous_result}")
             return previous_result
 
         species_mapping = {
@@ -411,9 +411,7 @@ class EnsemblApi:
         Returns:
             dict: Information about the gene
         """
-        if (
-            "Error" in id
-        ):  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
+        if ("Error" in id):  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
             logger.debug(
                 f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene"
                 " does not have a human ortholog and you are safe to ignore it."

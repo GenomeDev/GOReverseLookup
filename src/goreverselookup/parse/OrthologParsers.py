@@ -366,7 +366,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
                 line = self._readlines[line_index + 2]
                 second_split = line.split("\t")
                 if second_split[1] == "human":
-                    logger.debug("Found keyword 'human' on secondpass line querying.")
+                    # logger.debug("Found keyword 'human' on secondpass line querying.")
                     return second_split[3]
                 else:
                     # this still means no human ortholog!
@@ -427,7 +427,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
                 line = self._readlines[line_index + 2]
                 second_split = line.split("\t")
                 if second_split[1] == "human":
-                    logger.debug("Found keyword 'human' on secondpass line querying.")
+                    # logger.debug("Found keyword 'human' on secondpass line querying.")
                     return second_split[3]
                 else:
                     # this still means no human ortholog!
@@ -436,7 +436,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
             else:
                 return split[3]
 
-        logger.debug(f"Starting MGI search for {product_id}")
+        # logger.debug(f"Starting MGI search for {product_id}")
         product_id_short = ""
         if ":" in product_id:
             split = product_id.split(":")
@@ -451,15 +451,12 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
         for line in self._readlines:
             if product_id_short in line:
                 # if "mouse" gene smybol is found at line i, then human gene symbol will be found at line i+1
-                logger.debug(
-                    f"i = {i}, product_id_short = {product_id_short}, line = {line}"
-                )
                 human_symbol = _mgi_get_human_symbol_from_line(
                     self._readlines[i + 1], i
                 )
                 if "MgiError" in human_symbol:
                     logger.info(
-                        f"Couldn't find human ortholog for mgi gene {product_id}"
+                        f"DID NOT find human ortholog for mgi gene {product_id}"
                     )
                     return None
                 logger.info(

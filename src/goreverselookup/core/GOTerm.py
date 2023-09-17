@@ -49,9 +49,7 @@ class GOTerm:
             weight = 1.0
         self.weight = float(weight)
         self.products = products
-        self.http_error_codes = (
-            {}
-        )  # used for errors happening during server querying; for example, a dict pair 'products': "HTTP Error ..." signifies an http error when querying for GO Term's products
+        self.http_error_codes = {}  # used for errors happening during server querying; for example, a dict pair 'products': "HTTP Error ..." signifies an http error when querying for GO Term's products
         self.category = category
         self.parent_term_ids = parent_term_ids
         self.is_obsolete = is_obsolete
@@ -239,7 +237,7 @@ class GOTerm:
     async def fetch_products_async_v3(
         self,
         session: aiohttp.ClientSession,
-        request_params={"rows": 20000},
+        request_params={"rows": 50000},
         req_delay=0.5,
         max_retries=3,
     ):
@@ -263,8 +261,8 @@ class GOTerm:
         # data key is in the format [class_name][function_name][function_params]
         data_key = f"[{self.__class__.__name__}][{self.fetch_products_async_v3.__name__}][go_id={self.id}]"
         previous_data = Cacher.get_data("go", data_key)
-        if previous_data is not None and previous_data != {}:
-            logger.debug(f"Cached previous product fetch data for {self.id}")
+        if previous_data is not None and previous_data != []:
+            logger.debug(f"Cached previous product fetch data for {self.id}. Data = {previous_data}")
             self.products = previous_data
             return previous_data
 
@@ -281,6 +279,7 @@ class GOTerm:
 
         retries = 0
         data = None
+        response_url = ""
         for _ in range(max_retries):
             possible_http_error_text = ""
             if retries == (max_retries - 1):
@@ -308,6 +307,7 @@ class GOTerm:
                         )
                         logger.warning(possible_http_error_text)
                         continue
+                    response_url = response.url
                     data = await response.json()
                     if data is not None:
                         Cacher.store_data("url", url, data)
@@ -338,12 +338,14 @@ class GOTerm:
             logger.warning(
                 f"Found no products for GO Term {self.id} (name = {self.name})!"
             )
+            logger.warning(f"  - response.url: {response_url}")
             logger.warning(f"  - response.json(): {data}")
+            return []
             # if len(data) < 500:
             #    logger.debug(f"Response json: {data}")
 
         self.products = products
-        logger.info(f"Fetched {len(products)} products for GO term {self.id}")
+        logger.info(f"Fetched {len(products)} products for GO term {self.id} using {response_url}")
         Cacher.store_data("go", data_key, products)
         return products
 
