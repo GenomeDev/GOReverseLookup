@@ -317,7 +317,7 @@ class GOTerm:
                 except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError) as e:
                     logger.warning(f"Error when fetching products for {self.id}")
                     logger.warning(f"  - attempted url: {url}")
-                    raise e
+                    # raise e # TODO: implement logic for errors when querying GO Term products - refetch?
 
         products_set = set()
         for assoc in data["associations"]:

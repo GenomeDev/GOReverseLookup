@@ -24,7 +24,7 @@ Cacher.init(cache_dir="cache")
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file("input_files/input.txt")
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=0.1)
-model.fetch_all_go_term_products(web_download=True, run_async=True)
+model.fetch_all_go_term_products(web_download=True, run_async=True, max_connections=50)
 model.create_products_from_goterms()
 model.fetch_ortholog_products(
     run_async=True, max_connections=15, semaphore_connections=5, req_delay=0.1
