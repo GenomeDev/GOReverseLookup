@@ -123,9 +123,7 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
         self._check_file()
         with open(self._filepath, "r") as read_content:
             self._readlines = read_content.readlines()
-        logger.info(
-            f"ZFINHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
-        )
+        logger.info(f"ZFINHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
 
     def _check_file(self):
         os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
@@ -166,9 +164,7 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
                 e = _zfin_get_human_gene_symbol_from_line(line)
                 human_symbol = e[0]
                 human_gene_name = e[1]
-                logger.info(
-                    f"[ Returning human symbol {human_symbol} and {human_gene_name}"
-                )
+                # logger.info(f"[ Returning human symbol {human_symbol} and {human_gene_name}")
                 return human_symbol, human_gene_name
         return None
         # return [f"ZfinError_No-human-ortholog-found:product_id={product_id}"]
@@ -201,12 +197,9 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
                 e = _zfin_get_human_gene_symbol_from_line(line)
                 human_symbol = e[0]
                 human_gene_name = e[1]
-                logger.info(
-                    f"[ Returning human symbol {human_symbol} and {human_gene_name}"
-                )
+                # logger.info(f"[ Returning human symbol {human_symbol} and {human_gene_name}")
                 return human_symbol, human_gene_name
         return None
-        # return [f"ZfinError_No-human-ortholog-found:product_id={product_id}"]
 
 
 class XenbaseHumanOrthologFinder(HumanOrthologFinder):
@@ -229,9 +222,7 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
         self._check_file()
         with open(self._filepath, "r") as read_content:
             self._readlines = read_content.readlines()
-        logger.info(
-            f"XenbaseHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
-        )
+        logger.info(f"XenbaseHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
 
     def _check_file(self):
         os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
@@ -276,8 +267,11 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
                     f" xenbase gene {product_id}"
                 )
                 return human_symbol, human_gene_name
+        logger.info(
+            f"DID NOT find human ortholog for xenbase gene {product_id}"
+        )
         return None
-        # return [f"[XenbaseError_No-human-ortholog-found:product_id={product_id}"]
+
 
     async def find_human_ortholog_async(self, product_id):
         """
@@ -311,8 +305,10 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
                     f" xenbase gene {product_id}"
                 )
                 return human_symbol, human_gene_name
+        logger.info(
+            f"DID NOT find human ortholog for xenbase gene {product_id}"
+        )
         return None
-        # return [f"[XenbaseError_No-human-ortholog-found:product_id={product_id}"]
 
 
 class MGIHumanOrthologFinder(HumanOrthologFinder):
@@ -379,7 +375,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
             else:
                 return split[3]
 
-        logger.debug(f"Starting MGI search for {product_id}")
+        # logger.debug(f"Starting MGI search for {product_id}")
         product_id_short = ""
         if ":" in product_id:
             split = product_id.split(":")
@@ -394,15 +390,12 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
         for line in self._readlines:
             if product_id_short in line:
                 # if "mouse" gene smybol is found at line i, then human gene symbol will be found at line i+1
-                logger.debug(
-                    f"i = {i}, product_id_short = {product_id_short}, line = {line}"
-                )
                 human_symbol = _mgi_get_human_symbol_from_line(
                     self._readlines[i + 1], i
                 )
                 if "MgiError" in human_symbol:
                     logger.info(
-                        f"Couldn't find human ortholog for mgi gene {product_id}"
+                        f"DID NOT find human ortholog for mgi gene {product_id}"
                     )
                     return None
                 logger.info(
@@ -410,8 +403,10 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
                 )
                 return human_symbol  # return here doesnt affect line counter 'i', since if gene is found i is no longer needed
             i += 1
+        logger.info(
+            f"DID NOT find human ortholog for mgi gene {product_id}"
+        )
         return None
-        # return f"[MgiError_No-human-ortholog-found:product_id={product_id}"
 
     async def find_human_ortholog_async(self, product_id):
         """
@@ -472,8 +467,10 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
                 )
                 return human_symbol  # return here doesnt affect line counter 'i', since if gene is found i is no longer needed
             i += 1
+        logger.info(
+            f"DID NOT find human ortholog for mgi gene {product_id}"
+        )
         return None
-        # return f"[MgiError_No-human-ortholog-found:product_id={product_id}"
 
 
 class RGDHumanOrthologFinder(HumanOrthologFinder):
@@ -552,6 +549,9 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                     f"Found human ortholog {human_symbol} for RGD gene {product_id}"
                 )
                 return human_symbol
+        logger.info(
+            f"DID NOT find human ortholog {human_symbol} for RGD gene {product_id}"
+        )
         return None
         # return f"[RgdError_No-human-ortholog-found:product_id={product_id}"
 
@@ -595,5 +595,7 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                     f"Found human ortholog {human_symbol} for RGD gene {product_id}"
                 )
                 return human_symbol
+        logger.info(
+            f"DID NOT find human ortholog {human_symbol} for RGD gene {product_id}"
+        )
         return None
-        # return f"[RgdError_No-human-ortholog-found:product_id={product_id}"

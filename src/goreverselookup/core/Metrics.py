@@ -838,10 +838,10 @@ class fisher_exact_test(Metrics):
                         new_fisher = fisher_exact(new_cont_table)
                         new_pvalue = new_fisher.pvalue
                         if new_pvalue > previous_pvalue:
-                            logger.warning(
-                                "Newly calculated pvalue is greater! prev_pvalue ="
-                                f" {previous_pvalue}, new_pvalue = {new_pvalue}"
-                            )
+                            #logger.warning(
+                            #    "Newly calculated pvalue is greater! prev_pvalue ="
+                            #    f" {previous_pvalue}, new_pvalue = {new_pvalue}"
+                            #)
                             success = False
                             break
                         else:
