@@ -296,23 +296,28 @@ class GOTerm:
                 data = previous_response
                 break  # previous response json was cached, break the loop
             else:
-                await asyncio.sleep(req_delay)
-                response = await session.get(url, params=params)
-                if (
-                    response.status != 200
-                ):  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
-                    possible_http_error_text = (
-                        f"HTTP Error when parsing {self.id}. Response status ="
-                        f" {response.status}"
-                    )
-                    logger.warning(possible_http_error_text)
-                    # return f"HTTP Error: status = {response.status}, reason = {response.reason}"
-                    continue
-                data = await response.json()
-                if data is not None:
-                    Cacher.store_data("url", url, data)
-                    logger.debug(f"Cached async product fetch data for {self.id}")
-                    break  # reponse json was obtained, break the loop
+                try:
+                    await asyncio.sleep(req_delay)
+                    response = await session.get(url, params=params)
+                    if (
+                        response.status != 200
+                    ):  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
+                        possible_http_error_text = (
+                            f"HTTP Error when parsing {self.id}. Response status ="
+                            f" {response.status}"
+                        )
+                        logger.warning(possible_http_error_text)
+                        # return f"HTTP Error: status = {response.status}, reason = {response.reason}"
+                        continue
+                    data = await response.json()
+                    if data is not None:
+                        Cacher.store_data("url", url, data)
+                        logger.debug(f"Cached async product fetch data for {self.id}")
+                        break  # reponse json was obtained, break the loop
+                except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError) as e:
+                    logger.warning(f"Error when fetching products for {self.id}")
+                    logger.warning(f"  - attempted url: {url}")
+                    raise e
 
         products_set = set()
         for assoc in data["associations"]:

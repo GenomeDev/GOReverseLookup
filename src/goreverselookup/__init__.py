@@ -1,5 +1,5 @@
 from .Model import ReverseLookup
-from .Workflows import WorkflowOne
+from .Workflows import WorkflowOne, PrimaryWorkflow
 
 from .core.ModelSettings import ModelSettings
 from .core.GOTerm import GOTerm
@@ -38,7 +38,7 @@ from .web_apis.GOApi import GOApi
 __all__ = [
     "ReverseLookup",
     "WorkflowOne",
-    "WorkflowTwo",
+    "PrimaryWorkflow",
     "ModelSettings",
     "GOTerm",
     "nterms",

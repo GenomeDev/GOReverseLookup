@@ -776,9 +776,7 @@ class ReverseLookup:
         human_ortholog_finder = HumanOrthologFinder(
             goaf=self.goaf,
             zfin_filepath=third_party_db_files["zfin_human_ortho_mapping_filepath"],
-            xenbase_filepath=third_party_db_files[
-                "xenbase_human_ortho_mapping_filepath"
-            ],
+            xenbase_filepath=third_party_db_files["xenbase_human_ortho_mapping_filepath"],
             mgi_filepath=third_party_db_files["mgi_human_ortho_mapping_filepath"],
             rgd_filepath=third_party_db_files["rgd_human_ortho_mapping_filepath"],
         )
@@ -793,7 +791,7 @@ class ReverseLookup:
         )
         semaphore = asyncio.Semaphore(semaphore_connections)
         async with aiohttp.ClientSession(connector=connector) as session:
-            # async with create_session() as session:
+        # async with create_session() as session:
             tasks = []
             for product in self.products:
                 if product.had_orthologs_computed is False or refetch is True:
