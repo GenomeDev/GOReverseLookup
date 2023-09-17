@@ -519,8 +519,8 @@ class EnsemblApi:
                         await asyncio.sleep(self.async_request_sleep_delay)
                 else:
                     raise Exception("no ensembl id returned")
-            except Exception:
-                logger.warning(f"Failed to fetch Ensembl info for {id}.")
+            except Exception as e:
+                logger.warning(f"Failed to fetch Ensembl info for {id}. Error = {e}")
                 return {}
 
         if "error" in response_json or response_json is None:

@@ -213,7 +213,7 @@ class Cacher:
                     )
 
     @classmethod
-    def get_data(cls, data_location: str, data_key: str):
+    def get_data(cls, data_location: str, data_key: str, debug_log:bool=False):
         if cls.is_init is False:
             cls.init()
 
@@ -231,7 +231,8 @@ class Cacher:
 
         if cached_data != {}:
             if data_key in cached_data:
-                logger.info(f"Successfully cached old data for {data_key}.")
+                if debug_log:
+                    logger.info(f"Successfully returned old data for {data_key}.")
                 return_value = cached_data[data_key]["data_value"]
 
                 # bugfix: some urls return the following response: {'error': 'No valid lookup found for symbol Oxct2a'}
@@ -368,7 +369,7 @@ class ConnectionCacher(Cacher):
                     )  # save cached urls
 
     @classmethod
-    def get_url_response(cls, url: str):
+    def get_url_response(cls, url: str, debug_log:bool=False):
         """
         Obtains the response of the 'url' from previously cached urls, if the same url already exists.
         Previously cached urls and their responses are stored in root/cache/connection_cache.json.
@@ -385,9 +386,10 @@ class ConnectionCacher(Cacher):
         if cls.cached_urls != {}:
             if url in cls.cached_urls:
                 # TODO: implement url age option, eg. if the user selects "previous month", if the url is older than that, return None
-                logger.info(
-                    f"Cached response for {url}: {cls.cached_urls[url]['response']}"
-                )
+                if debug_log:
+                    logger.info(
+                        f"Cached response for {url}: {cls.cached_urls[url]['response']}"
+                    )
                 return cls.cached_urls[url]["response"]
             else:  # url wasn't found
                 return None
