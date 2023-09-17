@@ -191,6 +191,7 @@ class EnsemblApi:
     def get_sequence(self, ensembl_id, sequence_type="cdna"):
         """
         Given an Ensembl ID, returns the corresponding nucleotide sequence using the Ensembl API.
+        type can be genomic,cds,cdna,protein
         """
         url = f"https://rest.ensembl.org/sequence/id/{ensembl_id}?object_type=transcript;type={sequence_type}"
         try:

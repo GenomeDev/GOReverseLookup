@@ -41,6 +41,7 @@ version = "0.0.0"
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-asyncio",
     "tox",
     "ruff",
     "black",
