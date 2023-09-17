@@ -116,7 +116,7 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
         """
         if filepath == "":
             self._filepath = (
-                "app/goreverselookup/data_files/zfin_human_ortholog_mapping.txt"
+                "data_files/zfin_human_ortholog_mapping.txt"
             )
         else:
             self._filepath = filepath
@@ -221,7 +221,7 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
         """
         if filepath == "":
             self._filepath = (
-                "app/goreverselookup/data_files/xenbase_human_ortholog_mapping.txt"
+                "data_files/xenbase_human_ortholog_mapping.txt"
             )
         else:
             self._filepath = filepath
@@ -328,7 +328,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
         """
         if filepath == "":
             self._filepath = (
-                "app/goreverselookup/data_files/mgi_human_ortholog_mapping.txt"
+                "data_files/mgi_human_ortholog_mapping.txt"
             )
         else:
             self._filepath = filepath
@@ -489,7 +489,7 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
         """
         if filepath == "":
             self._filepath = (
-                "app/goreverselookup/data_files/rgd_human_ortholog_mapping.txt"
+                "data_files/rgd_human_ortholog_mapping.txt"
             )
         else:
             self._filepath = filepath
