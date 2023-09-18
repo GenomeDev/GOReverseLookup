@@ -271,9 +271,9 @@ class ReverseLookup:
         web_download: bool = True,
         run_async=True,
         recalculate: bool = False,
-        delay: float = 0.0,
+        delay: float = 0.2,
         run_async_options: str = "v3",
-        request_params={"rows": 50000},
+        request_params={"rows": 50000, "taxon": "NCBITaxon:9606"},
         max_connections=60,
     ):
         """
@@ -499,7 +499,7 @@ class ReverseLookup:
     async def _fetch_all_goterm_products_async_v3(
         self,
         max_connections=100,
-        request_params={"rows": 50000},
+        request_params={"rows": 50000, "taxon": "NCBITaxon:9606"},
         req_delay=0.5,
         recalculate: bool = False,
     ):
