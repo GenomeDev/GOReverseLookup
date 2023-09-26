@@ -57,7 +57,7 @@ class GOApi:
             return None
 
     def get_products(
-        self, term_id, get_url_only=False, request_params={"rows": 10000000}
+        self, term_id, get_url_only=False, get_response_only=False, request_params={"rows": 10000000}
     ):
         """
         Fetches product IDs (gene ids) associated with a given term ID from the Gene Ontology API. The product IDs can be of any of the following
@@ -97,6 +97,9 @@ class GOApi:
                 response.raise_for_status()
 
                 json = response.json()
+                if get_response_only == True:
+                    return json
+                
                 for assoc in json["associations"]:
                     if assoc["object"]["id"] == term_id and any(
                         (

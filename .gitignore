@@ -7,6 +7,9 @@ results/*
 exe_version/data_files/*
 exe_version/cache/*
 exe_version/results/*
+archive/*
+tests_debug/*
+log_output/association_differences.json
 .vscode
 
 

@@ -48,7 +48,7 @@ fisher_score = fisher_exact_test(model)
 model.score_products(
     score_classes=[nterms_score, adv_prod_score, binom_score, fisher_score]
 )
-model.model_settings.pvalue = 0.05  # set pvalue to be used in statistical analysis
+model.model_settings.pvalue = 0.10  # set pvalue to be used in statistical analysis
 model.perform_statistical_analysis(
     test_name="fisher_test", filepath="results/statistically_relevant_genes.json"
 )
