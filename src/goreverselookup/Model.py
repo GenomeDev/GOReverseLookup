@@ -141,6 +141,14 @@ class ReverseLookup:
         Sets self.model_settings to the model settings supplied in the parameter.
         """
         self.model_settings = model_settings
+    
+    def get_goterm(self, goterm_id:str):
+        """
+        Returns the GO Term object associated with the input 'goterm_id' string
+        """
+        for goterm in self.goterms:
+            if goterm.id == goterm_id:
+                return goterm
 
     def set_model_setting(self, setting: str, value):
         """
@@ -219,7 +227,7 @@ class ReverseLookup:
             result[datafile_type] = self.get_datafile_path(datafile_type)
         return result
 
-    def fetch_all_go_term_names_descriptions(self, run_async=True, req_delay=0.1):
+    def fetch_all_go_term_names_descriptions(self, run_async=True, req_delay=0.1, max_connections=50):
         """
         Iterates over all GOTerm objects in the go_term set and calls the fetch_name_description method for each object.
         """
@@ -229,7 +237,7 @@ class ReverseLookup:
         if run_async is True:
             asyncio.run(
                 self._fetch_all_go_term_names_descriptions_async(
-                    api, req_delay=req_delay
+                    api, req_delay=req_delay, max_connections=max_connections
                 )
             )
         else:
@@ -252,19 +260,23 @@ class ReverseLookup:
         self.timer.print_elapsed_time()
 
     async def _fetch_all_go_term_names_descriptions_async(
-        self, api: GOApi, req_delay=0.1
+        self, api: GOApi, req_delay=0.1, max_connections=50
     ):
         """
         Call fetch_all_go_term_names_descriptions with run_async == True to run this code.
         """
-        tasks = []
-        for goterm in self.goterms:
-            if goterm.name is None or goterm.description is None:
-                task = asyncio.create_task(
-                    goterm.fetch_name_description_async(api, req_delay=req_delay)
-                )
-                tasks.append(task)
-        await asyncio.gather(*tasks)
+        connector = aiohttp.TCPConnector(
+            limit=max_connections, limit_per_host=max_connections
+        ) 
+        async with aiohttp.ClientSession(connector=connector) as session:
+            tasks = []
+            for goterm in self.goterms:
+                if goterm.name is None or goterm.description is None:
+                    task = asyncio.create_task(
+                        goterm.fetch_name_description_async(api=api, session=session, req_delay=req_delay)
+                    )
+                    tasks.append(task)
+            await asyncio.gather(*tasks)
 
     def fetch_all_go_term_products(
         self,
@@ -562,7 +574,7 @@ class ReverseLookup:
                 self.products.append(
                     Product.from_dict({"id_synonyms": [product], "genename": product})
                 )
-        logger.info("Created Product objects from GOTerm object definitions")
+        logger.info(f"Created {len(self.products)} Product objects from GOTerm object definitions")
 
         if "create_products_from_goterms" not in self.execution_times:
             self.execution_times[

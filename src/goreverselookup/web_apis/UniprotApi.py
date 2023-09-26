@@ -611,7 +611,7 @@ class UniProtApi:
         if previous_response is not None:
             response_json = previous_response
         else:
-            asyncio.sleep(self.async_request_sleep_delay)
+            await asyncio.sleep(self.async_request_sleep_delay)
             QUERY_RETRIES = 3  # TODO: make parameter
             i = 0
             for _ in range(QUERY_RETRIES):
@@ -629,7 +629,7 @@ class UniProtApi:
                         f" {str(e)}"
                     )
                     self.uniprot_query_exceptions.append({f"{uniprot_id}": f"{str(e)}"})
-                    await asyncio.sleep(2)  # sleep before retrying
+                    await asyncio.sleep(self.async_request_sleep_delay)  # sleep before retrying
                     continue
 
         # single query retry

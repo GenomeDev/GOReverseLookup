@@ -475,7 +475,6 @@ class EnsemblApi:
                 # TODO: 19.08.2023: the below link doesn't work for any other {species} in endpoint other than human. Ie.
                 # zebrafish, xenbase, mgi, rgd don't work !!!
                 # The xrefs link is supposed to work for parameter 'id's which are not ENSG
-
                 ensembl_id = ""
                 if "ENS" not in id:
                     # parameter id is not ensembl, attempt to find ensembl id
@@ -577,6 +576,9 @@ class EnsemblApi:
             #    pass
             except Exception as e:
                 logger.warning(f"Exception: {e}")
+                if "Too Many Requests" in (f"{e}"):
+                    logger.info(f"Too many requests detected. Sleeping for 5 seconds.")
+                    await asyncio.sleep(5)
                 pass
 
             uniprot_id = ""

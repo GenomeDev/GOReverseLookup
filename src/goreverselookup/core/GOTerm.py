@@ -129,22 +129,21 @@ class GOTerm:
                 self.description = data['definition']
             logger.info(f"Fetched name and description for GO term {self.id}")
 
-    async def fetch_name_description_async(self, api: GOApi, req_delay=0.1):
-        async with aiohttp.ClientSession() as session:
-            url = api.get_data(self.id, get_url_only=True)
-            response = await session.get(url)
-            if response.status == 200:
-                data = await response.json()
-                await asyncio.sleep(req_delay)
-                if "label" in data:
-                    self.name = data['label']
-                if "definition" in data:
-                    self.description = data['definition']
-                # logger.info(f"Fetched name and description for GO term {self.id}")
-                # print out only 15 desc chars not to clutter console
-                logger.info(f"GOid {self.id}: name = {self.name}, description = {self.description[:15]}...")
-            else:
-                logger.info(f"Query for url {url} failed with response code {response.status}")
+    async def fetch_name_description_async(self, api: GOApi, session:aiohttp.ClientSession, req_delay=0.1):
+        url = api.get_data(self.id, get_url_only=True)
+        response = await session.get(url)
+        if response.status == 200:
+            data = await response.json()
+            await asyncio.sleep(req_delay)
+            if "label" in data:
+                self.name = data['label']
+            if "definition" in data:
+                self.description = data['definition']
+            # logger.info(f"Fetched name and description for GO term {self.id}")
+            # print out only 15 desc chars not to clutter console
+            logger.info(f"GOid {self.id}: name = {self.name}, description = {self.description[:15]}...")
+        else:
+            logger.info(f"Query for url {url} failed with response code {response.status}")
     
     def fetch_products(self, source):
         """
@@ -247,7 +246,7 @@ class GOTerm:
                         logger.warning(possible_http_error_text)
                         # return f"HTTP Error: status = {response.status}, reason = {response.reason}"
                         continue
-                        data = await response.json()
+                    data = await response.json()
                     if data != None:
                         Cacher.store_data("url", url, data)
                         logger.debug(f"Cached async product fetch data for {self.id}")
@@ -272,17 +271,6 @@ class GOTerm:
         logger.info(f"Fetched products for GO term {self.id}")
         Cacher.store_data("go", data_key, products)
         return products
-    
-    """
-    async def fetch_products_async(self, source):
-        #Warning: this function doesn't work if source is GO Annotations File
-        if not isinstance(source, GOApi):
-            logger.warning("Cannot connect asynchronously, if GOApi is not set as source.")
-        async with aiohttp.ClientSession() as session:
-            url = source.get_products(self.id)
-            response = await session.get(url)
-            # TODO: MOVE THIS TO ANNOTATIONPROCESSOR
-    """
 
     def compare_products_to_list(self, products_comparison_list:list):
         """
