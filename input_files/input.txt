@@ -120,7 +120,7 @@
 #homosapiens_only	True
 #require_product_evidence_codes	False
 fisher_test_use_online_query	False
-include_indirect_annotations	False
+include_indirect_annotations	True
 uniprotkb_genename_online_query	False
 pvalue	0.05
 ###filepaths

@@ -640,7 +640,10 @@ class fisher_exact_test(Metrics):
                 # num_goterms_product_general = len(self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories))
                 logger.debug(f"Fisher test online num_goterms_product_general query: {num_goterms_product_general}")
             else:  # offline pathway: get goterms from GOAF
-                goterms_product_general = self.goaf.get_all_terms_for_product(product.genename)
+                if self.reverse_lookup.model_settings.include_indirect_annotations == True:
+                    goterms_product_general = self.goaf.get_all_terms_for_product(product.genename, indirect_annotations=True, obo_parser=self.reverse_lookup.obo_parser)
+                else:
+                    goterms_product_general = self.goaf.get_all_terms_for_product(product.genename)
                 num_goterms_product_general = len(goterms_product_general)  # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
 
             # find the number of parent indirect annotations

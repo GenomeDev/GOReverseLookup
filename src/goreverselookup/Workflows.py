@@ -10,6 +10,7 @@ from .core.Metrics import (
     basic_mirna_score,
 )
 from .core.Report import ReportGenerator
+from .core.ModelSettings import ModelSettings
 
 import logging
 
@@ -321,7 +322,10 @@ class PrimaryWorkflow(Workflow):
     def create_workflow(self, debug: bool = False, fetch_mirna=False):
         # Fetch all GO term names and descriptions
         self.add_function(
-            self.model.fetch_all_go_term_names_descriptions, run_async=True
+            self.model.fetch_all_go_term_names_descriptions, 
+            run_async=True,
+            req_delay=0.5,
+            max_connections=20
         )
         # Fetch all GO term products
         self.add_function(
@@ -331,7 +335,7 @@ class PrimaryWorkflow(Workflow):
             recalculate=False,
             max_connections=40,
             request_params={"rows": 50000},
-            delay=0.0,
+            delay=0.5,
         )
         # Create product instances from GO terms
         self.add_function(self.model.create_products_from_goterms)
@@ -340,7 +344,7 @@ class PrimaryWorkflow(Workflow):
             self.model.fetch_ortholog_products,
             refetch=False,
             run_async=True,
-            max_connections=15,
+            max_connections=10,
             req_delay=0.1,
             semaphore_connections=5,
         )
@@ -351,7 +355,7 @@ class PrimaryWorkflow(Workflow):
             self.model.fetch_product_infos,
             refetch=False,
             run_async=True,
-            max_connections=12,
+            max_connections=15,
             semaphore_connections=10,
             req_delay=0.1,
         )

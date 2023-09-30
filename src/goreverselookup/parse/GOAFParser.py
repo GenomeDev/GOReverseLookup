@@ -3,6 +3,8 @@ import os
 import gzip
 import urllib
 
+from .OBOParser import OboParser
+
 import logging
 
 # from logging import config
@@ -23,6 +25,7 @@ class GOAnnotationsFile:
         """
         This class provides access to a Gene Ontology Annotations File, which stores the relations between each GO Term and it's products (genes),
         along with an evidence code, confirming the truth of the interaction. A GO Annotation comprises of a) GO Term, b) gene / gene product c) evidence code.
+        WARNING: GOAF stores only DIRECT annotations (See https://geneontology.org/docs/faq/ "Why does AmiGO display annotations to term X but these annotations aren’t in the GAF file?")
 
         Parameters:
           - (str) filepath: the filepath to the GO Annotations File downloaded file from http://current.geneontology.org/products/pages/downloads.html -> Homo Sapiens (EBI Gene Ontology Database) - protein = goa_human.gaf; link = http://geneontology.org/gene-associations/goa_human.gaf.gz
@@ -145,13 +148,15 @@ class GOAnnotationsFile:
                 return "cellular_component"
         return None
 
-    def get_all_products_for_goterm(self, goterm_id: str) -> List[str]:
+    def get_all_products_for_goterm(self, goterm_id: str, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
         """
         This method returns all unique products associated with the GO term id.
         The return of this function is influenced by the go_categories supplied to the constructor of the GOAF!
 
         Args:
-            goterm_id (str): a GO Term identifier, eg. GO:0003723
+          - (str) goterm_id: a GO Term identifier, eg. GO:0003723
+          - (bool) indirect_annotations: if True, will return a list of unique products for the specified goterm_id and for all of the children goterms of the 'goterm_id'
+          - (OboParser) obo_parser: an OboParser instance, to prevent recalculations. If no OboParser is passed, then this function will attempt to call OboParser() to create an OboParser instance.
 
         Returns:
             List[str]: a List of all product (gene/gene products) gene names, eg. ['NUDT4B', ...]
@@ -162,7 +167,21 @@ class GOAnnotationsFile:
         if self.terms_dict is None:
             self.populate_terms_dict()
 
-        return self.terms_dict.get(goterm_id, [])
+        direct_products = self.terms_dict.get(goterm_id, [])
+        if indirect_annotations == False:
+            return direct_products
+        else:
+            if obo_parser is None:
+                obo_parser = OboParser()
+
+            indirect_products = []
+            child_goterm_ids = obo_parser.get_child_terms(goterm_id)
+            for child_goterm_id in child_goterm_ids:
+                child_products = self.terms_dict.get(child_goterm_id, [])
+                indirect_products += child_products
+            
+            return set(direct_products + indirect_products)
+            
 
     def populate_poducts_dict(self):
         """
@@ -172,24 +191,11 @@ class GOAnnotationsFile:
         GO Terms (eg. ['GO:0003723', ...])
         """
         self.products_dict = {}
-        for (
-            line
-        ) in (
-            self._readlines
-        ):  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
+        for line in self._readlines:  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
             chunks = line.split("\t")
-            self.products_dict.setdefault(chunks[2], set()).add(
-                chunks[4]
-            )  # create a key with the line's product gene name (if the key already exists, don't re-create the key - specified by the setdefault method) and add the associated GO Term to the value set. eg. {'NUDT4B': {'GO:0003723'}}, after first line is processed, {'NUDT4B': {'GO:0003723'}, 'NUDT4B': {'GO:0046872'}} after second line ...
-        for (
-            key,
-            values,
-        ) in (
-            self.products_dict.items()
-        ):  # the set() above prevents the value elements (GO Terms) in dictionary to be repeated
-            self.products_dict[key] = list(
-                values
-            )  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
+            self.products_dict.setdefault(chunks[2], set()).add(chunks[4])  # create a key with the line's product gene name (if the key already exists, don't re-create the key - specified by the setdefault method) and add the associated GO Term to the value set. eg. {'NUDT4B': {'GO:0003723'}}, after first line is processed, {'NUDT4B': {'GO:0003723'}, 'NUDT4B': {'GO:0046872'}} after second line ...
+        for key,values in self.products_dict.items():  # the set() above prevents the value elements (GO Terms) in dictionary to be repeated
+            self.products_dict[key] = list(values)  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
 
     def populate_terms_dict(self):
         """
@@ -199,32 +205,21 @@ class GOAnnotationsFile:
         associated product gene names (eg. ['NUDT4B', ...])
         """
         self.terms_dict = {}
-        for (
-            line
-        ) in (
-            self._readlines
-        ):  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
+        for line in self._readlines:  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
             chunks = line.split("\t")
-            self.terms_dict.setdefault(chunks[4], set()).add(
-                chunks[2]
-            )  # create a key with the line's GO Term (if the key already exists, don't re-create the key - specified by the setdefault method) and add the product' gene name to the value set. eg. {'GO:0003723': {'NUDT4B'}}, after first line is processed, {'GO:0003723': {'NUDT4B'}, 'GO:0046872': {'NUDT4B'}} after second line ...
-        for (
-            key,
-            values,
-        ) in (
-            self.terms_dict.items()
-        ):  # the previous set() prevents the value elements (product gene names) in dictionary to be repeated
-            self.terms_dict[key] = list(
-                values
-            )  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
+            self.terms_dict.setdefault(chunks[4], set()).add(chunks[2])  # create a key with the line's GO Term (if the key already exists, don't re-create the key - specified by the setdefault method) and add the product' gene name to the value set. eg. {'GO:0003723': {'NUDT4B'}}, after first line is processed, {'GO:0003723': {'NUDT4B'}, 'GO:0046872': {'NUDT4B'}} after second line ...
+        for key,values in self.terms_dict.items():  # the previous set() prevents the value elements (product gene names) in dictionary to be repeated
+            self.terms_dict[key] = list(values)  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
 
-    def get_all_terms_for_product(self, product: str) -> List[str]:
+    def get_all_terms_for_product(self, product: str, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
         """
         Gets all GO Terms associated to a product gene name.
         The return of this function is influenced by the go_categories supplied to the constructor of the GOAF!
 
         Args:
           - (str) product: must be a gene name corresponding to a specific gene/gene product, eg. NUDT4B
+          - (bool) indirect_annotations: if True, will also return all indirectly annotated terms for product (ie. all children of directly annotated terms in the GOAF)
+          - (OboParser) obo_parser: an OboParser instance, to prevent recalculations. If no OboParser is passed, then this function will attempt to call OboParser() to create an OboParser instance.
 
         Returns:
           - List[str]: a List of all GO Term ids associated with the input product's gene name
@@ -234,7 +229,20 @@ class GOAnnotationsFile:
         if self.products_dict is None:
             self.populate_poducts_dict()
 
-        return self.products_dict.get(product, [])
+        direct_annotations = self.products_dict.get(product, [])
+        if indirect_annotations == False:
+            return direct_annotations
+        else:
+            if obo_parser is None:
+                obo_parser = OboParser()
+
+            indirect_annotations = []
+            for goterm_id in direct_annotations:
+                children = obo_parser.get_child_terms(goterm_id)
+                indirect_annotations += children
+            
+            return (direct_annotations + indirect_annotations)
+
 
     def get_all_terms(self) -> List[str]:
         """

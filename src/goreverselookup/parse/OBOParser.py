@@ -1,7 +1,7 @@
 import networkx as nx
 import os
+from typing import Set, List, Dict, Optional
 
-from ..core.GOTerm import GOTerm
 from ..util.Timer import Timer
 
 import logging
@@ -9,6 +9,29 @@ import logging
 # from logging import config
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+
+# workaround class, as importing GOTerm would cause a circular import
+class GOTerm_placeholder:
+    def __init__(self, id: str, processes: List[Dict] = None, name: Optional[str] = None, description: Optional[str] = None, category: Optional[str] = None, parent_term_ids: Optional[List[str]] = None, is_obsolete:bool = False, weight: float = 1.0, products: List[str] = [], http_error_codes:dict={}):
+        """
+        A placeholder class to construct GO Terms
+
+        Args:
+            id (str): The ID of the GO term.
+            name (str): Name (optional).
+            description (str): A description of the GO term (optional).
+            products (list): Products associated with the term (optional).
+            category (str): biological_process, molecular_activity or cellular_component
+            parent_term_ids (list[str]): GO ids of the parent terms (parsed from .obo)
+            is_obsolete (bool): if the term is labelled as obsolete in the .obo file
+        """
+        self.id = id
+        self.name = name
+        self.description = description
+        self.products = products
+        self.category = category
+        self.parent_term_ids = parent_term_ids
+        self.is_obsolete = is_obsolete
 
 
 class OboParser:
@@ -69,7 +92,7 @@ class OboParser:
                         if "is_obsolete" not in term_data:
                             term_data["is_obsolete"] = False
 
-                        current_goterm = GOTerm(
+                        current_goterm = GOTerm_placeholder(
                             id=term_data["id"],
                             name=term_data["name"],
                             category=term_data["category"],
@@ -89,16 +112,12 @@ class OboParser:
                         case "name":
                             term_data["name"] = line_value
                         case "def":
-                            line_value = line_value.strip(
-                                '"'
-                            )  # definition line value contains double quotes in obo, strip them
+                            line_value = line_value.strip('"')  # definition line value contains double quotes in obo, strip them
                             term_data["description"] = line_value
                         case "namespace":
                             term_data["category"] = line_value
                         case "is_a":
-                            line_value = line_value.split(" ")[
-                                0
-                            ]  # GO:0000090 ! mitotic anaphase -> split into GO:0000090
+                            line_value = line_value.split(" ")[0]  # GO:0000090 ! mitotic anaphase -> split into GO:0000090
                             term_data["parent_term_ids"].append(line_value)
                         case "is_obsolete":
                             is_obsolete = True if line_value == "true" else False
@@ -107,7 +126,7 @@ class OboParser:
         # all go terms from OBO are now constructed as GOTerm objects in all_goterms dictionary
         # create a Direcected Acyclic Graph from the created GO Terms
         for goid, goterm in all_goterms.items():
-            assert isinstance(goterm, GOTerm)
+            assert isinstance(goterm, GOTerm_placeholder)
             if dag.has_node(goterm.id) is False:
                 dag.add_node(goterm.id)
             for parent_id in goterm.parent_term_ids:
@@ -117,24 +136,20 @@ class OboParser:
         self.filepath = obo_filepath
         self.dag = dag
         self.all_goterms = all_goterms
-        self.previously_computed_parents_cache = (
-            {}
-        )  # cache dictionary between already computed goterms and their parents
-        self.previously_computed_children_cache = (
-            {}
-        )  # cache dictionary between already computed goterms and their children
+        self.previously_computed_parents_cache = {}  # cache dictionary between already computed goterms and their parents
+        self.previously_computed_children_cache = {} # cache dictionary between already computed goterms and their children
         logger.info("Obo parser init completed.")
 
     def get_parent_terms(
-        self, term_id: str, return_as_class: bool = False, ordered: bool = True
+        self, term_id: str, return_as_json:bool = False, ordered: bool = True
     ):
         """
         Gets all of GO Term parents of 'term_id'.
 
         Parameters:
           - (str) term_id: The GO Term whose parents you wish to obtain
-          - (bool) return_as_class: If False, will return a list of string ids of parent GO Terms.
-                                    If True, will return a list of GO Term parent classes.
+          - (bool) return_as_json: If False, will return a list of string ids of parent GO Terms.
+                                    If True, will return a list of GO Term parents represented as JSON objects, with the following structure: {'id':xxxx, 'name':xxxx, 'description':xxxxx, 'products':[...], 'category':xxxx, 'parent_term_ids':[...], 'is_obsolete':True/False}
           - (bool) ordered: If True, parents will be returned topologically (closest parents will be listed first in the returned list)
 
         Returns: A list of parent GO Terms (either ids or classes)
@@ -162,8 +177,8 @@ class OboParser:
         # logger.debug(f"ancestors ordering elapsed: {timer.get_elapsed_formatted('milliseconds', reset_start_time=True)}")
 
         for parent_id in ancestors:
-            if return_as_class is True:
-                parents.append(self.all_goterms[parent_id])
+            if return_as_json is True:
+                parents.append(self.all_goterms[parent_id].__dict__)
             else:
                 parents.append(parent_id)
 
@@ -173,15 +188,15 @@ class OboParser:
         return parents
 
     def get_child_terms(
-        self, term_id: str, return_as_class: bool = False, ordered: bool = True
+        self, term_id: str, return_as_json: bool = False, ordered: bool = True
     ):
         """
         Gets all of GO Term children of 'term_id'.
 
         Parameters:
           - (str) term_id: The GO Term whose children you wish to obtain
-          - (bool) return_as_class: If False, will return a list of string ids of parent GO Terms.
-                                    If True, will return a list of GO Term parent classes.
+          - (bool) return_as_json: If False, will return a list of string ids of parent GO Terms.
+                                    If True, will return a list of GO Term parents represented as JSON objects, with the following structure: {'id':xxxx, 'name':xxxx, 'description':xxxxx, 'products':[...], 'category':xxxx, 'parent_term_ids':[...], 'is_obsolete':True/False}
           - (bool) ordered: If True, parents will be returned topologically (closest children will be listed first in the returned list)
 
         Returns: A list of children GO Terms (either ids or classes)
@@ -209,8 +224,8 @@ class OboParser:
         # logger.debug(f"descendants ordering elapsed: {timer.get_elapsed_formatted('milliseconds', reset_start_time=True)}")
 
         for child_id in descendants:
-            if return_as_class is True:
-                children.append(self.all_goterms[child_id])
+            if return_as_json is True:
+                children.append(self.all_goterms[child_id].__dict__)
             else:
                 children.append(child_id)
 

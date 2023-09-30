@@ -1841,7 +1841,7 @@ class ReverseLookup:
         )
         logger.info(
             "Finished with product statistical analysis. Found"
-            f" {len(statistically_relevant_products)} statistically relevant products."
+            f" {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}"
         )
         JsonUtil.save_json(
             data_dictionary=statistically_relevant_products_final_sorted,
@@ -1916,18 +1916,12 @@ class ReverseLookup:
             else:
                 obo_parser = OboParser()
             for goterm in goterms:
-                assert isinstance(goterm, GOTerm)
+                assert isinstance(goterm, GOTerm) # TODO: FIX HERE !!!!!!!!! obo now returns a dict and not a goterm!!!
                 if goterm.parent_term_ids == [] or goterm.parent_term_ids is None:
-                    goterm_obo = obo_parser.all_goterms[
-                        goterm.id
-                    ]  # obo representation of this goterm
-                    goterm.update(
-                        goterm_obo
-                    )  # update current goterm with information from .obo file
+                    goterm_obo = GOTerm.from_dict(obo_parser.all_goterms[goterm.id].__dict__)  # obo representation of this goterm is in json form
+                    goterm.update(goterm_obo)  # update current goterm with information from .obo file
 
-                    goterm_parent_ids = obo_parser.get_parent_terms(
-                        goterm.id
-                    )  # calculate parent term ids for this goterm
+                    goterm_parent_ids = obo_parser.get_parent_terms(goterm.id)  # calculate parent term ids for this goterm
                     goterm.parent_term_ids = goterm_parent_ids  # update parent term ids
 
         products = []
@@ -2127,25 +2121,13 @@ class ReverseLookup:
                 for goterm in tqdm(go_terms, desc="Compute indirect nodes"):
                     assert isinstance(goterm, GOTerm)
                     if goterm.parent_term_ids == [] or goterm.parent_term_ids is None:
-                        goterm_obo = obo_parser.all_goterms[
-                            goterm.id
-                        ]  # obo representation of this goterm
-                        goterm.update(
-                            goterm_obo
-                        )  # update current goterm with information from .obo file
+                        goterm_obo = GOTerm.from_dict(obo_parser.all_goterms[goterm.id].__dict__)  # obo representation of this goterm
+                        goterm.update(goterm_obo)  # update current goterm with information from .obo file
 
-                        goterm_parent_ids = obo_parser.get_parent_terms(
-                            goterm.id
-                        )  # calculate parent term ids for this goterm
-                        goterm_children_ids = obo_parser.get_child_terms(
-                            goterm.id
-                        )  # calculdate child term ids for this goterm
-                        goterm.parent_term_ids = (
-                            goterm_parent_ids  # update parent term ids
-                        )
-                        goterm.child_term_ids = (
-                            goterm_children_ids  # update child term ids
-                        )
+                        goterm_parent_ids = obo_parser.get_parent_terms(goterm.id)  # calculate parent term ids for this goterm
+                        goterm_children_ids = obo_parser.get_child_terms(goterm.id)  # calculdate child term ids for this goterm
+                        goterm.parent_term_ids = goterm_parent_ids  # update parent term ids
+                        # goterm.child_term_ids = goterm_children_ids  # update child term ids
             logger.info("Indirect annotations have been computed.")
 
             """      
@@ -2158,7 +2140,7 @@ class ReverseLookup:
                     goterm_parent_ids = obo_parser.get_parent_terms(goterm.id) # calculate parent term ids for this goterm
                     goterm_children_ids = obo_parser.get_child_terms(goterm.id) # calculdate child term ids for this goterm
                     goterm.parent_term_ids = goterm_parent_ids # update parent term ids
-                    goterm.child_term_ids = goterm_children_ids # update child term ids
+                    # goterm.child_term_ids = goterm_children_ids # update child term ids
             """
 
         logger.info("Creating model from input file with:")
