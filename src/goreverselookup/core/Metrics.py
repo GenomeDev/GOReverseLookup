@@ -770,7 +770,7 @@ class fisher_exact_test(Metrics):
                 ):  # TODO: check the logic of should_continue_current_loop
                     continue
 
-                fisher = fisher_exact(cont_table)
+                fisher = fisher_exact(cont_table, alternative="greater")
                 fisher_pvalue = fisher.pvalue
                 odds_ratio = fisher.statistic
 
@@ -805,7 +805,7 @@ class fisher_exact_test(Metrics):
                             # logger.warning("Values in cont. table are negative.")
                             success = False
                             break
-                        new_fisher = fisher_exact(new_cont_table)
+                        new_fisher = fisher_exact(new_cont_table, alternative="greater")
                         new_pvalue = new_fisher.pvalue
                         if new_pvalue > previous_pvalue:
                             #logger.warning(
