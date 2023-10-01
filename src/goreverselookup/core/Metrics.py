@@ -553,19 +553,19 @@ class fisher_exact_test(Metrics):
     set of GOt for angio+       | num_goterms_product_process   | ?                            | num_goterms_all_process
     --------------------------------------------------------------------------------------------------
     general set of GOt (all)    |                               |                              |
-    MINUS set of GOt for angio+ | ?                             | ?                            | num_goterms_all_general
+    MINUS set of GOt for angio+ | ?                             | ?                            | 
     --------------------------------------------------------------------------------------------------
-    total                       | num_goterms_product_general   | num_goterms_all_general      |
+    total                       | num_goterms_product_general   |                              | num_goterms_all_general 
 
     The complete table can now be calculated:
-                                    | n GOt (contains SOX2)         | n GOt (doesnt contain SOX2)                               | total
+                                    | n GOt (contains gene)         | n GOt (doesnt contain gene)                               | total
     -------------------------------------------------------------------------------------------------------------------------------------------------------
-    set of GOt for angio+           | num_goterms_product_process   | num_goterms_all_process - num_goterms_product_process     |  num_goterms_all_process
+    set of GOt for process+         | num_goterms_product_process   | num_goterms_all_process - num_goterms_product_process     |  num_goterms_all_process
     -------------------------------------------------------------------------------------------------------------------------------------------------------
-    general set of GOt (all)        | num_goterms_product_general - | num_goterms_all_general -                                 |
-    MINUS set of GOt for angio+     | num_goterms_product_process   | (num_goterms_all_process - num_goterms_product_process)   |
+    general set of GOt (all)        | num_goterms_product_general - | num_goterms_all_general - num_goterms_product_general -   | num_goterms_all_general -
+    MINUS set of GOt for process+   | num_goterms_product_process   | (num_goterms_all_process - num_goterms_product_process)   | num_goterms_all_process
     -------------------------------------------------------------------------------------------------------------------------------------------------------
-    total                           | num_goterms_product_general   | num_goterms_all_general                                   |
+    total                           | num_goterms_product_general   | num_goterms_all_general - num_goterms_product_general     | num_goterms_all_general
 
 
     Ladi original:
@@ -615,7 +615,7 @@ class fisher_exact_test(Metrics):
             )
 
     def metric(self, product: Product) -> Dict:
-        D_DEBUG_CALCULATE_DESIRED_N_PROD_PROCESS = True  # TODO: delete this # calculates num_goterms_product_process which would be sufficient for the product's statistical importance (p < 0.05)
+        D_DEBUG_CALCULATE_DESIRED_N_PROD_PROCESS = False  # TODO: delete this # calculates num_goterms_product_process which would be sufficient for the product's statistical importance (p < 0.05)
 
         if self._num_all_goterms == 0:
             self._num_all_goterms = len(self.goaf.get_all_terms())
@@ -712,9 +712,27 @@ class fisher_exact_test(Metrics):
                     ],
                     [
                         num_goterms_product_general - num_goterms_product_process,
-                        num_goterms_all_general - (num_goterms_all_process - num_goterms_product_process)
+                        num_goterms_all_general - num_goterms_product_general - (num_goterms_all_process - num_goterms_product_process)
                     ],
                 ]
+
+                """ TODO: START FROM HERE! 
+                if num_goterms_product_process == 0:
+                    results_dict[f"{process['process']}{direction}"] = {
+                        "n_prod_process": num_goterms_product_process,
+                        "n_all_process": num_goterms_all_process,
+                        "n_prod_general": num_goterms_product_general,
+                        "n_all_general": num_goterms_all_general,
+                        "required_n_prod_process_for_statistical_relevance": None,
+                        "expected": None,
+                        "fold_enrichment": None,
+                        "pvalue": None,
+                        "odds_ratio": None,
+                        "goterms_prod_process": None,
+                        "status": "num_goterms_product_process is 0, thus not statistically relevant"
+                    }
+                    continue # continue to the next loop iteration (next process direction)
+                """
 
                 # check that any contingency table element is non-negative
                 should_continue_current_loop = False
@@ -824,7 +842,6 @@ class fisher_exact_test(Metrics):
                     "n_all_process": num_goterms_all_process,
                     "n_prod_general": num_goterms_product_general,
                     "n_all_general": num_goterms_all_general,
-                    "num": num_goterms_product_process,
                     "required_n_prod_process_for_statistical_relevance": (
                         required_n_prod_process_for_stat_relevance
                     ),
