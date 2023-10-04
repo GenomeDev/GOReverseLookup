@@ -20,12 +20,12 @@
 #			If False, fisher test will compute num_goterms_products_general (= the number of goterms associated with a product) via an offline pathway using GOAF parsing.
 #	- include_indirect_annotations:
 #			When querying GO terms associated with genes, only specific directly annotated GO Terms are returned (this is a direct annotation).
-#			However, all of the parents of a directly annotated GO Term are also indirectly connected to the gene in question (these are indirect annotations).
+#			However, all of the children of a directly annotated GO Term are also indirectly connected to the gene in question (these are indirect annotations).
 #
 #			Likewise, when computing the number of GO Terms associated with a user-defined pathophysiological process, the GO Terms that the user defines count as direct annotations.
 #			However, all the children of the directly annotated GO Terms (indirect annotations) to a pathophysiological process should also count towards the modulation of that pathophysiological process.
 #
-#			If this setting is set to True, each each GO Term relevant to the analysis will have a list of it's parents and child term ids computed (using go.obo). These ids will be taken
+#			If this setting is set to True, each each GO Term relevant to the analysis will have a list of it's child term ids computed (using go.obo). These ids will be taken
 #			into account when performing the fisher exact test. 
 #			If this setting is set to False, only directly annotated GO Terms will be accounted for during the scoring process.
 #	- uniprotkb_genename_online_query:

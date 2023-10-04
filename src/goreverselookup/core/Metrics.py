@@ -628,7 +628,7 @@ class fisher_exact_test(Metrics):
 
             # num_goterms_product_general ... # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
             #   - can be queried either via online or offline pathway (determined by model_settings.fisher_test_use_online_query)
-            #   - can have all parent terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_indirect_annotations
+            #   - can have all child terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_indirect_annotations
             if self.reverse_lookup.model_settings.fisher_test_use_online_query is True:  # online pathway: get goterms associated with this product via a web query
                 goterms_product_general = self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories)
                 if goterms_product_general is not None:
@@ -646,6 +646,18 @@ class fisher_exact_test(Metrics):
                     goterms_product_general = self.goaf.get_all_terms_for_product(product.genename)
                 num_goterms_product_general = len(goterms_product_general)  # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
 
+            """
+            # This is probably an error - why did we even bother implementing the parent scores?
+            # GOxxx
+            #   - GOxxx <-- this term doesnt have the gene (parent)
+            #       - GOxxx <-- gene associated to this term
+            #           - GOxxx <-- indirect annotation (child)
+            #               - GOxxx <-- indirect annotation (child)
+            #   - GOxxx <-- this term doesn't have the gene
+            #       ...
+            #   - GOxxx
+            #       ...
+            
             # find the number of parent indirect annotations
             if self.reverse_lookup.model_settings.include_indirect_annotations is True:
                 # include all parent goterms in the scoring
@@ -656,7 +668,18 @@ class fisher_exact_test(Metrics):
                 # delete duplicate parents by converting a list to set
                 goterms_product_general = set(goterms_product_general)
                 num_goterms_product_general = len(goterms_product_general)  # calculate new num_goterms_product_general
-
+            """
+            # find the number of child indirect annotations
+            if self.reverse_lookup.model_settings.include_indirect_annotations is True:
+                # include all indirect annotations for num_goterms_product_general
+                directly_associated_goterms = list(goterms_product_general) # calling list constructor creates two separate entities, which prevents infinite looping !
+                for directly_associated_goterm in directly_associated_goterms:  # WARNING: don't iterate over goterms_product_general, since this list is being updated in the for loop !!
+                    child_goterms = self.reverse_lookup.obo_parser.get_child_terms(directly_associated_goterm)  # indirectly associated goterms
+                    goterms_product_general += child_goterms  # expand goterms_product_general by the child goterms
+                # delete duplicate children by converting a list to set
+                goterms_product_general = set(goterms_product_general)
+                num_goterms_product_general = len(goterms_product_general)  # calculate new num_goterms_product_general
+    
             for direction in ["+", "-"]:
                 # num_goterms_product_process = sum(1 for goterm in process_goterms_list if (any(goterm_process['direction'] == direction for goterm_process in goterm.processes) and (any(product_id in goterm.products for product_id in product.id_synonyms) or product.genename in goterm.products)))
                 # the above line is a single-line implementation of the below nested for loops
