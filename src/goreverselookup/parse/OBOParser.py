@@ -200,6 +200,26 @@ class OboParser:
           - (bool) ordered: If True, parents will be returned topologically (closest children will be listed first in the returned list)
 
         Returns: A list of children GO Terms (either ids or classes)
+
+        Example usage: We want to query child terms of 'GO:0003924 GTPase activity'
+        When looking at Amigo2's inferred tree view for GO:0003924 (https://amigo.geneontology.org/amigo/term/GO:0003924#display-lineage-tab), we see the following structure: 
+        GO:0003924 GTPase activity
+          - (is_a_relation) GO:0003925 G protein activity
+          - (capable_of_relation) GO:1905360 GTPase complex
+          - (is_a_relation) GO:0061791 GTPase motor activity
+              - (is_a_relation) GO:1990606 membrane scission GTPase motor activity
+          - GO:0034260 negative regulation of GTPase activity
+          - GO:0043547 positive regulation of GTPase activity
+          - GO:0043087 regulation of GTPase activity
+        
+        We construct the following code:
+            from goreverselookup import OboParser
+            obo_parser = OboParser()
+            child_terms = obo_parser.get_child_terms("GO:0003924")
+            -> return: 3 children: ['GO:0003925', 'GO:0061791', 'GO:1990606']
+        
+        As we can see, the program returns only the children terms of GO:0003924 that are quatified with the
+        'is_a_relation' relationship. It correctly queries the children, even the nested children.
         """
         # attempt to cache old data
         if term_id in self.previously_computed_children_cache:
