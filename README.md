@@ -332,6 +332,12 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+## Setting up an editable GOReverseLookup installation in Visual Studio Code
+When developing code for the GOReverseLookup project, it is useful to create an **editable install**, which means that every change in the GOReverseLookup package's files will apply to any function/class calls that are made outside of the package. This is a useful feature when developing new functionalities since it circumvents the need to re-execute the `pip install .` when any changes to the source code are made. This mini-guide is intended for Windows users:
+1. [Create a new Python virtual environment](https://code.visualstudio.com/docs/python/environments): Inside VSCode, open the GOReverseLookup project from a folder. Then, press `CTRL + SHIFT + P` to open the command palette and then search for (and click on) the `Python: Create Environment` option, and then select the `venv` option. Then, select the currently installed Python interpreter (should be auto-detected by VSCode). If the installation of the local venv environment is successful, then a `.venv` folder will be created in the project's root, which contains the virtual environment for the newly created project.
+2. Open the Terminal of the project (the filepath in the terminal should point to the project's root) and run the command: `pip install -e .`
+3. Wait for the pip to correctly complete the editable installation.
+
 # License
 Distributed using Apache 2.0 License. See `LICENSE.txt` for more information.
 
