@@ -11,11 +11,49 @@ import logging
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
 
+class GOAFMaster:
+    def __init__(
+            self,
+            goa_filepaths: dict = {
+                'human': {
+                    'organism': "human",
+                    'local_filepath': "data_files/goa_human.gaf",
+                    'download_url': "http://geneontology.org/gene-associations/goa_human.gaf.gz",
+                },
+                'danio_rerio': {
+                    'organism': "danio_rerio",
+                    'local_filepath': "data_files/zfin.gaf",
+                    'download_url': "http://current.geneontology.org/annotations/zfin.gaf.gz"
+                },
+                'rattus_norvegicus': {
+                    'organism': "rattus_norvegicus",
+                    'local_filepath': "data_files/rgd.gaf",
+                    'download_url': "http://current.geneontology.org/annotations/rgd.gaf.gz"
+                },
+                'mus_musculus': {
+                    'organism': "mus_musculus",
+                    'local_filepath': "data_files/mgi.gaf",
+                    'download_url': "http://current.geneontology.org/annotations/mgi.gaf.gz"
+                },
+                'xenopus': {
+                    'organism': "xenopus",
+                    'local_filepath': "data_files/xenbase.gaf",
+                    'download_url': "http://current.geneontology.org/annotations/xenbase.gaf.gz"
+                }
+            },
+            go_categories: list = ["biological_process", "molecular_activity", "cellular_component"]
+    ):
+        """
+        This is a master-class, which allows managing of several GOAnnotationsFiles (for different organisms).
+        """
+        self.goa_filepaths = goa_filepaths
+        self.go_categories = go_categories
+        # TODO: finish implementation
 
 class GOAnnotationsFile:
     def __init__(
         self,
-        filepath: str = "app/goreverselookup/data_files/goa_human.gaf",
+        filepath: str = "data_files/goa_human.gaf",
         go_categories: list = [
             "biological_process",
             "molecular_activity",

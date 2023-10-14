@@ -18,7 +18,6 @@ import logging
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
 
-
 class Metrics:
     """
     A super-class (interface) for the scoring used in the GO Reverse Lookup. It has to be implemented by a subclass, specifically you have
@@ -398,17 +397,25 @@ class binomial_test(Metrics):
         self.name = "binomial_test"
         self._num_all_goterms = 0
 
-    def metric(self, product: Product) -> Dict:
+    def metric(self, product: Product, use_goaf=False) -> Dict:
+        """
+        WARNING: 'use_goaf' determines if the GO Annotations File will be used to determine num_goterms_all (the set of all goterms in existence).
+        If you wish to use EVERY GO Term in existence, then set 'use_goaf' to False - this will use the .obo instead to query all GO Terms in existence.
+        However, if you wish to use a GO Annotations File for a specific species (e.g. ZFIN), then set use_goaf to True, so a ZFIN.gaf file will be used to
+        calculate all GO Terms in existence for the zebrafish. You must construct the binomial_test instance in this case with the ZFIN.gaf!!!
+        """
         # get the count of all GO terms from the GOAF
         if self._num_all_goterms == 0:
-            self._num_all_goterms = len(self.goaf.get_all_terms())
+            if use_goaf == True:
+                self._num_all_goterms = len(self.goaf.get_all_terms())
+            else: # use .obo
+                self._num_all_goterms = len(self.reverse_lookup.obo_parser.get_goterms(validity='valid', go_categories=self.reverse_lookup.go_categories))
 
         results_dict = {}
 
         for process in self.reverse_lookup.target_processes:
-            process_goterms_list = self.reverse_lookup.get_all_goterms_for_process(
-                process["process"]
-            )  # get all (positive, negative, neutral) GO terms for this process from the input file
+            process_goterms_list = self.reverse_lookup.get_all_goterms_for_process(process["process"])  # get all (positive, negative, neutral) GO terms for this process from the input file
+            # TODO: debate on the use of .goaf for num_goterms_product_general
             num_goterms_product_general = len(
                 self.goaf.get_all_terms_for_product(product.genename)
             )  # get all GO terms associated with this product from the GOAF
@@ -614,17 +621,30 @@ class fisher_exact_test(Metrics):
                 go_categories=self.reverse_lookup.go_categories,
             )
 
-    def metric(self, product: Product) -> Dict:
+    def metric(self, product: Product, use_goaf=False) -> Dict: # TODO: IMPLEMENT .OBO INSTEAD OF GOAF FOR NUM_GOTERMS_ALL !!!
+        """
+        Computes the Fisher exact score for this gene product.
+
+        WARNING: 'use_goaf' determines if the GO Annotations File will be used to determine num_goterms_all (the set of all goterms in existence).
+        If you wish to use EVERY GO Term in existence, then set 'use_goaf' to False - this will use the .obo instead to query all GO Terms in existence.
+        However, if you wish to use a GO Annotations File for a specific species (e.g. ZFIN), then set use_goaf to True, so a ZFIN.gaf file will be used to
+        calculate all GO Terms in existence for the zebrafish. You must construct the binomial_test instance in this case with the ZFIN.gaf!!!
+        """
         D_DEBUG_CALCULATE_DESIRED_N_PROD_PROCESS = False  # TODO: delete this # calculates num_goterms_product_process which would be sufficient for the product's statistical importance (p < 0.05)
+        D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_PROCESS_ALL = False # TODO: remove/integrate this
 
         if self._num_all_goterms == 0:
-            self._num_all_goterms = len(self.goaf.get_all_terms())
+            if use_goaf == True:
+                self._num_all_goterms = len(self.goaf.get_all_terms())
+            else:
+                # use .obo to compute all goterms
+                self._num_all_goterms = len(self.reverse_lookup.obo_parser.get_goterms(validity="valid", go_categories=self.reverse_lookup.go_categories))
 
         results_dict = {}
 
         for process in self.reverse_lookup.target_processes:  # example self.reverse_lookup.target_processes: [0]: {'process': 'chronic_inflammation', 'direction': '+'}, [1]: {{'process': 'cancer', 'direction': '+'}}
             process_goterms_list = self.reverse_lookup.get_all_goterms_for_process(process["process"])  # all GO Term ids associated with a specific process (eg. angio, diabetes, obesity) for the current MODEL
-            num_goterms_all_general = (self._num_all_goterms)  # number of all GO Terms from the GO Annotations File (current total: 18880)
+            num_goterms_all_general = self._num_all_goterms  # number of all GO Terms from the GO Annotations File (current total: 18880)
 
             # num_goterms_product_general ... # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
             #   - can be queried either via online or offline pathway (determined by model_settings.fisher_test_use_online_query)
@@ -717,6 +737,15 @@ class fisher_exact_test(Metrics):
                     num_indirect_children += len(all_indirect_children)
 
                 # first, compute the sum of direct annotations
+                goterms_all_process = []
+                # TODO: integrate process-specific lists of GO Terms into the ReverseLookup instance to prevent recalculations
+                for goterm in process_goterms_list:
+                    if any(
+                        goterm_process["direction"] == direction
+                        for goterm_process in goterm.processes
+                    ):
+                        goterms_all_process.append(goterm)
+
                 num_goterms_all_process = sum(
                     1
                     for goterm in process_goterms_list
@@ -725,7 +754,19 @@ class fisher_exact_test(Metrics):
                         for goterm_process in goterm.processes
                     )
                 )  # all of the GO Terms from input.txt file associated with the current process (and the process' regulation direction)
-                num_goterms_all_process += num_indirect_children # if children are computed for goterms, then also increase num_goterms_all_process, to prevent negative values in the contingency table (specifically upper-right quadrant: num_goterms_all_process-num_goterms_product_process) 
+                
+                # TODO: MAKE A SETTING FOR THIS !!!
+                # compute indirectly annotated goterms of goterms_all_process
+                if D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_PROCESS_ALL == True:
+                    goterms_all_process_indirect = set()
+                    for goterm in goterms_all_process:
+                        children = self.reverse_lookup.obo_parser.get_child_terms(goterm.id)
+                        goterms_all_process_indirect.update(children)
+                    num_goterms_all_process += len(goterms_all_process_indirect)
+                else:
+                    # if children are computed for goterms, then also increase num_goterms_all_process, to prevent negative values in the contingency table (specifically upper-right quadrant: num_goterms_all_process-num_goterms_product_process) 
+                    # don't run this if indirect annotations are already computed for num_goterms_all_proces
+                    num_goterms_all_process += num_indirect_children 
 
                 # time for Binomial test and "risk ratio"
                 cont_table = [

@@ -1,4 +1,6 @@
 import os
+import requests
+import shutil
 
 import logging
 
@@ -235,3 +237,40 @@ class FileUtil:
                 return True
         except FileNotFoundError:
             logger.warning(f"File {filepath} wasn't found!")
+    
+    @classmethod
+    def download_file(cls, filepath:str, download_url:str):
+        """
+        Downloads the file specified by 'download_url' to 'filepath'.
+        
+        Warning: For .txt web files, rather use the download_text_file function.
+        """
+        if os.path.exists(filepath) and not cls.is_file_empty(filepath):
+            logger.info(f"File {filepath} exists and isn't empty.")
+            return
+        # file doesn't exist or is empty -> create filepath tree and download
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        response = requests.get(download_url, stream=True)
+        if response.status_code == 200:
+            with open(filepath, 'wb') as file:
+                shutil.copyfileobj(response.raw, file)
+            if not cls.is_file_empty(filepath):
+                logger.info(f"Successfully downloaded {download_url} to {filepath}!")
+        else:
+            raise Exception(f"Failed to download {download_url}! Response code: {response.status_code}, reason: {response.reason}")
+
+    @classmethod
+    def download_txt_file(cls, filepath:str, download_url:str):
+        """
+        Use this function to download .txt files from the web.
+
+        Downloads 'download_url' and saves it into 'filepath'
+        """
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        if not os.path.exists(filepath):
+            url = download_url
+            response = requests.get(url)
+            with open(filepath, "wb") as f:
+                f.write(response.content)
+        if not cls.is_file_empty(filepath):
+            logger.info(f"Successfully downloaded {download_url} to {filepath}")

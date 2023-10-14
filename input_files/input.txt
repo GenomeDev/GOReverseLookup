@@ -123,13 +123,21 @@ fisher_test_use_online_query	False
 include_indirect_annotations	True
 uniprotkb_genename_online_query	False
 pvalue	0.05
+#
+#goterms_set	all
+#goterms_set	HomoSapiens,ZFIN,MGI,RGD,Xenbase
+#
 ###filepaths
-go_obo_filepath	data_files/go.obo
-goaf_filepath	data_files/goa_human.gaf
-zfin_human_ortho_mapping_filepath	data_files/zfin_human_ortholog_mapping.txt
-mgi_human_ortho_mapping_filepath	data_files/mgi_human_ortholog_mapping.txt
-rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
-xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
 ###processes [proces name] [to be expressed + or suppressed -]
 chronic_inflammation	+
 cancer	+
@@ -215,8 +223,11 @@ GO:2000510	chronic_inflammation	+	1	positive regulation of dendritic cell chemot
 GO:2000509	chronic_inflammation	-	1	negative regulation of dendritic cell chemotaxis
 GO:0005125	chronic_inflammation	+	1	cytokine activity
 GO:0001618	chronic_inflammation	+	1	virus receptor activity
-GO:0038146	chronic_inflammation	+	1	chemokine (C-X-C motif) ligand 12 signaling pathway 
+GO:0038146	chronic_inflammation	+	1	chemokine (C-X-C motif) ligand 12 signaling pathway
+GO:0070098	chronic_inflammation	+	1	chemokine-mediated signaling pathway
 GO:0038160	chronic_inflammation	+	1	CXCL12-activated CXCR4 signaling pathway # doi: 10.7150/thno.5135 (Involvement of CXCR4/CXCR7/CXCL12 Interactions in Inflammatory Bowel Disease)
+GO:0070101	chronic_inflammation	+	1	positive regulation of chemokine-mediated signaling pathway
+GO:0070100	chronic_inflammation	-	1	negative regulation of chemokine-mediated signaling pathway
 
 # immune effector process parent node
 GO:0002698	chronic_inflammation	-	1	negative regulation of immune effector process
@@ -331,8 +342,8 @@ GO:0030308	cancer	-	1	negative regulation of cell growth
 GO:0030307	cancer	+	1	positive regulation of cell growth
 GO:0043069	cancer	+	1	negative regulation of programmed cell death
 GO:0062100	cancer	-	1	positive regulation of programmed necrotic cell death
-#GO:0043065	cancer	-	1	positive regulation of apoptotic process
-#GO:0043066	cancer	+	1	negative regulation of apoptotic process
+GO:0043065	cancer	-	1	positive regulation of apoptotic process
+GO:0043066	cancer	+	1	negative regulation of apoptotic process
 GO:0001569	cancer	+	1	branching involved in blood vessel morphogenesis
 GO:1905555	cancer	+	1	positive regulation of blood vessel branching
 GO:1905554	cancer	-	1	negative regulation of vessel branching
@@ -370,6 +381,8 @@ GO:1903265	cancer	+	1	positive regulation of tumor necrosis factor-mediated sign
 GO:0010804	cancer	-	1	negative regulation of tumor necrosis factor-mediated signaling pathway
 GO:0030335	cancer	+	1	positive regulation of cell migration
 GO:0030336	cancer	-	1	negative regulation of cell migration
+GO:0004674	cancer	+	1	protein serine/threonine kinase activity # https://molecular-cancer.biomedcentral.com/articles/10.1186/s12943-018-0804-2, https://pubmed.ncbi.nlm.nih.gov/32479955/
+GO:0060397	cancer	+	1	growth hormone receptor signaling pathway via JAK-STAT #  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7602614 --> the overactivation of JAK/STAT proteins, as well as the reduction of the different SOCS, are associated with proliferation, progression, metastasis, and survival in various types of tumor cells
 
 # cell differentiation:
 GO:0045596	cancer	+	1	negative regulation of cell differentiation
@@ -377,8 +390,11 @@ GO:0045597	cancer	-	1	positive regulation of cell differentiation
 
 # JNK cascade:  evidence indicates that this Janus signaling promotes cancer cell survival. JNK acts synergistically with NF-κB, JAK/STAT, and other signaling molecules to exert a survival function (https://onlinelibrary.wiley.com/doi/abs/10.1002/med.21574#:~:text=c%2DJun%20N%2Dterminal%20kinase,to%20exert%20a%20survival%20function)
 GO:0007254	cancer	+	1	JNK cascade
+GO:0004705	cancer	+	1	JUN kinase activity # 10.1002/med.21574 - JNK signaling in cancer cell survival
 GO:0046330	cancer	+	1	positive regulation of JNK cascade
 GO:0046329	cancer	-	1	negative regulation of JNK cascade
+GO:0043507	cancer	+	1	positive regulation of JUN kinase activity
+GO:0043508	cancer	-	1	negative regulation of JUN kinase activity
 
 # Wnt cascade; # ... leading to actin cytoskeleton rearrangement. In addition, Dvl activates Rac and finally JNK (c-Jun-N-terminal-kinase) thereby modulating cell migration. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5853106/; doi: 10.1016/j.critrevonc.2015.12.005)
 GO:0090263	cancer	+	1	positive regulation of canonical Wnt signaling pathway	

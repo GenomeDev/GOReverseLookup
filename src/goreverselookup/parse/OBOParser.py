@@ -3,6 +3,7 @@ import os
 from typing import Set, List, Dict, Optional
 
 from ..util.Timer import Timer
+from ..util.FileUtil import FileUtil
 
 import logging
 
@@ -35,13 +36,14 @@ class GOTerm_placeholder:
 
 
 class OboParser:
-    def __init__(self, obo_filepath: str = "app/goreverselookup/data_files/go.obo"):
+    def __init__(self, obo_filepath: str = "data_files/go.obo", obo_download_url:str = "https://purl.obolibrary.org/obo/go.obo"):
         """
         Parses the Gene Ontology OBO file.
 
         Params:
           - (str) obo_filepath: the filepath to the obo file
         """
+        FileUtil.download_file(filepath=obo_filepath, download_url=obo_download_url)
         dag = (
             nx.MultiDiGraph()
         )  # DiGraph cannot store multiple edges, therefore use MiltiDiGraph!!!
@@ -61,6 +63,11 @@ class OboParser:
 
         # read all GO terms from the OBO file
         all_goterms = {}  # mapping of all go ids to GOTerm objects
+        all_valid_goterms = {} # mapping of all valid GOTerms (which are not obsolete)
+        all_valid_BP_goterms = {} # mapping of all valid "Biological Process" GO Terms
+        all_valid_MF_goterms = {} # mapping of all valid "Molecular Function" GO Terms
+        all_valid_CC_goterms = {} # mapping of all valid "Cellular Component" GO Terms
+        all_obsolete_goterms = {} # mapping of all obsolete GOTerms
 
         # exe version bugfix:
         if not os.path.exists(obo_filepath):
@@ -101,6 +108,19 @@ class OboParser:
                             is_obsolete=term_data["is_obsolete"],
                         )
                         all_goterms[current_goterm.id] = current_goterm
+                        if is_obsolete == True:
+                            all_obsolete_goterms[current_goterm.id] = current_goterm
+                        else:
+                            all_valid_goterms[current_goterm.id] = current_goterm
+                        
+                        match current_goterm.category:
+                            case "molecular_function":
+                                all_valid_MF_goterms[current_goterm.id] = current_goterm
+                            case "biological_process":
+                                all_valid_BP_goterms[current_goterm.id] = current_goterm
+                            case "cellular_component":
+                                all_valid_CC_goterms[current_goterm.id] = current_goterm
+
                     term_data = _reset_term_data()  # reset term data for a new goterm
                 else:  # Term is not in line -> line is GO Term data -> process term data in this block
                     chunks = line.split(": ", 1)  # split only first ": " element
@@ -136,6 +156,11 @@ class OboParser:
         self.filepath = obo_filepath
         self.dag = dag
         self.all_goterms = all_goterms
+        self.all_valid_goterms = all_valid_goterms
+        self.all_valid_BP_goterms = all_valid_BP_goterms
+        self.all_valid_MF_goterms = all_valid_MF_goterms
+        self.all_valid_CC_goterms = all_valid_CC_goterms
+        self.all_obsolete_goterms = all_obsolete_goterms
         self.previously_computed_parents_cache = {}  # cache dictionary between already computed goterms and their parents
         self.previously_computed_children_cache = {} # cache dictionary between already computed goterms and their children
         logger.info("Obo parser init completed.")
@@ -252,3 +277,33 @@ class OboParser:
         # cache and return
         self.previously_computed_children_cache[term_id] = children
         return children
+
+    def get_goterms(self, validity="valid", go_categories:list=["molecular_function", "biological_process", "cellular_component"]): # TODO: CONTINUE WITH IMPLEMENTATION OF GO CATEGORIES
+        """
+        Returns all GOTerms with respect to the validity scope.
+
+        The possible 'validity' scopes are:
+          - 'all': returns all GO Terms, both valid and obsolete GO Terms
+          - 'valid': returns only the valid GO Terms (who don't have is_obsolete = False)
+          - 'obsolete': returns only the obsolete GO Terms (who have is_obsolete = True)
+        """
+        if validity == "all":
+            return self.all_goterms
+        if validity == "obsolete":
+            return self.all_obsolete_goterms
+        
+        if validity == "valid":
+            # return valid goterms with respect to selected go_categories
+            return_result = {}
+            for category in go_categories:
+                match category:
+                    case "biological_process":
+                        return_result = {**return_result, **self.all_valid_BP_goterms}
+                    case "molecular_function":
+                        return_result = {**return_result, **self.all_valid_MF_goterms}
+                    case "cellular_component":
+                        return_result = {**return_result, **self.all_valid_CC_goterms}
+            return return_result
+        
+        logger.warning(f"get_all_goterms was called with an inappropritate validity scope '{validity}'. Possible scopes are 'all', 'valid' and 'obsolete'.")
+        return None

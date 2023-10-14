@@ -2,6 +2,7 @@ import os
 import requests
 
 from ..parse.GOAFParser import GOAnnotationsFile
+from ..util.FileUtil import FileUtil
 
 import logging
 
@@ -15,9 +16,13 @@ class HumanOrthologFinder:
         self,
         goaf: GOAnnotationsFile,
         zfin_filepath: str = "",
+        zfin_download_url:str = "",
         xenbase_filepath: str = "",
+        xenbase_download_url:str = "",
         mgi_filepath: str = "",
+        mgi_download_url:str = "",
         rgd_filepath: str = "",
+        rgd_download_url:str = ""
     ):
         """
         Constructs the HumanOrthologFinder, which uses file-based search on pre-downloaded 3rd party database ortholog mappings to find
@@ -33,10 +38,10 @@ class HumanOrthologFinder:
 
         The files are expected to reside in app/goreverselookup/data_files/ folder.
         """
-        self.zfin = ZFINHumanOrthologFinder(filepath=zfin_filepath)
-        self.xenbase = XenbaseHumanOrthologFinder(filepath=xenbase_filepath)
-        self.mgi = MGIHumanOrthologFinder(filepath=mgi_filepath)
-        self.rgd = RGDHumanOrthologFinder(filepath=rgd_filepath)
+        self.zfin = ZFINHumanOrthologFinder(filepath=zfin_filepath, download_url=zfin_download_url)
+        self.xenbase = XenbaseHumanOrthologFinder(filepath=xenbase_filepath, download_url=xenbase_download_url)
+        self.mgi = MGIHumanOrthologFinder(filepath=mgi_filepath, download_url=mgi_download_url)
+        self.rgd = RGDHumanOrthologFinder(filepath=rgd_filepath, download_url=rgd_download_url)
         self.goaf = goaf
 
     def find_human_ortholog(self, product):
@@ -50,29 +55,17 @@ class HumanOrthologFinder:
             The human gene symbol or None if no human ortholog was found.
         """
         if "ZFIN" in product:
-            result = self.zfin.find_human_ortholog(
-                product
-            )  # returns [0]: gene symbol, [1]: long name of the gene
+            result = self.zfin.find_human_ortholog(product)  # returns [0]: gene symbol, [1]: long name of the gene
             human_gene_symbol = result[0] if result is not None else None
-            # human_gene_symbol = self.zfin.find_human_ortholog(product)[0]
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
         elif "Xenbase" in product:
             result = self.xenbase.find_human_ortholog(product)
             human_gene_symbol = result[0] if result is not None else None
-            # human_gene_symbol = self.xenbase.find_human_ortholog(product)[0]
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
         elif "MGI" in product:
             human_gene_symbol = self.mgi.find_human_ortholog(product)
-            human_gene_symbol = (
-                human_gene_symbol if (human_gene_symbol is not None) else None
-            )
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
+            human_gene_symbol = human_gene_symbol if (human_gene_symbol is not None) else None # return None if "Error" in human_gene_symbol else human_gene_symbol
         elif "RGD" in product:
             human_gene_symbol = self.rgd.find_human_ortholog(product)
-            human_gene_symbol = (
-                human_gene_symbol if (human_gene_symbol is not None) else None
-            )
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
+            human_gene_symbol = human_gene_symbol if (human_gene_symbol is not None) else None # return None if "Error" in human_gene_symbol else human_gene_symbol
         else:
             logger.info(f"No database found for {product}")
 
@@ -80,32 +73,24 @@ class HumanOrthologFinder:
 
     async def find_human_ortholog_async(self, product):
         if "ZFIN" in product:
-            result = await self.zfin.find_human_ortholog_async(
-                product
-            )  # returns [0]: gene symbol, [1]: long name of the gene
+            result = await self.zfin.find_human_ortholog_async(product)  # returns [0]: gene symbol, [1]: long name of the gene
             return result[0] if result is not None else None
-            # human_gene_symbol = self.zfin.find_human_ortholog(product)[0]
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
         elif "Xenbase" in product:
             result = await self.xenbase.find_human_ortholog_async(product)
             return result[0] if result is not None else None
-            # human_gene_symbol = self.xenbase.find_human_ortholog(product)[0]
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
         elif "MGI" in product:
             human_gene_symbol = await self.mgi.find_human_ortholog_async(product)
             return human_gene_symbol if (human_gene_symbol is not None) else None
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
         elif "RGD" in product:
             human_gene_symbol = await self.rgd.find_human_ortholog_async(product)
             return human_gene_symbol if (human_gene_symbol is not None) else None
-            # return None if "Error" in human_gene_symbol else human_gene_symbol
         else:
             logger.info(f"No database found for {product}")
             return None
 
 
 class ZFINHumanOrthologFinder(HumanOrthologFinder):
-    def __init__(self, filepath: str = ""):
+    def __init__(self, filepath: str = "", download_url: str = ""):
         """
         This class allows the user to search Zebrafish human orthologs. The human orthologs mapping file should be downloaded
         from the ZFIN webpage: https://zfin.org/downloads -> Orthology Data -> Human and Zebrafish Orthology -> link = https://zfin.org/downloads/human_orthos.txt
@@ -113,28 +98,14 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
         Parameters:
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/zfin_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
-        """
-        if filepath == "":
-            self._filepath = (
-                "data_files/zfin_human_ortholog_mapping.txt"
-            )
-        else:
-            self._filepath = filepath
-        self._check_file()
-        with open(self._filepath, "r") as read_content:
+        """        
+        self.filepath = "data_files/zfin_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.download_url = "https://zfin.org/downloads/human_orthos.txt" if download_url == "" else download_url
+
+        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+        with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
         logger.info(f"ZFINHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
-
-    def _check_file(self):
-        os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
-        if not os.path.exists(self._filepath):
-            url = "https://zfin.org/downloads/human_orthos.txt"
-            response = requests.get(url)
-            with open(self._filepath, "wb") as f:
-                f.write(response.content)
-            logger.info(
-                f"Downloaded zfin_human_ortholog_mapping.txt to {self._filepath}"
-            )
 
     def find_human_ortholog(self, product_id):
         """
@@ -203,7 +174,7 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
 
 
 class XenbaseHumanOrthologFinder(HumanOrthologFinder):
-    def __init__(self, filepath: str = ""):
+    def __init__(self, filepath: str = "", download_url: str = ""):
         """
         This class allows the user to search Xenbase human orthologs. The human orthologs mapping file should be downloaded
         from the Xenbase webpage: https://www.xenbase.org/ -> Download -> Data Download (https://www.xenbase.org/xenbase/static-xenbase/ftpDatafiles.jsp) -> Data Reports -> Orthology -> Xenbase genes to Human Entrez Genes -> link: https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt
@@ -212,28 +183,13 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/xenbase_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        if filepath == "":
-            self._filepath = (
-                "data_files/xenbase_human_ortholog_mapping.txt"
-            )
-        else:
-            self._filepath = filepath
+        self.filepath = "data_files/xenbase_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.download_url = "https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt" if download_url == "" else download_url
 
-        self._check_file()
-        with open(self._filepath, "r") as read_content:
+        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+        with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
         logger.info(f"XenbaseHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
-
-    def _check_file(self):
-        os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
-        if not os.path.exists(self._filepath):
-            url = "https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt"
-            response = requests.get(url)
-            with open(self._filepath, "wb") as f:
-                f.write(response.content)
-            logger.info(
-                f"Downloaded xenbase_human_ortholog_mapping.txt to {self._filepath}"
-            )
 
     def find_human_ortholog(self, product_id):
         """
@@ -312,7 +268,7 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
 
 
 class MGIHumanOrthologFinder(HumanOrthologFinder):
-    def __init__(self, filepath: str = ""):
+    def __init__(self, filepath: str = "", download_url: str = ""):
         """
         This class allows the user to search MGI human orthologs. The human orthologs mapping file should be downloaded
         from the MGI webpage: Filepath to the Mouse Genome Informatics human ortholog mapping file, found at:
@@ -322,30 +278,13 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/mgi_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        if filepath == "":
-            self._filepath = (
-                "data_files/mgi_human_ortholog_mapping.txt"
-            )
-        else:
-            self._filepath = filepath
+        self.filepath = "data_files/mgi_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.download_url = "https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt" if download_url == "" else download_url
 
-        self._check_file()
-        with open(self._filepath, "r") as read_content:
+        FileUtil.download_file(filepath=self.filepath, download_url=self.download_url)
+        with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
-        logger.info(
-            f"MGIHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
-        )
-
-    def _check_file(self):
-        os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
-        if not os.path.exists(self._filepath):
-            url = "https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt"
-            response = requests.get(url)
-            with open(self._filepath, "wb") as f:
-                f.write(response.content)
-            logger.info(
-                f"Downloaded mgi_human_ortholog_mapping.txt to {self._filepath}"
-            )
+        logger.info(f"MGIHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
 
     def find_human_ortholog(self, product_id):
         """
@@ -471,7 +410,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
 
 
 class RGDHumanOrthologFinder(HumanOrthologFinder):
-    def __init__(self, filepath: str = ""):
+    def __init__(self, filepath: str = "", download_url: str = ""):
         """
         This class allows the user to search RGD human orthologs. The human orthologs mapping file should be downloaded
         from the RGD webpage: https://rgd.mcw.edu/ -> Data -> Download -> data/release -> RGD_ORTHOLOGS.txt -> link = https://download.rgd.mcw.edu/data_release/RGD_ORTHOLOGS.txt
@@ -481,30 +420,15 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/rgd_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        if filepath == "":
-            self._filepath = (
-                "data_files/rgd_human_ortholog_mapping.txt"
-            )
-        else:
-            self._filepath = filepath
+        self.filepath = "data_files/rgd_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.download_url = "https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt" if download_url == "" else download_url
 
-        self._check_file()
-        with open(self._filepath, "r") as read_content:
+        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+        with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
         logger.info(
             f"RGDHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
         )
-
-    def _check_file(self):
-        os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
-        if not os.path.exists(self._filepath):
-            url = "https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt"
-            response = requests.get(url)
-            with open(self._filepath, "wb") as f:
-                f.write(response.content)
-            logger.info(
-                f"Downloaded rgd_human_ortholog_mapping.txt to {self._filepath}"
-            )
 
     def find_human_ortholog(self, product_id):
         """
