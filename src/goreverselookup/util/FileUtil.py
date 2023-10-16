@@ -1,6 +1,8 @@
 import os
 import requests
 import shutil
+import urllib
+import gzip
 
 import logging
 
@@ -274,3 +276,24 @@ class FileUtil:
                 f.write(response.content)
         if not cls.is_file_empty(filepath):
             logger.info(f"Successfully downloaded {download_url} to {filepath}")
+    
+    @classmethod
+    def download_zip_file(cls, filepath:str, download_url:str, zip_specifier:str="rt"):
+        """
+        Downloads a zip file from 'download_url' into 'filepath'.
+        Use the appropriate 'zip_specifier'.
+
+        Example usage:
+        download_url = "http://geneontology.org/gene-associations/goa_human.gaf.gz"
+        download_path = "data_files/goa_human_test.gaf"
+        FileUtil.download_zip_file(download_path, download_url, "rt")
+        """
+        temp_file, _ = urllib.request.urlretrieve(download_url)
+
+        # read the contents of the gzip file and save it to the txt file
+        with gzip.open(temp_file, "rt") as f_in, open(filepath, "w") as f_out:
+            for line in f_in:
+                f_out.write(line)
+
+        # delete the temporary file
+        os.remove(temp_file)

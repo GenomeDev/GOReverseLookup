@@ -600,6 +600,13 @@ class fisher_exact_test(Metrics):
             self.goaf = model.goaf
         else:
             self.goaf = goaf
+        
+        if self.goaf is None:
+            self.goaf = GOAnnotationsFile(
+                filepath=self.reverse_lookup.model_settings.datafile_paths["goa_human"], # TODO: change this !!!
+                go_categories=self.reverse_lookup.go_categories,
+            )
+
         self.name = "fisher_test"
         self._num_all_goterms = 0
         if self.reverse_lookup.model_settings.fisher_test_use_online_query is True:
@@ -615,10 +622,6 @@ class fisher_exact_test(Metrics):
             logger.info(
                 "GOAF will be recalculated using the ReverseLookup's GO categories:"
                 f" {self.reverse_lookup.go_categories}"
-            )
-            self.goaf = GOAnnotationsFile(
-                filepath=self.reverse_lookup.datafile_paths["goaf_filepath"],
-                go_categories=self.reverse_lookup.go_categories,
             )
 
     def metric(self, product: Product, use_goaf=False) -> Dict: # TODO: IMPLEMENT .OBO INSTEAD OF GOAF FOR NUM_GOTERMS_ALL !!!
@@ -779,24 +782,6 @@ class fisher_exact_test(Metrics):
                         num_goterms_all_general - num_goterms_product_general - (num_goterms_all_process - num_goterms_product_process)
                     ],
                 ]
-
-                """ TODO: START FROM HERE! 
-                if num_goterms_product_process == 0:
-                    results_dict[f"{process['process']}{direction}"] = {
-                        "n_prod_process": num_goterms_product_process,
-                        "n_all_process": num_goterms_all_process,
-                        "n_prod_general": num_goterms_product_general,
-                        "n_all_general": num_goterms_all_general,
-                        "required_n_prod_process_for_statistical_relevance": None,
-                        "expected": None,
-                        "fold_enrichment": None,
-                        "pvalue": None,
-                        "odds_ratio": None,
-                        "goterms_prod_process": None,
-                        "status": "num_goterms_product_process is 0, thus not statistically relevant"
-                    }
-                    continue # continue to the next loop iteration (next process direction)
-                """
 
                 # check that any contingency table element is non-negative
                 should_continue_current_loop = False

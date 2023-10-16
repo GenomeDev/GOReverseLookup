@@ -4,6 +4,7 @@ import gzip
 import urllib
 
 from .OBOParser import OboParser
+from ..util.FileUtil import FileUtil
 
 import logging
 
@@ -48,12 +49,32 @@ class GOAFMaster:
         """
         self.goa_filepaths = goa_filepaths
         self.go_categories = go_categories
-        # TODO: finish implementation
+
+        # create files
+        if 'human' in goa_filepaths:
+            self.goa_human = GOAnnotationsFile(filepath=goa_filepaths['human']['local_filepath'], download_url=goa_filepaths['human']['download_url'])
+        
+        if 'danio_rerio' in goa_filepaths:
+            self.goa_zfin = GOAnnotationsFile(filepath=goa_filepaths['danio_rerio']['local_filepath'], download_url=goa_filepaths['danio_rerio']['download_url'])
+        
+        if 'rattus_norvegicus' in goa_filepaths:
+            self.goa_rgd = GOAnnotationsFile(filepath=goa_filepaths['rattus_norvegicus']['local_filepath'], download_url=goa_filepaths['rattus_norvegicus']['download_url'])
+        
+        if 'mus_musculus' in goa_filepaths:
+            self.goa_mgi = GOAnnotationsFile(filepath=goa_filepaths['mus_musculus']['local_filepath'], download_url=goa_filepaths['mus_musculus']['local_filepath'])
+        
+        if 'xenopus' in goa_filepaths:
+            self.goa_xenbase = GOAnnotationsFile(filepath=goa_filepaths['xenopus']['local_filepath'], download_url=goa_filepaths['xenopus']['download_url'])
+    
+    def get_all_products_for_goterm(goterm_id:str, organisms=['human', 'danio_rerio', 'rattus_norvegicus', 'mus_musculus', 'xenopus']):
+        # TODO: IMPLEMENT !!!!
+        return
 
 class GOAnnotationsFile:
     def __init__(
         self,
         filepath: str = "data_files/goa_human.gaf",
+        download_url = "http://geneontology.org/gene-associations/goa_human.gaf.gz",
         go_categories: list = [
             "biological_process",
             "molecular_activity",
@@ -84,22 +105,25 @@ class GOAnnotationsFile:
 
         logger.info(f"Attempting to create GOAF using: {self._filepath}")
 
-        self._check_file()
-        if self._check_file():
-            logger.info("  - GOAF filepath exists.")
-            with open(self._filepath, "r") as read_content:
-                temp_content = read_content.readlines()
-                self._readlines = []
-                for line in temp_content:
-                    if not line.startswith("!") and not line.strip() == "":
-                        line = line.strip()
-                        line_category = self._get_go_category_from_line(line)
-                        if line_category in go_categories:
-                            self._readlines.append(line)
+        # self._check_file()
+        if not os.path.exists(filepath) or FileUtil.is_file_empty(filepath):
+            FileUtil.download_zip_file(filepath=filepath, download_url=download_url, zip_specifier="rt")
+
+        logger.info("  - GOAF filepath exists.")
+        with open(self._filepath, "r") as read_content:
+            temp_content = read_content.readlines()
+            self._readlines = []
+            for line in temp_content:
+                if not line.startswith("!") and not line.strip() == "":
+                    line = line.strip()
+                    line_category = self._get_go_category_from_line(line)
+                    if line_category in go_categories:
+                        self._readlines.append(line)
         self.terms_dict = None
         self.products_dict = None
         logger.info(f"  - GOAF created with {len(self._readlines)} annotations.")
 
+    # this is obsolete. TODO: remove after ensuring it doesn't cause problems
     def _check_file(self):
         os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
         if os.path.exists(self._filepath):
