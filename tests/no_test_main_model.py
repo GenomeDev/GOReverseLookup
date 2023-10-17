@@ -51,7 +51,5 @@ model.score_products(
 # -> Pvalcalculator.score_products(model, scoreclass, correction)
 
 # model.model_settings.pvalue = 0.10  # set pvalue to be used in statistical analysis
-model.perform_statistical_analysis(
-    test_name="fisher_test", filepath="results/statistically_relevant_genes.json"
-)
+model.perform_statistical_analysis(test_name="fisher_test", filepath="results/statistically_relevant_genes.json")
 model.save_model("results/data.json")

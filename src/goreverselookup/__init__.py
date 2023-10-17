@@ -14,7 +14,10 @@ from .core.miRNA import miRNA
 from .core.Product import Product
 from .core.Report import ReportGenerator
 
-from .parse.GOAFParser import GOAnnotationsFile
+from .parse.GOAFParser import (
+	GOAnnotationsFile,
+	GOAFMaster
+	)
 from .parse.OBOParser import OboParser
 from .parse.OrthologParsers import (
     HumanOrthologFinder,
@@ -50,6 +53,7 @@ __all__ = [
     "Product",
     "ReportGenerator",
     "GOAnnotationsFile",
+	"GOAFMaster",
     "OboParser",
     "HumanOrthologFinder",
     "ZFINHumanOrthologFinder",

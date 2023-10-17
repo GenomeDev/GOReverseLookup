@@ -16,28 +16,33 @@ class GOAFMaster:
     def __init__(
             self,
             goa_filepaths: dict = {
-                'human': {
-                    'organism': "human",
+                'homo_sapiens': {
+                    'organism': "homo_sapiens",
+                    'ncbi_taxon_id': "9606",
                     'local_filepath': "data_files/goa_human.gaf",
                     'download_url': "http://geneontology.org/gene-associations/goa_human.gaf.gz",
                 },
                 'danio_rerio': {
                     'organism': "danio_rerio",
+                    'ncbi_taxon_id': "7955",
                     'local_filepath': "data_files/zfin.gaf",
                     'download_url': "http://current.geneontology.org/annotations/zfin.gaf.gz"
                 },
                 'rattus_norvegicus': {
                     'organism': "rattus_norvegicus",
+                    'ncbi_taxon_id': "10116",
                     'local_filepath': "data_files/rgd.gaf",
                     'download_url': "http://current.geneontology.org/annotations/rgd.gaf.gz"
                 },
                 'mus_musculus': {
                     'organism': "mus_musculus",
+                    'ncbi_taxon_id': "10090",
                     'local_filepath': "data_files/mgi.gaf",
                     'download_url': "http://current.geneontology.org/annotations/mgi.gaf.gz"
                 },
                 'xenopus': {
                     'organism': "xenopus",
+                    'ncbi_taxon_id': "8353",
                     'local_filepath': "data_files/xenbase.gaf",
                     'download_url': "http://current.geneontology.org/annotations/xenbase.gaf.gz"
                 }
@@ -45,31 +50,111 @@ class GOAFMaster:
             go_categories: list = ["biological_process", "molecular_activity", "cellular_component"]
     ):
         """
-        This is a master-class, which allows managing of several GOAnnotationsFiles (for different organisms).
+        This is a master-class, which allows managing of several GOAnnotationsFiles (for different organisms). Parameters:
+          - goa_filepaths: a dictionary of the supplied GOA files. In it's minimum, this dictionary has to be structured like the following:
+
+            {
+                "GOA_FILE_NAME": {
+                    'organism': "ORGANISM_NAME",
+                    'ncbi_taxon_id': "NCBI_TAXON_ID",
+                    'local_filepath': "LOCAL_FILEPATH",
+                    'download_url': "DOWNLOAD_URL"
+                }
+            }
+
+            Example:
+
+            {
+                "homo_sapiens": {
+                    'organism': "homo_sapiens",
+                    'ncbi_taxon_id': 9606
+                    'local_filepath': "data_files/goa_human.gaf",
+                    'download_url': "http://geneontology.org/gene-associations/goa_human.gaf.gz"
+                }
+            }
+
+            If GOAFMaster were supplied with the above 'goa_filepaths' parameter, it would append the created GOA instance to self.goa_files,
+            which could be accessed by self.goa_files[ORGANISM], in our case self.goa_files["homo_sapiens"].
+
+          - go_categories: a list of GO categories to take into account. They must be supplied in the list as strings. Available options are: "biological_process", "molecular_activity" and "cellular_component"
         """
         self.goa_filepaths = goa_filepaths
         self.go_categories = go_categories
+        self.goa_files = {} # dict mapping organism labels to respective goa files
 
-        # create files
-        if 'human' in goa_filepaths:
-            self.goa_human = GOAnnotationsFile(filepath=goa_filepaths['human']['local_filepath'], download_url=goa_filepaths['human']['download_url'])
+        for organism_key, file_raw_info in goa_filepaths.items():
+            goa_file = GOAnnotationsFile(
+                filepath=file_raw_info['local_filepath'],
+                download_url=file_raw_info['download_url'],
+                go_categories=go_categories,
+                organism_label=file_raw_info['organism'],
+                organism_ncbi_taxon_id=file_raw_info['ncbi_taxon_id']
+            )
+            self.goa_files[organism_key] = goa_file
+
+    def get_all_products_for_goterm(self, goterm_id:str, organism_labels=['homo_sapiens', 'danio_rerio', 'rattus_norvegicus', 'mus_musculus', 'xenopus'], indirect_annotations:bool = False, obo_parser:OboParser=None):
+        """
+        Finds all genes associated to goterm_id across differeng GAF files (specified by organims_labels, which should match the organism labels used to create the GOAFMaster instance).
         
-        if 'danio_rerio' in goa_filepaths:
-            self.goa_zfin = GOAnnotationsFile(filepath=goa_filepaths['danio_rerio']['local_filepath'], download_url=goa_filepaths['danio_rerio']['download_url'])
-        
-        if 'rattus_norvegicus' in goa_filepaths:
-            self.goa_rgd = GOAnnotationsFile(filepath=goa_filepaths['rattus_norvegicus']['local_filepath'], download_url=goa_filepaths['rattus_norvegicus']['download_url'])
-        
-        if 'mus_musculus' in goa_filepaths:
-            self.goa_mgi = GOAnnotationsFile(filepath=goa_filepaths['mus_musculus']['local_filepath'], download_url=goa_filepaths['mus_musculus']['local_filepath'])
-        
-        if 'xenopus' in goa_filepaths:
-            self.goa_xenbase = GOAnnotationsFile(filepath=goa_filepaths['xenopus']['local_filepath'], download_url=goa_filepaths['xenopus']['download_url'])
+        Returns:
+          - [0]: a list of all gene ids associated with goterm_id from all of the specified organism_labels (all of the specified gaf files)
+          - [1]: a dict mapping organism label keys to found gene ids
+
+        Example usage:
+        (GOAFMaster).get_all_products_for_goterm(GOID, ["homo_sapiens", "danio_rerio"])
+        -> returns: 
+             [0]: [ABC1, VEGFA, ..., ijp2, tsp5, mmp1, ...]
+             [1]: {
+                    'homo_sapiens': [ABC1, VEGFA],
+                    'danio_rerio': [ijp2, tsp5, mmp1]
+                  }
+        """
+        annotated_genes_simple_list = [] # list of annotated genes to goterm_id; source organism isn't known
+        annotated_genes_dict = {} # dict between organism label (key) and associated genes
+        for organism_label in organism_labels:
+            if organism_label not in self.goa_files:
+                logger.warning(f"Organism label '{organism_label}' was NOT found in self.goa_files. Was the correct GOA file created during construction of GOAFMaster?")
+                continue
+            goa_current = self.goa_files[organism_label]
+            assert isinstance(goa_current, GOAnnotationsFile)
+            current_genes = goa_current.get_all_products_for_goterm(goterm_id=goterm_id, indirect_annotations=indirect_annotations, obo_parser=obo_parser)
+            annotated_genes_simple_list = [*annotated_genes_simple_list, *current_genes]
+            annotated_genes_dict[organism_label] = current_genes
+
+        return [annotated_genes_simple_list, annotated_genes_dict]
     
-    def get_all_products_for_goterm(goterm_id:str, organisms=['human', 'danio_rerio', 'rattus_norvegicus', 'mus_musculus', 'xenopus']):
-        # TODO: IMPLEMENT !!!!
-        return
+    def get_all_goterms_for_product(self, product_id: str, organism_labels=['homo_sapiens', 'danio_rerio', 'rattus_norvegicus', 'mus_musculus', 'xenopus'], indirect_annotations:bool=False, obo_parser:OboParser=None):
+        """
+        Finds all GO Terms associated to product_id across differeng GAF files (specified by organims_labels, which should match the organism labels used to create the GOAFMaster instance).
+        
+        Returns:
+          - [0]: a list of all GO Term ids associated with product_id from all of the specified organism_labels (all of the specified gaf files)
+          - [1]: a dict mapping organism label keys to found GO Term ids
 
+        Example usage:
+        (GOAFMaster).get_all_goterms_for_product(gene_id, ["homo_sapiens", "danio_rerio"])
+        -> returns: 
+             [0]: [ABC1, VEGFA, ..., ijp2, tsp5, mmp1, ...]
+             [1]: {
+                    'homo_sapiens': [ABC1, VEGFA],
+                    'danio_rerio': [ijp2, tsp5, mmp1]
+                  }
+        """
+        annotated_termids_simple_list = []
+        annotated_termids_dict = {}
+        
+        for organism_label in organism_labels:
+            if organism_label not in self.goa_files:
+                logger.warning(f"Organism label '{organism_label}' was NOT found in self.goa_files. Was the correct GOA file created during construction of GOAFMaster?")
+                continue
+            goa_current = self.goa_files[organism_label]
+            assert isinstance(goa_current, GOAnnotationsFile)
+            current_termids = goa_current.get_all_terms_for_product(product=product_id, indirect_annotations=indirect_annotations, obo_parser=obo_parser)
+            annotated_termids_simple_list = [*annotated_termids_simple_list, *current_termids]
+            annotated_termids_dict[organism_label] = current_termids
+
+        return [annotated_termids_simple_list, annotated_termids_dict]
+    
 class GOAnnotationsFile:
     def __init__(
         self,
@@ -80,8 +165,12 @@ class GOAnnotationsFile:
             "molecular_activity",
             "cellular_component",
         ],
+        organism_label = "",
+        organism_ncbi_taxon_id = ""
     ) -> None:
         """
+        TODO: update comment
+
         This class provides access to a Gene Ontology Annotations File, which stores the relations between each GO Term and it's products (genes),
         along with an evidence code, confirming the truth of the interaction. A GO Annotation comprises of a) GO Term, b) gene / gene product c) evidence code.
         WARNING: GOAF stores only DIRECT annotations (See https://geneontology.org/docs/faq/ "Why does AmiGO display annotations to term X but these annotations aren’t in the GAF file?")
@@ -89,15 +178,21 @@ class GOAnnotationsFile:
         Parameters:
           - (str) filepath: the filepath to the GO Annotations File downloaded file from http://current.geneontology.org/products/pages/downloads.html -> Homo Sapiens (EBI Gene Ontology Database) - protein = goa_human.gaf; link = http://geneontology.org/gene-associations/goa_human.gaf.gz
                             if left to default value, self._filepath will be set to 'app/goreverselookup/data_files/goa_human.gaf'. The file should reside in app/goreverselookup/data_files/ and the parameter filepath should be the file name of the downloaded file inside data_files/
+          - (str) download_url: the download url that is used to download this file from the web
           - (list) go_categories: determines which GO categories are valid. Default is that all three GO categories are valid. Setting GO categories determines which products
                                   or terms are returned from goaf.get_all_products_for_goterm and goaf.get_all_terms_for_product functions. The algorithm excludes any associations whose category doesn't match go_categories already in
                                   the GOAF file read phase - lines not containing a desired category (from go_categories) won't be read.
-
+          - (str) organism_label: a descriptive label of the organism, for which this GAF is constructed (eg. homo_sapiens)
+          - (str) organism_ncbi_taxon_id: ncbi taxon id for the organism, for which this GAF is constructed(eg. 9606 for homo_sapiens)
+                                  
         See also:
           - http://geneontology.org/docs/download-go-annotations/
           - http://current.geneontology.org/products/pages/downloads.html
         """
         self.go_categories = go_categories
+        self.organism_label = organism_label
+        self.organism_ncbi_taxon_id = organism_ncbi_taxon_id
+
         if filepath == "" or filepath is None:
             self._filepath = "app/goreverselookup/data_files/goa_human.gaf"
         else:
