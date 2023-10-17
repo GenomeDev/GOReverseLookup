@@ -153,6 +153,9 @@ class Cacher:
         With this code, if the algorithm encounters and already queried url, it will pull its old response,
         rather than query a new one.
         """
+        if not hasattr(cls, "is_init"):
+            cls.init()
+            
         if cls.is_init is False:
             cls.init()  # attempt cacher init, if the user forgot to initialise it
 

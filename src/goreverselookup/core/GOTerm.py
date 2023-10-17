@@ -189,11 +189,13 @@ class GOTerm:
                 error_report = products
                 self.http_error_codes["products"] = error_report
     
-    async def fetch_products_async_v3(self, session:aiohttp.ClientSession, request_params = {"rows":20000}, req_delay=0.5, max_retries = 3):
+    async def fetch_products_async_v3(self, session:aiohttp.ClientSession, request_params={"rows": 10000000}, req_delay=0.5, max_retries = 3):
         """
         A better variant of get_products_async. Doesn't include timeout in the url request, no retries.
         Doesn't create own ClientSession, but relies on external ClientSession, hence doesn't overload the server as does the get_products_async_notimeout function.
         
+        Warning: DO NOT CHANGE request_params={"rows": 10000000}. Decrementing the rows WILL lead to fewer annotations being queried without raising any exceptions in code!
+
         # Previous algorithm created one aiohttp.ClientSession FOR EACH GOTERM. Therefore, each ClientSession only had one connection,
         # and the checks for connection limiting weren't enforeced. During runtime, there could be as many as 200 (as many as there are goterms)
         # active ClientSessions, each with only one request. You should code in the following manner:
@@ -207,6 +209,13 @@ class GOTerm:
         #            response = await session.get(url)
         #            # Process the response
         """
+        if request_params is not None:
+            if 'rows' in request_params:
+                if request_params['rows'] < 10000000:
+                    logger.warning(f"MAJOR WARNING: Rows specified in request params ({request_params['rows']}) are less than {10000000}. You risk missing out important anootations!")
+            if 'rows' not in request_params:
+                logger.warning(f"MAJOR WARNING! You did not specify 'rows' in request params. You risk missing out important annotations!")
+        
         # data key is in the format [class_name][function_name][function_params]
         data_key = f"[{self.__class__.__name__}][{self.fetch_products_async_v3.__name__}][go_id={self.id}]"
         previous_data = Cacher.get_data("go", data_key)
@@ -256,7 +265,9 @@ class GOTerm:
                     logger.warning(f"  - attempted url: {url}")
             
         products_set = set()
+        _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
         for assoc in data['associations']:
+            _d_unique_dbs.add(assoc['subject']['id'].split(":")[0]) # assoc['subject']['id'] is eg. "UniProtKB:Q9UQF2" -> split and store "UniProtKB"
             if assoc['object']['id'] == self.id and any((database[0] in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in database[1])) for database in APPROVED_DATABASES):
                 product_id = assoc['subject']['id']
                 products_set.add(product_id)
@@ -268,7 +279,7 @@ class GOTerm:
             #    logger.debug(f"Response json: {data}")
 
         self.products = products
-        logger.info(f"Fetched products for GO term {self.id}")
+        logger.info(f"Fetched {len(self.products)} products for GO term {self.id} from {len(_d_unique_dbs)} unique databases ({_d_unique_dbs})")
         Cacher.store_data("go", data_key, products)
         return products
 

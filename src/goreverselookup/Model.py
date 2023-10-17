@@ -186,6 +186,7 @@ class ReverseLookup:
                     tasks.append(task)
             await asyncio.gather(*tasks)
 
+    # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     def fetch_all_go_term_products(
         self,
         web_download: bool = True,
@@ -193,7 +194,7 @@ class ReverseLookup:
         recalculate: bool = False,
         delay: float = 0.2,
         run_async_options: str = "v3",
-        request_params={"rows": 50000, "taxon": "NCBITaxon:9606"},
+        request_params={"rows": 10000000},
         max_connections=60,
     ):
         """
@@ -356,7 +357,7 @@ class ReverseLookup:
         await asyncio.gather(*tasks)
 
     async def _fetch_all_goterm_products_async_v2(
-        self, max_connections=100, request_params={"rows": 20000}, req_delay=0.5
+        self, max_connections=100, request_params={"rows": 1000000}, req_delay=0.5
     ):
         """
         In comparison to _fetch_all_go_term_products_async, this function doesn't overload the server and cause the server to block our requests.
@@ -371,9 +372,7 @@ class ReverseLookup:
         ]
         api = GOApi()
 
-        connector = aiohttp.TCPConnector(
-            limit=max_connections, limit_per_host=max_connections
-        )  # default is 100
+        connector = aiohttp.TCPConnector(limit=max_connections, limit_per_host=max_connections)  # default is 100
         async with aiohttp.ClientSession(connector=connector) as session:
             for goterm in self.goterms:
                 url = api.get_products(
@@ -416,10 +415,11 @@ class ReverseLookup:
 
     # IMPROVE SPEED UP USING ASYNCIO.GATHER: Instead of awaiting each request individually in a loop, you can use asyncio.gather()
     # to concurrently execute multiple requests. This allows the requests to be made in parallel, which can significantly improve performance.
+    # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     async def _fetch_all_goterm_products_async_v3(
         self,
         max_connections=100,
-        request_params={"rows": 50000, "taxon": "NCBITaxon:9606"},
+        request_params={"rows": 10000000},
         req_delay=0.5,
         recalculate: bool = False,
     ):

@@ -167,7 +167,12 @@ class EnsemblApi:
         if response_json == [] or "error" in response_json:
             return None
         elif response_json != [] and "error" not in response_json:
-            response_json = response_json["data"][0]["homologies"]
+            try:
+                response_json = response_json["data"][0]["homologies"]
+            except (KeyError, IndexError):
+                logger.warning(f"Key error or list index out of range when parsing ['data'][0]['homologies] for id {id}.")
+                logger.debug(f"response json = {response_json}")
+                return None
             if response_json == []:  # if there are no homologies, return None
                 return None
 
