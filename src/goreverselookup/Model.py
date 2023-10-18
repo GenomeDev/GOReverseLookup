@@ -6,7 +6,7 @@ from typing import List, Dict
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from .core.ModelSettings import ModelSettings
+from .core.ModelSettings import ModelSettings, OrganismInfo
 from .core.GOTerm import GOTerm
 from .core.Product import Product
 from .core.Metrics import Metrics, basic_mirna_score, miRDB60predictor
@@ -1937,7 +1937,19 @@ class ReverseLookup:
                                 else:
                                     # 'human' -> ["human"]
                                     setting_value = [setting_value]
-
+                        if setting_name == "target_organism":
+                            organism_info = OrganismInfo.parse_organism_info_str(metadata=setting_value)
+                            setting_value = organism_info
+                        if setting_name == "ortholog_organisms":
+                            organism_info_dict = {}
+                            for organism_info_str in setting_value.split(","): # split at commas
+                                organism_info = OrganismInfo.parse_organism_info_str(metadata=organism_info_str)
+                                # create multiple annotations in dict both for the label and for the ncbitaxon full id
+                                if organism_info.label != "":
+                                    organism_info_dict[organism_info.label] = organism_info
+                                if organism_info.ncbi_id_full != "":
+                                    organism_info_dict[organism_info.ncbi_id_full] = organism_info
+                            setting_value = organism_info_dict
                         settings.set_setting(setting_name=setting_name, setting_value=setting_value)
                     elif section == "filepaths":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)

@@ -117,16 +117,13 @@
 #		model_data_file = "model/data.json"
 #		model = ReverseLookup.load_model(model_data_file)
 ###settings
-#homosapiens_only	True
-#require_product_evidence_codes	False
+target_organism	homo_sapiens||NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus|Xenbase|NCBITaxon:8353
 fisher_test_use_online_query	False
-include_indirect_annotations	True
+include_indirect_annotations	False
 uniprotkb_genename_online_query	False
+#require_product_evidence_codes	False
 pvalue	0.05
-#
-#goterms_set	all
-#goterms_set	HomoSapiens,ZFIN,MGI,RGD,Xenbase
-#
 ###filepaths
 go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
 goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens

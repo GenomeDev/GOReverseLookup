@@ -1,7 +1,7 @@
 from .Model import ReverseLookup
 from .Workflows import WorkflowOne, PrimaryWorkflow
 
-from .core.ModelSettings import ModelSettings
+from .core.ModelSettings import ModelSettings,OrganismInfo
 from .core.GOTerm import GOTerm
 from .core.Metrics import (
     nterms,
