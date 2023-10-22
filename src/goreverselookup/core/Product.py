@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 
 from .ModelSettings import ModelSettings
+from .ModelStats import ModelStats
 from ..parse.OrthologParsers import HumanOrthologFinder
 from ..parse.GOAFParser import GOAnnotationsFile
 from ..web_apis.EnsemblApi import EnsemblApi
@@ -19,6 +20,7 @@ class Product:
     def __init__(
         self,
         id_synonyms: List[str],
+        taxon: str = None,
         genename: str = None,
         uniprot_id: str = None,
         description: str = None,
@@ -46,6 +48,7 @@ class Product:
             had_fetch_info_computed (bool): If this Product instance has had the fetch_info function called already.
         """
         self.id_synonyms = id_synonyms
+        self.taxon = taxon
         self.genename = genename  # NOTE: genename indicates a successful ortholog fetch operation !!!
         self.description = description
         self.uniprot_id = uniprot_id
@@ -295,54 +298,39 @@ class Product:
         if not ensembl_api:
             ensembl_api = EnsemblApi()
 
-        if len(self.id_synonyms) == 1 and "UniProtKB" in self.id_synonyms[0]:
+        if len(self.id_synonyms) == 1 and "UniProtKB" in self.id_synonyms[0] and self.taxon == "NCBITaxon:9606":
             if self.uniprot_id is None or self.uniprot_id == "":
                 # 14.08.2023: replaced online uniprot info query with goaf.get_uniprotkb_genename, as it is more successful and does the same as the uniprot query
                 if (
                     model_settings is not None
                     and model_settings.uniprotkb_genename_online_query is True
                 ):
-                    info_dict = await uniprot_api.get_uniprot_info_async(
-                        self.id_synonyms[0], session
-                    )
+                    info_dict = await uniprot_api.get_uniprot_info_async(self.id_synonyms[0], session)
                 else:
-                    info_dict = {
-                        "genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])
-                    }
+                    info_dict = {"genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])} # TODO: implement goafmaster -> human!!!
             else:
                 if (
                     model_settings is not None
                     and model_settings.uniprotkb_genename_online_query is True
                 ):
-                    info_dict = await uniprot_api.get_uniprot_info_async(
-                        self.uniprot_id, session
-                    )
+                    info_dict = await uniprot_api.get_uniprot_info_async(self.uniprot_id, session)
                 else:
-                    info_dict = {
-                        "genename": goaf.get_uniprotkb_genename(self.uniprot_id)
-                    }
+                    info_dict = {"genename": goaf.get_uniprotkb_genename(self.uniprot_id)}
             if info_dict is not None:
                 self.genename = info_dict.get("genename")
         elif len(self.id_synonyms) == 1:
-            human_ortholog_gene_id = (
-                await human_ortholog_finder.find_human_ortholog_async(
-                    self.id_synonyms[0]
-                )
-            )
+            # UniProtKBs with non-homosapiens-taxon are also processed here (besides ZFIN, RGD, MGI, Xenbase, ...)
+            
+            if "UniProtKB" in self.id_synonyms[0]:
+                _d=0
+                pass # TODO: remove this, for debug only
+            
+            human_ortholog_gene_id = (await human_ortholog_finder.find_human_ortholog_async(self.id_synonyms[0]))
             if human_ortholog_gene_id is None:
-                logger.warning(
-                    "human ortholog finder did not find ortholog for"
-                    f" {self.id_synonyms[0]}"
-                )
-                human_ortholog_gene_ensg_id = (
-                    await ensembl_api.get_human_ortholog_async(
-                        self.id_synonyms[0], session
-                    )
-                )  # attempt ensembl search
+                logger.debug(f"Human ortholog finder did not find ortholog for {self.id_synonyms[0]}. Trying Ensembl query.")
+                human_ortholog_gene_ensg_id = (await ensembl_api.get_human_ortholog_async(self.id_synonyms[0], session, taxon=self.taxon))  # attempt ensembl search
                 if human_ortholog_gene_ensg_id is not None:
-                    enst_dict = await ensembl_api.get_info_async(
-                        human_ortholog_gene_ensg_id, session
-                    )
+                    enst_dict = await ensembl_api.get_info_async(human_ortholog_gene_ensg_id, session)
                     self.genename = enst_dict.get("genename")
 
                     # update 19.08.2023: attempt to obtain as many values as possible for this Product already from
@@ -361,6 +349,13 @@ class Product:
                             self.uniprot_id = enst_dict.get("uniprot_id")
             else:
                 self.genename = human_ortholog_gene_id
+
+        ModelStats.product_ortholog_query_results[self.id_synonyms[0]] = {
+            'initial_taxon': self.taxon,
+            'ensg_id': self.ensg_id,
+            'enst_id': self.enst_id,
+            'uniprot_id': self.uniprot_id
+        }
 
         if self.genename != None:
             logger.info(f"Fetched orthologs for: {self.genename}")
@@ -384,7 +379,7 @@ class Product:
                 goaf=goaf,
                 human_ortholog_finder=human_ortholog_finder,
                 uniprot_api=uniprot_api,
-                ensembl_api=ensembl_api,
+                ensembl_api=ensembl_api
             )
 
     def fetch_info(
@@ -618,6 +613,7 @@ class Product:
         """
         return cls(
             d.get("id_synonyms"),
+            d.get("taxon") if "taxon" in d else None,
             d.get("genename"),
             d.get("uniprot_id"),
             d.get("description"),

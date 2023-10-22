@@ -2,6 +2,13 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 import aiohttp
 import asyncio
+import json
+import time
+import zlib
+import re
+from xml.etree import ElementTree
+
+from urllib.parse import urlparse, parse_qs, urlencode
 
 from ..util.CacheUtil import Cacher
 
@@ -647,3 +654,166 @@ class UniProtApi:
             Cacher.store_data("uniprot", uniprot_data_key, return_value)
 
         return return_value
+    
+    def idmapping_batch(self, ids:list, from_db="UniProtKB_AC-ID", to_db="Ensembl"):
+        """
+        Performs identifier mapper from 'from_db' database to 'to_db' database on every identifier from 'ids'.
+        Reference implementation documents: 
+          - implementation guidelines: https://www.uniprot.org/help/id_mapping
+          - useful info on idmapping (possible to and from parameters etc): https://www.uniprot.org/help/id_mapping#submitting-an-id-mapping-job
+          - use 'curl -k https://rest.uniprot.org/configure/idmapping/fields' or 'curl http://rest.uniprot.org/configure/idmapping/fields' in CMD (after installing curl as per https://linuxhint.com/install-use-curl-windows/) 
+            to find all available to and from parameters. Note the '-k' flag forces curl to omit ssl security verification, otherwise it throws an error for https in my case.
+            see https://jsonformatter.org/f5632a for a list of all possible values
+        """
+        def check_idmapping_results_ready(job_id, session:requests.Session, api_url="https://rest.uniprot.org"):
+            while True:
+                request_job = session.get(f"{api_url}/idmapping/status/{job_id}")
+                request_job = request_job.json()
+                if "jobStatus" in request_job:
+                    if request_job["jobStatus"] == "RUNNING":
+                        logger.info(f"idmapping in progress, retrying in {polling_interval}s...")
+                        time.sleep(polling_interval)
+                    else:
+                        raise Exception(request_job["jobStatus"])
+                else:
+                    if "results" in request_job and "failedIds" in request_job:
+                        return bool(request_job["results"] or request_job["failedIds"])
+                    elif "results" in request_job:
+                        return bool(request_job["results"])
+
+        def get_idmapping_results_link(job_id, session:requests.Session, api_url="https://rest.uniprot.org"):
+            url = f"{api_url}/idmapping/details/{job_id}"
+            request = session.get(url)
+            return request.json()["redirectURL"]
+        
+        def get_idmapping_results_search(url, session:requests.Session):
+            parsed = urlparse(url)
+            query = parse_qs(parsed.query)
+            file_format = query["format"][0] if "format" in query else "json"
+            if "size" in query:
+                size = int(query["size"][0])
+            else:
+                size = 500 # TODO: change this hardcode?
+                query["size"] = size
+            compressed = query["compressed"][0].lower() == "true" if "compressed" in query else False
+            parsed = parsed._replace(query=urlencode(query, doseq=True))
+            url = parsed.geturl()
+            request = session.get(url)
+            results = decode_results(request, file_format, compressed)
+            total = int(request.headers["x-total-results"])
+            print_progress_batches(0, size, total)
+            for i, batch in enumerate(get_batch(request, file_format, compressed, session), 1):
+                results = combine_batches(results, batch, file_format)
+                print_progress_batches(i, size, total)
+            if file_format == "xml":
+                return merge_xml_results(results)
+            return results
+        
+        def decode_results(response, file_format, compressed):
+            if compressed:
+                decompressed = zlib.decompress(response.content, 16 + zlib.MAX_WBITS)
+                if file_format == "json":
+                    j = json.loads(decompressed.decode("utf-8"))
+                    return j
+                elif file_format == "tsv":
+                    return [line for line in decompressed.decode("utf-8").split("\n") if line]
+                elif file_format == "xlsx":
+                    return [decompressed]
+                elif file_format == "xml":
+                    return [decompressed.decode("utf-8")]
+                else:
+                    return decompressed.decode("utf-8")
+            elif file_format == "json":
+                return response.json()
+            elif file_format == "tsv":
+                return [line for line in response.text.split("\n") if line]
+            elif file_format == "xlsx":
+                return [response.content]
+            elif file_format == "xml":
+                return [response.text]
+            return response.text
+        
+        def print_progress_batches(batch_index, size, total):
+            n_fetched = min((batch_index + 1) * size, total)
+            logger.info(f"Fetched: {n_fetched} / {total}")
+        
+        def get_batch(batch_response, file_format, compressed, session):
+            batch_url = get_next_link(batch_response.headers)
+            while batch_url:
+                batch_response = session.get(batch_url)
+                batch_response.raise_for_status()
+                yield decode_results(batch_response, file_format, compressed)
+                batch_url = get_next_link(batch_response.headers)
+        
+        def get_next_link(headers):
+            re_next_link = re.compile(r'<(.+)>; rel="next"')
+            if "Link" in headers:
+                match = re_next_link.match(headers["Link"])
+                if match:
+                    return match.group(1)
+        
+        def merge_xml_results(xml_results):
+            merged_root = ElementTree.fromstring(xml_results[0])
+            for result in xml_results[1:]:
+                root = ElementTree.fromstring(result)
+                for child in root.findall("{http://uniprot.org/uniprot}entry"):
+                    merged_root.insert(-1, child)
+            ElementTree.register_namespace("", get_xml_namespace(merged_root[0]))
+            return ElementTree.tostring(merged_root, encoding="utf-8", xml_declaration=True)
+
+        def get_xml_namespace(element):
+            m = re.match(r"\{(.*)\}", element.tag)
+            return m.groups()[0] if m else ""
+        
+        def combine_batches(all_results, batch_results, file_format):
+            if file_format == "json":
+                for key in ("results", "failedIds"):
+                    if key in batch_results and batch_results[key]:
+                        all_results[key] += batch_results[key]
+            elif file_format == "tsv":
+                return all_results + batch_results[1:]
+            else:
+                return all_results + batch_results
+            return all_results
+
+        # check uniprot ids
+        processed_ids = []
+        for id in ids:
+            processed_ids.append(id.split(":")[1]) if ":" in id else processed_ids.append(id)
+        ids = processed_ids
+
+        polling_interval = 3
+
+        api_url = "https://rest.uniprot.org"
+        retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+        session = requests.Session()
+        session.mount("https://", HTTPAdapter(max_retries=retries))
+
+        # ",".join(ids) because the request requires identifiers as comma-serparated values
+        request = requests.post(
+            f"{api_url}/idmapping/run",
+            data={"from": from_db, "to": to_db, "ids": ",".join(ids)}
+        )
+        logger.info(f"Attempting batch idmapping from {from_db} to {to_db}. Url = {request.url}")
+
+        request_job_id = request.json()["jobId"]
+
+        # check idmapping results ready
+        if check_idmapping_results_ready(request_job_id, session):
+            link = get_idmapping_results_link(request_job_id, session)
+            results = get_idmapping_results_search(link, session)
+            return results
+            
+
+    
+    def idmapping_ensembl_batch(self, uniprot_ids:list):
+        """
+        Maps a list of uniprot ids to a list of ensembl ids.
+        """
+        # possible from and to parameters: https://jsonformatter.org/f5632a
+        from_db = "UniProtKB_AC-ID"
+        to_db = "Ensembl"
+        return self.idmapping_batch(ids=uniprot_ids, from_db=from_db, to_db=to_db)
+
+        
+        

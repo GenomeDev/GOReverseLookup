@@ -103,23 +103,46 @@ class EnsemblApi:
         logger.info(f"Received ortholog for id {full_id} -> {ortholog}")
         return ortholog
 
-    async def get_human_ortholog_async(self, id, session: aiohttp.ClientSession):
+    async def get_human_ortholog_async(self, id, session: aiohttp.ClientSession, taxon=""):
         """
         Given a source ID, detect organism and returns the corresponding human ortholog using the Ensembl API.
-        Example source IDs are: UniProtKB:P21709, RGD:6494870, ZFIN:ZDB-GENE-040426-1432, Xenbase:XB-GENE-479318 and MGI:95537
+        Example source IDs are: UniProtKB:P21709, RGD:6494870, ZFIN:ZDB-GENE-040426-1432, Xenbase:XB-GENE-479318 and MGI:95537.
+
+        Taxon can be specified, since UniProtKB ids may not be of human origin.
 
         Parameters:
           - (str) id
 
         This function uses request caching. It will use previously saved url request responses instead of performing new (the same as before) connections
         """
+        def taxon_to_label(taxon:str):
+            """
+            Converts a NCBI taxon to a suitable ensembl label
+            """
+            match taxon:
+                case "NCBITaxon:9606":
+                    return "homo_sapiens"
+                case "NCBITaxon:7955":
+                    return "danio_rerio"
+                case "NCBITaxon:10116":
+                    return "rattus_norvegicus"
+                case "NCBITaxon:10090":
+                    return "mus_musculus"
+                case "NCBITaxon:8353":
+                    return "xenopus"
+
         ensembl_data_key = f"[{self.__class__.__name__}][{self.get_human_ortholog_async.__name__}][id={id}]"
         previous_result = Cacher.get_data("ensembl", ensembl_data_key)
         if previous_result is not None:
             logger.debug(f"Returning cached ortholog for id {id}: {previous_result}")
             return previous_result
 
-        if "ZFIN" in id:
+        id_url = None
+        _d_stop = False # TODO: remove
+        if "UniProtKB" in id:
+            id_url = id.split(":")[1]
+            _d_stop = True # TODO: remove
+        elif "ZFIN" in id:
             species = "zebrafish"
             id_url = id.split(":")[1]
         elif "Xenbase" in id:
@@ -132,8 +155,19 @@ class EnsemblApi:
             species = "rat"
             id_url = id.split(":")[1]
         else:
-            logger.info(f"No predefined organism found for {id}")
-            return None
+            # logger.info(f"No predefined organism found for {id}")
+            # return None
+            pass
+
+        if id_url == None:
+            # attempt one final split
+            id_url = id.split(":")[1]
+        
+        if taxon != "" and taxon is not None:
+            species = taxon_to_label(taxon=taxon)
+
+        # TODO: SWITCH TARGET ORGANISM HERE !!!
+        # this link is important to query between 3rd party databases (zfin, mgi, rgd, xenbase, ...) and the target organism
         url = f"https://rest.ensembl.org/homology/symbol/{species}/{id_url}?target_species=human;type=orthologues;sequence=none"
 
         # Check if the url is cached
@@ -143,9 +177,7 @@ class EnsemblApi:
             response_json = previous_response
         else:
             try:
-                response = await session.get(
-                    url, headers={"Content-Type": "application/json"}, timeout=10
-                )
+                response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=10)
                 # response.raise_for_status()
                 response_json = await response.json()
                 Cacher.store_data("url", url, response_json)
@@ -164,6 +196,9 @@ class EnsemblApi:
         # if response.content_type == "application/json":
         #    response_json = await response.json()
 
+        if _d_stop:
+            pass # TODO: remove
+
         if response_json == [] or "error" in response_json:
             return None
         elif response_json != [] and "error" not in response_json:
@@ -178,6 +213,15 @@ class EnsemblApi:
 
             max_perc_id = 0.0
             ortholog = ""
+
+            # debug check if any zfin,mgi,rgd,xenbase actually make it up to here
+            if species in ["zebrafish", "mouse", "rat", "xenopus_tropicalis", "danio_rerio", "mus_musculus", "rattus_norvegicus", "xenopus"]:
+                pass # TODO: remove this
+            
+            # debug check if any non-homo-sapiens uniprotkb genes get processed
+            if species in ["zebrafish", "mouse", "rat", "xenopus_tropicalis", "danio_rerio", "mus_musculus", "rattus_norvegicus", "xenopus"] and "UniProtKB" in id:
+                pass # TODO: remove this
+
             for ortholog_dict in response_json:
                 if ortholog_dict["target"]["species"] == "homo_sapiens":
                     current_perc_id = ortholog_dict["target"]["perc_id"]
@@ -605,3 +649,10 @@ class EnsemblApi:
         }
         Cacher.store_data("ensembl", ensembl_data_key, return_value)
         return return_value
+
+    async def id_to_ensembl_id(source_id:str):
+        """
+        Converts 'source_id' (eg. a UniProtKB gene id) to an Ensembl id.
+        """
+        pass
+        # TODO: implement!!!

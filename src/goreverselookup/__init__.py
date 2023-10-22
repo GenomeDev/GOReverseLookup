@@ -2,6 +2,7 @@ from .Model import ReverseLookup
 from .Workflows import WorkflowOne, PrimaryWorkflow
 
 from .core.ModelSettings import ModelSettings,OrganismInfo
+from .core.ModelStats import ModelStats
 from .core.GOTerm import GOTerm
 from .core.Metrics import (
     nterms,
@@ -43,6 +44,8 @@ __all__ = [
     "WorkflowOne",
     "PrimaryWorkflow",
     "ModelSettings",
+	"OrganismInfo",
+	"ModelStats",
     "GOTerm",
     "nterms",
     "adv_product_score",

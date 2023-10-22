@@ -3,7 +3,7 @@
 # see in this .py file.
 
 import os
-from goreverselookup import Cacher
+from goreverselookup import Cacher, ModelStats
 from goreverselookup import ReverseLookup
 from goreverselookup import nterms, adv_product_score, binomial_test, fisher_exact_test
 from goreverselookup import LogConfigLoader
@@ -20,12 +20,15 @@ logger.info("Starting Model Test!")
 logger.info(f"os.getcwd() =  {os.getcwd()}")
 
 Cacher.init(cache_dir="cache")
+ModelStats.init()
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file("input_files/input.txt")
+model.goterms = model.goterms[0:15] # TODO: remove this
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20)
 model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=30)
 model.create_products_from_goterms()
+model.products_perform_idmapping()
 model.fetch_ortholog_products(
     run_async=True, max_connections=30, semaphore_connections=10, req_delay=0.1
 )

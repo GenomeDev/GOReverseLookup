@@ -7,6 +7,7 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 from .core.ModelSettings import ModelSettings, OrganismInfo
+from .core.ModelStats import ModelStats
 from .core.GOTerm import GOTerm
 from .core.Product import Product
 from .core.Metrics import Metrics, basic_mirna_score, miRDB60predictor
@@ -110,7 +111,10 @@ class ReverseLookup:
                 self.obo_parser = OboParser(obo_filepath=self.model_settings.get_datafile_path('go_obo'), obo_download_url=self.model_settings.get_datafile_url('go_obo'))
             else:
                 self.obo_parser = OboParser()
-
+        
+        ModelStats.goterm_count = len(self.goterms)
+        ModelStats.product_count = len(self.products)
+        
     def set_model_settings(self, model_settings: ModelSettings):
         """
         Sets self.model_settings to the model settings supplied in the parameter.
@@ -309,6 +313,7 @@ class ReverseLookup:
                 asyncio.run(
                     self._fetch_all_goterm_products_async_v3(
                         max_connections=max_connections,
+                        model_settings=self.model_settings,
                         request_params=request_params,
                         req_delay=delay,
                     )
@@ -319,12 +324,7 @@ class ReverseLookup:
                     if (
                         goterm.products == [] or recalculate is True
                     ):  # to prevent recalculation of products if they are already computed
-                        goterm.fetch_products(source)
-
-        # api = GOApi()
-        # with logging_redirect_tqdm():
-        #     for goterm in tqdm(self.goterms):
-        #         goterm.fetch_products(api)
+                        goterm.fetch_products(source, model_settings=self.model_settings)
 
         if "fetch_all_go_term_products" not in self.execution_times:
             self.execution_times[
@@ -418,6 +418,7 @@ class ReverseLookup:
     # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     async def _fetch_all_goterm_products_async_v3(
         self,
+        model_settings:ModelSettings,
         max_connections=100,
         request_params={"rows": 10000000},
         req_delay=0.5,
@@ -435,7 +436,7 @@ class ReverseLookup:
             for goterm in self.goterms:
                 if goterm.products == [] or recalculate is True:
                     task = goterm.fetch_products_async_v3(
-                        session, request_params=request_params, req_delay=req_delay
+                        session, model_settings=model_settings, request_params=request_params, req_delay=req_delay
                     )
                     tasks.append(task)
             # perform multiple tasks at once asynchronously
@@ -471,10 +472,18 @@ class ReverseLookup:
         # Iterate over each GOTerm object in the go_term set and retrieve the set of products associated with that GOTerm
         # object. Add these products to the products_set.
         for term in self.goterms:
-            products_set.update(term.products)
+            for product in term.products:
+                if product not in products_set:
+                    products_set.update(product)
+                    if ":" in product:
+                        product_object = Product.from_dict({"id_synonyms": [product], "taxon": term.products_taxa_dict[product]})
+                    else:
+                        product_object = Product.from_dict({"id_synonyms": [product], "genename": product, "taxon": term.products_taxa_dict[product]})
+                    self.products.append(product_object)
 
         # Iterate over each product in the products_set and create a new Product object from the product ID using the
         # Product.from_dict() classmethod. Add the resulting Product objects to the ReverseLookup object's products list.
+        """
         for product in products_set:
             if ":" in product:
                 self.products.append(Product.from_dict({"id_synonyms": [product]}))
@@ -482,7 +491,9 @@ class ReverseLookup:
                 self.products.append(
                     Product.from_dict({"id_synonyms": [product], "genename": product})
                 )
+        """
         logger.info(f"Created {len(self.products)} Product objects from GOTerm object definitions")
+        ModelStats.product_count = len(self.products)
 
         if "create_products_from_goterms" not in self.execution_times:
             self.execution_times[
@@ -536,6 +547,104 @@ class ReverseLookup:
                 "create_products_from_goterms"
             ] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
+
+    def fetch_uniprot_product_ensg_ids(
+            self
+    ):
+        """
+        Fetches the ENSG identifiers for the gene products, which have a UniProtKB identifier.
+        This operation relies on a bulk request to the UniProtKB servers to perform the id mapping between UniProtKB
+        and Ensembl. It is advisable to perform it before attempting the ortholog search.
+        """
+        uniprot_api = UniProtApi()
+
+        if self.products == [] or self.products is None:
+            if len(self.goterms) > 0:
+                self.create_products_from_goterms()
+            if self.products == [] or self.products is None:
+                raise Exception("Model has no defined gene products!")
+        
+        uniprot_product_ids = []
+        for product in self.products:
+            assert isinstance(product, Product)
+            if product.uniprot_id == None:
+                continue
+            if "UniProtKB" in product.uniprot_id:
+                uniprot_product_ids.append(product.uniprot_id)
+        
+        logger.info(f"Performing batch UniProtKB id to Ensembl gene id mapping for {len(uniprot_product_ids)} genes.")
+        uniprot_to_ensembl_idmap = uniprot_api.idmapping_ensembl_batch(uniprot_ids=uniprot_product_ids)
+        successful_conversions = uniprot_to_ensembl_idmap['results']
+        failed_conversions = uniprot_to_ensembl_idmap['failedIds']
+        logger.info(f"UniProtKB->Ensembl id mapping results: successful = {len(successful_conversions)}, failed = {len(failed_conversions)}")
+        
+        # update self.produts
+        for idmap in successful_conversions:
+            uniprot_id = idmap['from']
+            ensembl_id = idmap['to']
+            for product in self.products:
+                if product.uniprot_id == None:
+                    continue
+                if uniprot_id in product.uniprot_id:
+                    product.ensg_id = ensembl_id
+    
+    def products_perform_idmapping(
+        self,
+        from_databases:list = ["UniProtKB", "ZFIN", "MGI", "RGD", "Xenbase"]
+    ):
+        """
+        First, attempts to map all non-UniProtKB gene product ids (from self.products) to the UniProtKB gene ids.
+        In the second run, attempts to map all UniProtKB gene ids to Ensembl gene ids.
+        """
+        uniprot_api = UniProtApi()
+
+        if self.products == [] or self.products is None:
+            if len(self.goterms) > 0:
+                self.create_products_from_goterms()
+            if self.products == [] or self.products is None:
+                raise Exception("Model has no defined gene products!")
+
+        ### Run 1: map all non-uniprotkb ids to uniprotkb ids
+        non_uniprot_dbs = [db for db in from_databases if "UniProtKB" not in db] # select all dbs besides uniprot
+        non_uniprot_dbs_product_dict = {} # mapping {'ZFIN': [list_of_zfin_product_ids], ...}
+        for db in non_uniprot_dbs: # initialise with empty values
+            non_uniprot_dbs_product_dict[db] = set()
+        
+        for product in self.products:
+            if "UniProtKB" in product.id_synonyms[0]:
+                continue # don't perform uniprotkb-uniprotkb mappings
+            p_id = product.id_synonyms[0] # ZFIN:XXXX
+            p_id_db = p_id.split(":")[0] # ZFIN
+            non_uniprot_dbs_product_dict[p_id_db].update([p_id])
+        
+        # convert sets to lists
+        for db, db_set in non_uniprot_dbs_product_dict.items():
+            non_uniprot_dbs_product_dict[db] = list(db_set)
+        
+        for db, db_ids_list in non_uniprot_dbs_product_dict.items():
+            if db_ids_list == []:
+                logger.info(f"Skipping {db}, as there are no associated genes.")
+                continue
+            idmappings = uniprot_api.idmapping_batch(
+                ids = db_ids_list,
+                from_db=db,
+                to_db="UniProtKB"
+            )
+            successful_mappings = idmappings['results']
+            failed_mappings = idmappings['failedIds']
+            logger.info(f"{db} id mapping conversion to UniProtKB: {len(successful_mappings)} successful mappings, {len(failed_mappings)} failed mappings.")
+            for idmap in successful_mappings:
+                initial_id = idmap['from']
+                uniprot_id = idmap['to']['primaryAccession']
+                uniprot_id_full = f"UniProtKB:{uniprot_id}"
+                for product in self.products:
+                    if len(product.id_synonyms) == 0:
+                        continue
+                    if initial_id in product.id_synonyms[0] and db in product.id_synonyms[0]:
+                        product.uniprot_id = uniprot_id_full
+        
+        ### Run 2: attempt Ensembl gene mappings
+        self.fetch_uniprot_product_ensg_ids()
 
     def fetch_ortholog_products(
         self,

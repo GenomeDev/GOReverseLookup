@@ -11,12 +11,15 @@ class OrganismInfo:
         """
         Representation of metadata information about a specific organism.
           - (str) label: eg. danio_rerio
-          - (str) database: The database associated with this organism - for Danio rerio, this would be set to "ZFIN"
+          - (str) database: The database associated with this organism - for Danio rerio, this would be set to "ZFIN". If left empty, will be automatically set to UniProtKB
           - (str) ncbi_id_full: ncbitaxon id in the full form, eg. NCBITaxon:7955 
           - (str) ncbi_id: ncbitaxon number, eg. 7955. If it isn't set, it will be automatically parsed from ncbi_id_full
         """
         self.label = label
-        self.database = database
+        if database == "":
+            self.database = "UniProtKB"
+        else:
+            self.database = database
         self.ncbi_id_full = ncbi_id_full
         
         if ncbi_id == -1 and ncbi_id_full != "":
@@ -31,6 +34,27 @@ class OrganismInfo:
         
         if ncbi_id != -1:
             self.ncbi_id = ncbi_id
+    
+    def to_json(self):
+        return {
+            'label': self.label,
+            'database': self.database,
+            'ncbi_id_full': self.ncbi_id_full,
+            'ncbi_id': self.ncbi_id
+        }
+    
+    @classmethod
+    def from_json(cls, json):
+        """
+        Creates an OrganismInfo instance from json
+        """
+        assert isinstance(json, dict)
+        return cls(
+            label=json.get('label'),
+            database=json.get('database'),
+            ncbi_id_full=json.get('ncbi_id_full'),
+            ncbi_id=json.get('ncbi_id')
+        )
     
     @classmethod
     def parse_organism_info_str(cls, metadata:str, as_dict:bool=False):
@@ -158,18 +182,23 @@ class ModelSettings:
         """
         instance = cls()  # create an instance of the class
         for attr_name in dir(instance):  # iterate through class variables (ie settings in ModelSettings)
-            if not callable(getattr(instance, attr_name)) and not attr_name.startswith(
-                "__"
-            ):
+            if not callable(getattr(instance, attr_name)) and not attr_name.startswith("__"):
                 if attr_name in json_data:  # check if attribute exists in json data
-                    setattr(
-                        instance, attr_name, json_data[f"{attr_name}"]
-                    )  # set the attribute
+                    value_to_set = json_data[f"{attr_name}"]
+
+                    # handling for target_organism and ortholog_organisms
+                    if attr_name == 'target_organism':
+                        value_to_set = OrganismInfo.from_json(value_to_set)
+                    if attr_name == 'ortholog_organisms':
+                        res = []
+                        for json_element in value_to_set:
+                            res.append(OrganismInfo.from_json(json_element))
+                        value_to_set = res
+
+                    # set the attribute    
+                    setattr(instance, attr_name, value_to_set)  # set the attribute
                 else:
-                    logger.warning(
-                        f"Attribute {attr_name} doesn't exist in json_data for"
-                        " ModelSettings!"
-                    )
+                    logger.warning(f"Attribute {attr_name} doesn't exist in json_data for ModelSettings!")
         return instance
 
     def to_json(self):
@@ -178,9 +207,21 @@ class ModelSettings:
         """
         json_data = {}
         for attr_name, attr_value in vars(self).items():
+            # custom handling for target_organism and ortholog_organisms, as they are code objects -> convert them to json
             if not callable(attr_value) and not attr_name.startswith("__"):
+                if attr_name == "target_organism":
+                    assert isinstance(attr_value, OrganismInfo)
+                    attr_value = attr_value.to_json()
+                if attr_name == "ortholog_organisms":
+                    res = []
+                    for ortholog_organism in attr_value: # attr_value is a list of OrthologOrganism objects
+                        assert isinstance(ortholog_organism, OrganismInfo)
+                        res.append(ortholog_organism.to_json)
+                    attr_value = res
+
+                # append to json_data result dict
                 json_data[attr_name] = attr_value
-        return json_data
+            return json_data
 
     def set_setting(self, setting_name: str, setting_value):
         if setting_name == "ortholog_organisms":

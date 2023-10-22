@@ -6,6 +6,7 @@ import aiohttp
 import asyncio
 
 from ..util.FileUtil import FileUtil
+from ..core.ModelSettings import ModelSettings,OrganismInfo
 
 import logging
 
@@ -57,7 +58,7 @@ class GOApi:
             return None
 
     def get_products(
-        self, term_id, get_url_only=False, get_response_only=False, request_params={"rows": 10000000}
+        self, term_id, model_settings:ModelSettings, get_url_only=False, get_response_only=False, request_params={"rows": 10000000}
     ):
         """
         Fetches product IDs (gene ids) associated with a given term ID from the Gene Ontology API. The product IDs can be of any of the following
@@ -68,14 +69,33 @@ class GOApi:
         Returns:
           - (string as json) data: a json string, representing the api request response
         """
-        APPROVED_DATABASES = [
-            ["UniProtKB", ["NCBITaxon:9606"]],
-            ["ZFIN", ["NCBITaxon:7955"]],
-            # ["RNAcentral", ["NCBITaxon:9606"]],
-            ["Xenbase", ["NCBITaxon:8364"]],
-            ["MGI", ["NCBITaxon:10090"]],
-            ["RGD", ["NCBITaxon:10116"]],
-        ]
+
+        approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
+        approved_dbs_and_taxa['UniProtKB'] = [] # create uniprotkb by default
+        # add target organism
+        if model_settings.target_organism.database in approved_dbs_and_taxa:
+            # existing database key -> add taxon!
+            if model_settings.target_organism.ncbi_id_full not in approved_dbs_and_taxa[model_settings.target_organism.database]:
+                approved_dbs_and_taxa[model_settings.target_organism.database] += [model_settings.target_organism.ncbi_id_full]
+        else:
+            # new database key
+            approved_dbs_and_taxa[model_settings.target_organism.database] = [model_settings.target_organism.ncbi_id_full]
+        # add ortholog organisms
+        for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
+            assert isinstance(ortholog_organism_object, OrganismInfo)
+            ortholog_organism = ortholog_organism_object
+            if ortholog_organism.database in approved_dbs_and_taxa:
+                # existing database key -> add taxon
+                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa[ortholog_organism.database]:
+                    approved_dbs_and_taxa[ortholog_organism.database] += [ortholog_organism.ncbi_id_full]
+                
+                # automatically add ortholog organism taxon to the UniProtKB database query
+                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa['UniProtKB']:
+                    approved_dbs_and_taxa['UniProtKB'] += [ortholog_organism.ncbi_id_full]
+            else:
+                approved_dbs_and_taxa[ortholog_organism.database] = [ortholog_organism.ncbi_id_full]
+        
+        
         url = f"http://api.geneontology.org/api/bioentity/function/{term_id}/genes"
         params = request_params
 
@@ -89,30 +109,32 @@ class GOApi:
             url = prepared_request.url
             return url
 
-        products_set = set()
         max_retries = 5  # try api requests for max 5 times
         for i in range(max_retries):
             try:
                 response = self.s.get(url, params=params, timeout=5)
                 response.raise_for_status()
 
-                json = response.json()
+                data = response.json()
                 if get_response_only == True:
-                    return json
+                    return data
                 
-                for assoc in json["associations"]:
-                    if assoc["object"]["id"] == term_id and any(
-                        (
-                            database[0] in assoc["subject"]["id"]
-                            and any(
-                                taxon in assoc["subject"]["taxon"]["id"]
-                                for taxon in database[1]
-                            )
-                        )
-                        for database in APPROVED_DATABASES
-                    ):
-                        product_id = assoc["subject"]["id"]
-                        products_set.add(product_id)
+                products_set = set()
+                _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
+        
+                for assoc in data['associations']:
+                    _d_unique_dbs.add(assoc['subject']['id'].split(":")[0])
+                    _d_db = assoc['subject']['id'].split(":")[0]
+                    _d_taxon = assoc['subject']['taxon']['id']
+                    if "UniProtKB" in _d_db and "9606" not in _d_taxon: # for debug purposes
+                        # logger.info(f"UniProtKB - {_d_taxon}")
+                        pass
+                    if assoc['object']['id'] == self.id:
+                        for database,taxa in approved_dbs_and_taxa.items():
+                            if database in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in taxa):
+                                product_id = assoc['subject']['id']
+                                products_set.add(product_id)
+                
                 products = list(products_set)
                 logger.info(f"Fetched products for GO term {term_id}")
                 return products
@@ -144,7 +166,7 @@ class GOApi:
                     time.sleep(0.5)  # time.sleep is in SECONDS !!!
                 return None
 
-    async def get_products_async(self, term_id):
+    async def get_products_async(self, term_id, model_settings:ModelSettings):
         """
         Fetches product IDs associated with a given term ID from the Gene Ontology API. The product IDs can be of any of the following
         databases: UniProt, ZFIN, Xenbase, MGI, RGD [TODO: enable the user to specify databases himself]
@@ -156,14 +178,31 @@ class GOApi:
         Returns:
           - (string as json) data: a json string, representing the api request response
         """
-        APPROVED_DATABASES = [
-            ["UniProtKB", ["NCBITaxon:9606"]],
-            ["ZFIN", ["NCBITaxon:7955"]],
-            # ["RNAcentral", ["NCBITaxon:9606"]],
-            ["Xenbase", ["NCBITaxon:8364"]],
-            ["MGI", ["NCBITaxon:10090"]],
-            ["RGD", ["NCBITaxon:10116"]],
-        ]
+        approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
+        approved_dbs_and_taxa['UniProtKB'] = [] # create uniprotkb by default
+        # add target organism
+        if model_settings.target_organism.database in approved_dbs_and_taxa:
+            # existing database key -> add taxon!
+            if model_settings.target_organism.ncbi_id_full not in approved_dbs_and_taxa[model_settings.target_organism.database]:
+                approved_dbs_and_taxa[model_settings.target_organism.database] += [model_settings.target_organism.ncbi_id_full]
+        else:
+            # new database key
+            approved_dbs_and_taxa[model_settings.target_organism.database] = [model_settings.target_organism.ncbi_id_full]
+        # add ortholog organisms
+        for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
+            assert isinstance(ortholog_organism_object, OrganismInfo)
+            ortholog_organism = ortholog_organism_object
+            if ortholog_organism.database in approved_dbs_and_taxa:
+                # existing database key -> add taxon
+                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa[ortholog_organism.database]:
+                    approved_dbs_and_taxa[ortholog_organism.database] += [ortholog_organism.ncbi_id_full]
+                
+                # automatically add ortholog organism taxon to the UniProtKB database query
+                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa['UniProtKB']:
+                    approved_dbs_and_taxa['UniProtKB'] += [ortholog_organism.ncbi_id_full]
+            else:
+                approved_dbs_and_taxa[ortholog_organism.database] = [ortholog_organism.ncbi_id_full]
+        
         MAX_RETRIES = 5
         url = f"http://api.geneontology.org/api/bioentity/function/{term_id}/genes"
         params = {"rows": 100000}
@@ -182,20 +221,22 @@ class GOApi:
                     response = await session.get(url, params=params, timeout=7)
                     response.raise_for_status()  # checks for anything other than status 200
                     data = await response.json()
+
                     products_set = set()
-                    for assoc in data["associations"]:
-                        if assoc["object"]["id"] == term_id and any(
-                            (
-                                database[0] in assoc["subject"]["id"]
-                                and any(
-                                    taxon in assoc["subject"]["taxon"]["id"]
-                                    for taxon in database[1]
-                                )
-                            )
-                            for database in APPROVED_DATABASES
-                        ):
-                            product_id = assoc["subject"]["id"]
-                            products_set.add(product_id)
+                    _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
+        
+                    for assoc in data['associations']:
+                        _d_unique_dbs.add(assoc['subject']['id'].split(":")[0])
+                        _d_db = assoc['subject']['id'].split(":")[0]
+                        _d_taxon = assoc['subject']['taxon']['id']
+                        if "UniProtKB" in _d_db and "9606" not in _d_taxon: # for debug purposes
+                            # logger.info(f"UniProtKB - {_d_taxon}")
+                            pass
+                        if assoc['object']['id'] == self.id:
+                            for database,taxa in approved_dbs_and_taxa.items():
+                                if database in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in taxa):
+                                    product_id = assoc['subject']['id']
+                                    products_set.add(product_id)
 
                     products = list(products_set)
                     logger.info(f"Fetched products for GO term {term_id}")
