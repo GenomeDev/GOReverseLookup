@@ -54,7 +54,7 @@ class gProfiler:
         r = self.s.post(
             url="https://biit.cs.ut.ee/gprofiler/api/convert/convert/",
             json={
-                "organism": taxon,
+                "organism": converted_taxon,
                 "target": namespace,
                 "query": source_ids_list,
             },
