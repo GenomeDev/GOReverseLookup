@@ -138,10 +138,8 @@ class EnsemblApi:
             return previous_result
 
         id_url = None
-        _d_stop = False # TODO: remove
         if "UniProtKB" in id:
             id_url = id.split(":")[1]
-            _d_stop = True # TODO: remove
         elif "ZFIN" in id:
             species = "zebrafish"
             id_url = id.split(":")[1]
@@ -166,7 +164,7 @@ class EnsemblApi:
         if taxon != "" and taxon is not None:
             species = taxon_to_label(taxon=taxon)
 
-        # TODO: SWITCH TARGET ORGANISM HERE !!!
+        # TODO: SWITCH TARGET SPECIES HERE !!!
         # this link is important to query between 3rd party databases (zfin, mgi, rgd, xenbase, ...) and the target organism
         url = f"https://rest.ensembl.org/homology/symbol/{species}/{id_url}?target_species=human;type=orthologues;sequence=none"
 
@@ -195,9 +193,6 @@ class EnsemblApi:
         # TODO: implement this safety check, server may send text only, which causes error (content_type == "text/plain")
         # if response.content_type == "application/json":
         #    response_json = await response.json()
-
-        if _d_stop:
-            pass # TODO: remove
 
         if response_json == [] or "error" in response_json:
             return None

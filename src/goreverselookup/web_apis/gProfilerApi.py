@@ -17,6 +17,7 @@ class gProfiler:
         session.mount("https://", adapter)
         self.s = session
 
+    # implementation as per https://biit.cs.ut.ee/gprofiler/convert
     def convert_ids(
         self,
         source_ids: Union[str, list[str], set[str]],
@@ -36,6 +37,12 @@ class gProfiler:
         Returns:
             dict[str, list[str]]: _description_
         """
+        USE_UNIPROT_IDMAP_NOTATION = True
+        # example notation: 
+        # {
+        #   'results': [{'from': 'P15692', 'to': 'ENSG00000112715.26'}, {'from': 'P16612', 'to': 'ENSRNOG00000019598'}, {'from': 'P40763', 'to': 'ENSG00000168610.16'}, {'from': 'P42227', 'to': 'ENSMUSG00000004040'}, {'from': 'P52631', 'to': 'ENSRNOG00000019742'}], 
+        #   'failedIds': ['O73682']
+        # }
 
         if not isinstance(taxon, str):
             raise TypeError("taxons must be str")
@@ -46,7 +53,7 @@ class gProfiler:
         if isinstance(source_ids, list):
             source_ids_list = source_ids
 
-        converted_taxon = NCBITaxon_to_gProfiler(taxon)
+        converted_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(taxon)
         if not converted_taxon:
             return {}
         namespace = target_namespace
@@ -69,8 +76,32 @@ class gProfiler:
             entry_source_id = entry["incoming"]
             if entry["converted"] not in ["N/A", "None", None]:
                 converted_ids[entry_source_id].append(entry["converted"])
-
-        return converted_ids
+        
+        if USE_UNIPROT_IDMAP_NOTATION == False:
+            return converted_ids
+        
+         # return idmap as uniprot notation
+        failedIds = []
+        for entry in result:
+            entry_source_id = entry["incoming"]
+            if entry["converted"] not in ["N/A", "None", None]:
+                converted_ids[entry_source_id].append(entry["converted"])
+            else:
+                failedIds.append(entry_source_id)
+        
+        idmap_uniprot_notation_results = []
+        for from_id, to_id in converted_ids.items():
+            res = {
+                'from': from_id,
+                'to': to_id
+            }
+            idmap_uniprot_notation_results.append(res)
+        
+        idmap_uniprot_notation = {
+            'results': idmap_uniprot_notation_results,
+            'failedIds': failedIds
+        }
+        return idmap_uniprot_notation
 
     def find_orthologs(
         self,
@@ -98,8 +129,8 @@ class gProfiler:
         if isinstance(source_ids, list):
             source_ids_list = source_ids
 
-        source_taxon = NCBITaxon_to_gProfiler(source_taxon)
-        target_taxon = NCBITaxon_to_gProfiler(target_taxon)
+        source_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(source_taxon)
+        target_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(target_taxon)
         if not source_taxon or not target_taxon:
             return {}
 
@@ -122,19 +153,25 @@ class gProfiler:
                 target_ids[entry_source_id].append(entry["ortholog_ensg"])
         return target_ids
 
+class gProfilerUtil:
+    def __init__():
+        pass
 
-def NCBITaxon_to_gProfiler(taxon):
-    """_summary_
+    @classmethod
+    def NCBITaxon_to_gProfiler(cls, taxon):
+        """
+        Converts an NCBI-type taxon to a respective GProfiler taxon.
+        Note: gprofiler - https://biit.cs.ut.ee/gprofiler/
 
-    Args:
-        taxon (_type_): _description_
+        Args:
+            taxon (_type_): _description_
 
-    Returns:
-        _type_: _description_
-    """
-    r = requests.get("https://biit.cs.ut.ee/gprofiler/api/util/organisms_list")
-    taxon_equivalents = {}
-    results = r.json()
-    for r in results:
-        taxon_equivalents[r["taxonomy_id"]] = r["id"]
-    return taxon_equivalents.get(str(taxon), None)
+        Returns:
+            _type_: _description_
+        """
+        r = requests.get("https://biit.cs.ut.ee/gprofiler/api/util/organisms_list")
+        taxon_equivalents = {}
+        results = r.json()
+        for r in results:
+            taxon_equivalents[r["taxonomy_id"]] = r["id"]
+        return taxon_equivalents.get(str(taxon), None)

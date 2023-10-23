@@ -37,6 +37,7 @@ from .util.LogConfigLoader import LogConfigLoader
 from .web_apis.EnsemblApi import EnsemblApi
 from .web_apis.UniprotApi import UniProtApi
 from .web_apis.GOApi import GOApi
+from .web_apis.gProfilerApi import gProfiler, gProfilerUtil
 
 # Optionally, you can define __all__ to specify what gets imported when using 'from package import *'
 __all__ = [

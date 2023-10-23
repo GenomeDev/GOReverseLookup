@@ -1,11 +1,10 @@
-import os
-import requests
-from typing import Union
-from collections import defaultdict
-
 from ..parse.GOAFParser import GOAnnotationsFile
 from ..util.FileUtil import FileUtil
-from ..web_apis.gProfilerApi import NCBITaxon_to_gProfiler
+from ..web_apis.gProfilerApi import gProfilerUtil
+from typing import Union
+import requests
+import os
+from collections import defaultdict
 
 import logging
 
@@ -64,8 +63,8 @@ class GOrthParser:
             source_ids_list = source_ids
         
         if database == "gOrth":
-            source_taxon = NCBITaxon_to_gProfiler(source_taxon)
-            target_taxon = NCBITaxon_to_gProfiler(target_taxon)
+            source_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(source_taxon)
+            target_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(target_taxon)
             if not source_taxon or not target_taxon:
                 return {}
             target_ids_dict = fetch_orthologs_with_gOrth(source_ids_list, source_taxon, target_taxon)

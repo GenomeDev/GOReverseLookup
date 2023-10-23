@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 import asyncio
 import aiohttp
 
@@ -24,7 +24,7 @@ class Product:
         genename: str = None,
         uniprot_id: str = None,
         description: str = None,
-        ensg_id: str = None,
+        ensg_id: Union[str,list] = None,
         enst_id: str = None,
         refseq_nt_id: str = None,
         mRNA: str = None,
@@ -39,7 +39,7 @@ class Product:
             id_synonyms (str): The list of ID of the product and synonyms. -> after ortholog translation it turns out that some products are the same. Example: RGD:3774, Xenbase:XB-GENE-5818802, UniProtKB:Q9NTG7
             uniprot_id (str): The UniProt ID of the product.
             description (str): A description of the product.
-            ensg_id (str): Ensembl gene ID (MAIN).
+            ensg_id (str): Ensembl gene ID or gene IDs
             enst_id (str): Ensembl transcript ID.
             refseq_nt_id (str): Refseq (reference sequence) transcript ID.
             mRNA (str): The mRNA sequence of the product.
@@ -130,9 +130,7 @@ class Product:
                     )
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
                 # do a file-based ortholog search using HumanOrthologFinder
-                human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(
-                    self.id_synonyms[0]
-                )
+                human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(self.id_synonyms[0])
                 offline_queried_ortholog = human_ortholog_gene_id  # this is used for acceleration so as not to repeat find_human_ortholog in the online algorithm section
                 if human_ortholog_gene_id is not None:
                     self.genename = human_ortholog_gene_id
@@ -144,20 +142,14 @@ class Product:
                     # 14.08.2023: replaced online uniprot info query with goaf.get_uniprotkb_genename, as it is more successful and does the same as the uniprot query
                     # online uniprot info query is performed only for debugging purposes with _d_compare_goaf
                     if _d_compare_goaf is True:
-                        info_dict = uniprot_api.get_uniprot_info(
-                            self.id_synonyms[0]
-                        )  # bugfix
+                        info_dict = uniprot_api.get_uniprot_info(self.id_synonyms[0])  # bugfix
                     else:
-                        info_dict = {
-                            "genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])
-                        }
+                        info_dict = {"genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])}
                 else:  # self.uniprot_id exists
                     if _d_compare_goaf is True:
                         info_dict = uniprot_api.get_uniprot_info(self.uniprot_id)
                     else:
-                        info_dict = {
-                            "genename": goaf.get_uniprotkb_genename(self.uniprot_id)
-                        }
+                        info_dict = {"genename": goaf.get_uniprotkb_genename(self.uniprot_id)}
                 # if compare is set to True, then only log the comparison between
                 if _d_compare_goaf is True:
                     if self.genename != info_dict.get("genename"):
@@ -176,24 +168,13 @@ class Product:
                     self.genename = info_dict.get("genename")
 
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
-                if (
-                    offline_queried_ortholog is None
-                ):  # if algorithm enters this section due to _d_compare_goaf == True, then this accelerates code, as it prevents double calculations
-                    human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(
-                        self.id_synonyms[0]
-                    )  # file-based search; alternative spot for GOAF analysis
+                if offline_queried_ortholog is None:  # if algorithm enters this section due to _d_compare_goaf == True, then this accelerates code, as it prevents double calculations
+                    human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(self.id_synonyms[0])  # file-based search; alternative spot for GOAF analysis
                 else:
                     human_ortholog_gene_id = offline_queried_ortholog
-                if (
-                    human_ortholog_gene_id is None
-                ):  # if file-based search finds no ortholog
-                    logger.warning(
-                        "human ortholog finder did not find ortholog for"
-                        f" {self.id_synonyms[0]}"
-                    )
-                    human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(
-                        self.id_synonyms[0]
-                    )  # attempt ensembl search
+                if human_ortholog_gene_id is None:  # if file-based search finds no ortholog
+                    logger.warning(f"human ortholog finder did not find ortholog for {self.id_synonyms[0]}")
+                    human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0]) if self.ensg_id is None else self.ensg_id
                     if human_ortholog_gene_ensg_id is not None:
                         enst_dict = ensembl_api.get_info(human_ortholog_gene_ensg_id)
                         human_ortholog_gene_id = enst_dict.get("genename")
@@ -202,9 +183,8 @@ class Product:
                                 DROP_MIRNA_FROM_ENSEMBL_QUERY is True
                                 and "MIR" in human_ortholog_gene_id
                             ):
-                                human_ortholog_gene_id = (
-                                    None  # Ensembl query returned a miRNA, return None
-                                )
+                                human_ortholog_gene_id = None  # Ensembl query returned a miRNA, return None
+        
                         if _d_compare_goaf is True:
                             if self.genename != human_ortholog_gene_id:
                                 logger.warning(
@@ -237,9 +217,7 @@ class Product:
                                     self.uniprot_id = enst_dict.get("uniprot_id")
                 else:
                     if _d_compare_goaf is True:
-                        if (
-                            self.genename != human_ortholog_gene_id
-                        ):  # with the current workflow, these will always be the same
+                        if self.genename != human_ortholog_gene_id:  # with the current workflow, these will always be the same
                             logger.warning(
                                 f"GOAF-obtained genename ({self.genename}) is not the"
                                 " same as file-search-obtained-genename"
@@ -323,12 +301,12 @@ class Product:
             
             if "UniProtKB" in self.id_synonyms[0]:
                 _d=0
-                pass # TODO: remove this, for debug only
+                pass # TODO: remove this, for debug only for non-hsapiens uniprotkb genes
             
             human_ortholog_gene_id = (await human_ortholog_finder.find_human_ortholog_async(self.id_synonyms[0]))
             if human_ortholog_gene_id is None:
                 logger.debug(f"Human ortholog finder did not find ortholog for {self.id_synonyms[0]}. Trying Ensembl query.")
-                human_ortholog_gene_ensg_id = (await ensembl_api.get_human_ortholog_async(self.id_synonyms[0], session, taxon=self.taxon))  # attempt ensembl search
+                human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0]) if self.ensg_id is None else self.ensg_id
                 if human_ortholog_gene_ensg_id is not None:
                     enst_dict = await ensembl_api.get_info_async(human_ortholog_gene_ensg_id, session)
                     self.genename = enst_dict.get("genename")
