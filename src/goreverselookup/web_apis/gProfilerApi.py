@@ -4,6 +4,9 @@ from typing import Union
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class gProfiler:
     def __init__(self) -> None:
@@ -55,6 +58,7 @@ class gProfiler:
 
         converted_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(taxon)
         if not converted_taxon:
+            logger.warning(f"Failed to convert taxon {taxon}!")
             return {}
         namespace = target_namespace
 
@@ -72,15 +76,6 @@ class gProfiler:
         )  # initialise with keys
         result: list[dict] = r.json()["result"]
 
-        for entry in result:
-            entry_source_id = entry["incoming"]
-            if entry["converted"] not in ["N/A", "None", None]:
-                converted_ids[entry_source_id].append(entry["converted"])
-        
-        if USE_UNIPROT_IDMAP_NOTATION == False:
-            return converted_ids
-        
-         # return idmap as uniprot notation
         failedIds = []
         for entry in result:
             entry_source_id = entry["incoming"]
@@ -89,6 +84,10 @@ class gProfiler:
             else:
                 failedIds.append(entry_source_id)
         
+        if USE_UNIPROT_IDMAP_NOTATION == False:
+            return converted_ids
+        
+         # return idmap as uniprot notation
         idmap_uniprot_notation_results = []
         for from_id, to_id in converted_ids.items():
             res = {
@@ -158,17 +157,21 @@ class gProfilerUtil:
         pass
 
     @classmethod
-    def NCBITaxon_to_gProfiler(cls, taxon):
+    def NCBITaxon_to_gProfiler(cls, taxon:Union[str,int]):
         """
         Converts an NCBI-type taxon to a respective GProfiler taxon.
         Note: gprofiler - https://biit.cs.ut.ee/gprofiler/
 
         Args:
-            taxon (_type_): _description_
+            taxon (str or int): a full NCBIType-taxon (NCBITaxon:xxxx) or an integer representing the NCBITaxon id (xxxx)
 
         Returns:
             _type_: _description_
         """
+        if isinstance(taxon, str):
+            if ":" in taxon:
+                taxon = taxon.split(":")[1]
+
         r = requests.get("https://biit.cs.ut.ee/gprofiler/api/util/organisms_list")
         taxon_equivalents = {}
         results = r.json()

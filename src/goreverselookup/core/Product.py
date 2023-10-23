@@ -174,7 +174,14 @@ class Product:
                     human_ortholog_gene_id = offline_queried_ortholog
                 if human_ortholog_gene_id is None:  # if file-based search finds no ortholog
                     logger.warning(f"human ortholog finder did not find ortholog for {self.id_synonyms[0]}")
-                    human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0]) if self.ensg_id is None else self.ensg_id
+                    if self.ensg_id is not None:
+                        if "ENSG" in self.ensg_id:
+                            human_ortholog_gene_ensg_id = self.ensg_id
+                        else:
+                            human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.ensg_id)
+                    else:
+                        human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0])
+
                     if human_ortholog_gene_ensg_id is not None:
                         enst_dict = ensembl_api.get_info(human_ortholog_gene_ensg_id)
                         human_ortholog_gene_id = enst_dict.get("genename")
@@ -306,7 +313,14 @@ class Product:
             human_ortholog_gene_id = (await human_ortholog_finder.find_human_ortholog_async(self.id_synonyms[0]))
             if human_ortholog_gene_id is None:
                 logger.debug(f"Human ortholog finder did not find ortholog for {self.id_synonyms[0]}. Trying Ensembl query.")
-                human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0]) if self.ensg_id is None else self.ensg_id
+                if self.ensg_id is not None:
+                    if "ENSG" in self.ensg_id:
+                        human_ortholog_gene_ensg_id = self.ensg_id
+                    else:
+                        human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.ensg_id)
+                else:
+                    human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0])
+                    
                 if human_ortholog_gene_ensg_id is not None:
                     enst_dict = await ensembl_api.get_info_async(human_ortholog_gene_ensg_id, session)
                     self.genename = enst_dict.get("genename")
