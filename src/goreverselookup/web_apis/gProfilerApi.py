@@ -35,8 +35,8 @@ class gProfiler:
 
         Returns:
             dict[str, list[str]]: _description_
-        """        
-        
+        """
+
         if not isinstance(taxon, str):
             raise TypeError("taxons must be str")
         if isinstance(source_ids, str):
@@ -71,6 +71,56 @@ class gProfiler:
                 converted_ids[entry_source_id].append(entry["converted"])
 
         return converted_ids
+
+    def find_orthologs(
+        self,
+        source_ids: Union[str, list[str], set[str]],
+        source_taxon: str,
+        target_taxon: str = "9606",
+    ) -> dict[str, list[str]]:
+        """_summary_
+
+        Args:
+            source_ids (Union[str, list[str], set[str]]): _description_
+            source_taxon (str): _description_
+            target_taxon (str, optional): _description_. Defaults to "9606".
+
+        Returns:
+            dict[str, list[str]]: _description_
+        """
+        if not isinstance(source_taxon, str) and not isinstance(target_taxon, str):
+            raise TypeError("taxons must be str")
+
+        if isinstance(source_ids, str):
+            source_ids_list = [source_ids]
+        if isinstance(source_ids, set):
+            source_ids_list = list(source_ids)
+        if isinstance(source_ids, list):
+            source_ids_list = source_ids
+
+        source_taxon = NCBITaxon_to_gProfiler(source_taxon)
+        target_taxon = NCBITaxon_to_gProfiler(target_taxon)
+        if not source_taxon or not target_taxon:
+            return {}
+
+        r = self.s.post(
+            url="https://biit.cs.ut.ee/gprofiler_archive3/e108_eg55_p17/api/orth/orth/",
+            json={
+                "organism": source_taxon,
+                "target": target_taxon,
+                "query": source_ids_list,
+            },
+        )
+
+        target_ids = defaultdict(
+            list, {k: [] for k in source_ids_list}
+        )  # initialise with keys
+        result: list[dict] = r.json()["result"]
+        for entry in result:
+            entry_source_id = entry["incoming"]
+            if entry["ortholog_ensg"] not in ["N/A", "None", None]:
+                target_ids[entry_source_id].append(entry["ortholog_ensg"])
+        return target_ids
 
 
 def NCBITaxon_to_gProfiler(taxon):
