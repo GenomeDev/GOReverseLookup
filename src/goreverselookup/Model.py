@@ -15,6 +15,7 @@ from .core.miRNA import miRNA
 from .web_apis.GOApi import GOApi
 from .web_apis.EnsemblApi import EnsemblApi
 from .web_apis.UniprotApi import UniProtApi
+from .web_apis.gProfilerApi import gProfiler
 from .parse.GOAFParser import GOAnnotationsFile
 from .parse.OrthologParsers import HumanOrthologFinder
 from .parse.OBOParser import OboParser
@@ -646,6 +647,62 @@ class ReverseLookup:
         ### Run 2: attempt Ensembl gene mappings
         self.fetch_uniprot_product_ensg_ids()
 
+    def fetch_orthologs_products_batch_gOrth(self, target_taxon_number="9606"):
+        """
+        Fetches a whole batch of gene product orthologs using gOrth (https://biit.cs.ut.ee/gprofiler/orth).
+        """
+        # divide products into distinct groups
+        taxa_ids = []
+        taxa_ids.append(f"{self.model_settings.target_organism.ncbi_id}")
+        for ncbi_id in self.model_settings.ortholog_organisms:
+            if ":" in ncbi_id:
+                ncbi_id = ncbi_id.split(":")[1]
+            taxa_ids.append(ncbi_id)
+        
+        # initialise empty dict
+        ortholog_query_dict = {}
+        for taxon_number in taxa_ids:
+            ortholog_query_dict[taxon_number] = []
+        
+        # iterate over products, construct ortholog_query_dict
+        # first pass: browsing id synonyms
+        for product in self.products:
+            product_id_short = "" # mustn't be UniProtKB:xxxx but just 'xxxx'
+            if len(product.id_synonyms) > 0:
+                id_syn = product.id_synonyms[0]
+                if ":" in id_syn:
+                    product_id_short = id_syn.split(":")[1]
+            if product_id_short == "": # if there is now id synonym, fall back to ensg id
+                if product.ensg_id is not None:
+                    product_id_short = product.ensg_id
+            if product_id_short == "": 
+                continue
+            
+            product_taxon_number = product.taxon.split(":")[1] if ":" in product.taxon else product.taxon
+            ortholog_query_dict[product_taxon_number].append(product_id_short)
+
+        # perform search and modify self.products with the search results
+        gprofiler = gProfiler()
+        for taxon, ids in ortholog_query_dict.items():
+            ortholog_query_results = gprofiler.find_orthologs(source_ids=ids, source_taxon=taxon, target_taxon=target_taxon_number) #all ortholog query results for this taxon
+            # process results for this taxon
+            for id, ortholog_results in ortholog_query_results.items():
+                p = self.get_product(id)
+                if ortholog_results == []:
+                    p.gorth_ortholog_exists = False
+                if len(ortholog_results) > 1:
+                    p.gorth_ortholog_exists = True
+                    p.ensg_id = ortholog_results[0]
+                    # TODO: this only takes the first ENS id. Implement perc_id (percentage identity) checks!!
+                if len(ortholog_results) == 1:
+                    # this is the ideal case -> gOrth returns only one ortholog id
+                    p.gorth_ortholog_exists = True
+                    p.ensg_id = ortholog_results[0]
+        
+        # TODO: start from here! finish implementation of this function into the code,
+        # modify ortholog query code to take into account (Product).gorth_ortholog_exists
+
+    
     def fetch_ortholog_products(
         self,
         refetch: bool = False,
@@ -1324,13 +1381,13 @@ class ReverseLookup:
 
     def get_product(self, identifier) -> Product:
         """
-        Return GOTerm based on any id
+        Return product based on any id
         """
         product = next(
             obj
             for obj in self.products
             if any(
-                getattr(obj, attr) == identifier
+                identifier in getattr(obj, attr)
                 for attr in [
                     "genename",
                     "description",
@@ -1339,9 +1396,9 @@ class ReverseLookup:
                     "enst_id",
                     "refseq_nt_id",
                     "mRNA",
-                ]
+                ] if getattr(obj,attr) is not None
             )
-            or any(id == identifier for id in obj.id_synonyms)
+            or any(identifier in id for id in obj.id_synonyms)
         )
         return product
 

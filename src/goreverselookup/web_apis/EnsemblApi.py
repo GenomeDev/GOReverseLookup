@@ -65,20 +65,18 @@ class EnsemblApi:
         url = f"https://rest.ensembl.org/homology/symbol/{species}/{id_url}?target_species=human;type=orthologues;sequence=none"
 
         # Check if the url is cached
-        # previous_response = ConnectionCacher.get_url_response(url)
         previous_response = Cacher.get_data("url", url)
-        if (
-            previous_response is not None
-        ):  # "error" check is a bugfix for this response: {'error': 'No valid lookup found for symbol Oxct2a'}
+        if previous_response is not None:  # "error" check is a bugfix for this response: {'error': 'No valid lookup found for symbol Oxct2a'}
             response_json = previous_response
         else:
             try:
                 response = self.s.get(
-                    url, headers={"Content-Type": "application/json"}, timeout=5
+                    url, 
+                    headers={"Content-Type": "application/json"}, 
+                    timeout=5
                 )
                 response.raise_for_status()
                 response_json = response.json()["data"][0]["homologies"]
-                # ConnectionCacher.store_url(url, response=response_json)
                 Cacher.store_data("url", url, response_json)
             except requests.exceptions.RequestException:
                 return None

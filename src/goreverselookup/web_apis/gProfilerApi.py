@@ -118,6 +118,10 @@ class gProfiler:
         Returns:
             dict[str, list[str]]: _description_
         """
+
+        if ":" in source_taxon:
+            source_taxon = source_taxon.split(":")[1]
+
         if not isinstance(source_taxon, str) and not isinstance(target_taxon, str):
             raise TypeError("taxons must be str")
 

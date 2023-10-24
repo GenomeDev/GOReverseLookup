@@ -31,6 +31,7 @@ class Product:
         scores: dict = None,
         had_orthologs_computed: bool = False,
         had_fetch_info_computed: bool = False,
+        gorth_ortholog_exists: bool = False
     ):
         """
         A class representing a product (e.g. a gene or protein).
@@ -46,6 +47,7 @@ class Product:
             scores (dict): A dictionary of scores associated with the product (e.g. expression score, functional score).
             had_orthologs_computed (bool): If this Product instance has had the fetch_ortholog function called already.
             had_fetch_info_computed (bool): If this Product instance has had the fetch_info function called already.
+            gorth_ortholog_exists (bool): True, if gOrth (from gProfiler) finds either 1 or multiple ortholog ids, otherwise false (if no orthologs are found via gOrth)
         """
         self.id_synonyms = id_synonyms
         self.taxon = taxon
@@ -61,6 +63,7 @@ class Product:
         self.had_fetch_info_computed = had_fetch_info_computed
         self._d_offline_online_ortholog_mismatch = False  # if fetch_ortholog is queried with _d_compare_goaf set to True, this variable will be set to True if there is a mismatch in the gene names returned from the online and offline query algorithms.
         self._d_offline_online_ortholog_mismatch_values = ""
+        self.gorth_ortholog_exists = gorth_ortholog_exists
 
         # see if UniProtKB id is already in id_synonyms:
         for id_syn in self.id_synonyms:
