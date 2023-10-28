@@ -1,0 +1,78 @@
+format-version: 1.0 
+data-version: test/2023-09-03
+subsetdef: test species
+default-namespace: gene_ontology
+ontology: go
+property_value: has_ontology_root_term GO:0000001
+
+[Term]
+id: GO:0000001
+name: root of all
+namespace: biological_process
+def: "Top root"
+synonym: "top one" EXACT []
+
+[Term]
+id: GO:0000002
+name: second level 1
+namespace: biological_process
+def: "first child of root" [GOC:ai, GOC:vw]
+is_a: GO:0000001 ! mitochondrion organization
+
+[Term]
+id: GO:0000003
+name: second level 2
+namespace: biological_process
+alt_id: GO:1000003
+def: "second child of root, with alt_id" [GOC:go_curators, GOC:isa_complete, GOC:jl, ISBN:0198506732]
+subset: goslim_agr
+subset: goslim_chembl
+subset: goslim_flybase_ribbon
+subset: goslim_pir
+subset: goslim_plant
+is_a: GO:0000001 ! biological_process
+disjoint_from: GO:0044848 ! biological phase
+
+[Term]
+id: GO:0000005
+name: obsolete third level 1
+namespace: molecular_function
+def: "OBSOLETE. child of second level 2." [GOC:jl, PMID:12150913]
+comment: This term was made obsolete because it refers to a class of gene products and a biological process rather than a molecular function.
+synonym: "ribosomal chaperone activity" EXACT []
+is_obsolete: true
+consider: GO:0000003
+
+[Term]
+id: GO:0000006
+name: third level 2
+namespace: molecular_function
+def: "child of second level 1" [TC:2.A.5.1.1]
+synonym: "high affinity zinc uptake transmembrane transporter activity" EXACT []
+synonym: "high-affinity zinc uptake transmembrane transporter activity" RELATED []
+is_a: GO:0000002 ! zinc ion transmembrane transporter activity
+
+[Term]
+id: GO:0000015
+name: forth level 1
+namespace: cellular_component
+def: "leaf 1" [GOC:jl, ISBN:0198506732]
+subset: goslim_metagenomics
+synonym: "enolase complex" EXACT []
+is_a: GO:0000006 ! catalytic complex
+relationship: part_of GO:0005829 ! cytosol
+
+[Term]
+id: GO:0005829
+name: lone root
+namespace: molecular_function
+def: "lone root for relationship" [TC:2.A.5.1.1]
+synonym: "high affinity zinc uptake transmembrane transporter activity" EXACT []
+synonym: "high-affinity zinc uptake transmembrane transporter activity" RELATED []
+
+[Typedef]
+id: regulates
+name: regulates
+namespace: external
+xref: RO:0002211
+is_transitive: true
