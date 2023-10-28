@@ -24,6 +24,8 @@ class JsonUtil:
         initial_filepath = filepath
 
         if not os.path.exists(filepath):
+            FileUtil.create_empty_file(filepath)
+            
             if not os.path.isabs(filepath):
                 fileutil = FileUtil()
                 filepath = fileutil.find_file(filepath)  # attempt backtrace file search

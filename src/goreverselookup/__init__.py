@@ -33,6 +33,8 @@ from .util.FileUtil import FileUtil
 from .util.JsonUtil import JsonUtil
 from .util.Timer import Timer
 from .util.LogConfigLoader import LogConfigLoader
+from .util.WebsiteParser import WebsiteParser
+from .util.ApiUtil import EnsemblUtil
 
 from .web_apis.EnsemblApi import EnsemblApi
 from .web_apis.UniprotApi import UniProtApi

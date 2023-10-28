@@ -439,6 +439,8 @@ class UniProtApi:
                 (entry for entry in results if entry["primaryAccession"] == uniprot_id),
                 None,
             )
+            if result is None:
+                return {}
             name = result["genes"][0]["geneName"]["value"]  # gene name
             if (
                 "proteinDescription" in result
@@ -610,6 +612,7 @@ class UniProtApi:
             return previous_result
 
         # Construct UniProt API query URL
+        # TODO: CHANGE ORGANISM ACCORDING TO TARGET ORGANISM
         url = f"https://rest.uniprot.org/uniprotkb/search?query={uniprot_id}+AND+organism_id:9606&format=json&fields=accession,gene_names,organism_name,reviewed,xref_ensembl,xref_refseq,xref_mane-select,protein_name"
 
         # Check if the url is cached

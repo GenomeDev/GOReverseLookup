@@ -416,9 +416,7 @@ class binomial_test(Metrics):
         for process in self.reverse_lookup.target_processes:
             process_goterms_list = self.reverse_lookup.get_all_goterms_for_process(process["process"])  # get all (positive, negative, neutral) GO terms for this process from the input file
             # TODO: debate on the use of .goaf for num_goterms_product_general
-            num_goterms_product_general = len(
-                self.goaf.get_all_terms_for_product(product.genename)
-            )  # get all GO terms associated with this product from the GOAF
+            num_goterms_product_general = len(self.goaf.get_all_terms_for_product(product.genename))  # get all GO terms associated with this product from the GOAF
             num_goterms_all_general = self._num_all_goterms
             for direction in ["+", "-"]:
                 # num goterms associated with input Product p AND the current process (including process direction)
@@ -446,17 +444,28 @@ class binomial_test(Metrics):
                 # time for Binomial test and "risk ratio"
                 # binom = binomtest(num_goterms_product_process, num_goterms_all_process,
                 #                  (num_goterms_product_general/num_goterms_all_general), alternative='greater')
-
-                binom = binomtest(
-                    num_goterms_product_process,
-                    num_goterms_all_process,
-                    (
-                        num_goterms_product_general / num_goterms_all_general
-                        if num_goterms_all_general != 0
-                        else 0
-                    ),
-                    alternative="greater",
-                )  # bugfix: ZeroDivisionError
+                try:
+                    binom = binomtest(
+                        num_goterms_product_process,
+                        num_goterms_all_process,
+                        (
+                            num_goterms_product_general / num_goterms_all_general
+                            if num_goterms_all_general != 0
+                            else 0
+                        ),
+                        alternative="greater",
+                    )  # bugfix: ZeroDivisionError
+                except ValueError as e:
+                    # this might happen because num_goterms_all_process is 0 
+                    results_dict[f"{process['process']}{direction}"] = {
+                        "pvalue": 1.0,
+                        "error": "ValueError",
+                        "n_prod_process" : num_goterms_product_process,
+                        "n_all_process" : num_goterms_all_process,
+                        "n_prod_general" : num_goterms_product_general,
+                        "n_all_general" : num_goterms_all_general,
+                    }
+                
                 binom_pvalue = binom.pvalue
 
                 if (

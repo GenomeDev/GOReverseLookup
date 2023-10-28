@@ -108,6 +108,15 @@ class HumanOrthologFinder:
         self.mgi = MGIHumanOrthologFinder(filepath=mgi_filepath, download_url=mgi_download_url)
         self.rgd = RGDHumanOrthologFinder(filepath=rgd_filepath, download_url=rgd_download_url)
         self.goaf = goaf
+    
+    @classmethod
+    def get_supported_organism_dbs(cls):
+        return [
+            "ZFIN",
+            "MGI",
+            "RGD",
+            "Xenbase"
+        ]
 
     def find_human_ortholog(self, product):
         """
@@ -137,6 +146,15 @@ class HumanOrthologFinder:
         return human_gene_symbol
 
     async def find_human_ortholog_async(self, product):
+        """
+        Finds the human ortholog for the given product.
+
+        Args:
+            product (str): The product (id) for which to find the human ortholog.
+
+        Returns:
+            The human gene symbol or None if no human ortholog was found.
+        """
         if "ZFIN" in product:
             result = await self.zfin.find_human_ortholog_async(product)  # returns [0]: gene symbol, [1]: long name of the gene
             return result[0] if result is not None else None
