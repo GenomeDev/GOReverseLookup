@@ -56,8 +56,9 @@ dev = [
 #Repository = "https://github.com/me/spam.git"
 #Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 #
-#[project.scripts]
-#spam-cli = "spam:main_cli"
+
+[project.scripts]
+goreverselookup = "goreverselookup.Model:cli"
 
 [tool.tox]
 legacy_tox_ini = """

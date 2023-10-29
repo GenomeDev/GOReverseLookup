@@ -25,13 +25,59 @@ from .ontology import GODag
 from .associations import Annotations
 from .reverse_lookup import GOReverseLookupStudy
 from collections import defaultdict
-
+from .reverse_lookup import  ReverseLookupRecord
+import argparse
 
 import logging
 
 # from logging import config
 # config.fileConfig("logging_config.py")
 logger = logging.getLogger(__name__)
+
+
+def cli():
+    parser = argparse.ArgumentParser(description="Run GO reverse lookup study")
+    parser.add_argument("filename", help="the filepath to the input file")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="change the verbosity of console output",
+        action="count",
+        default=0,
+    )
+    parser.add_argument("-o", "--output", help="destination filepath for the report")
+    parser.add_argument("--noapi", help="disable the use of APIs in the study", action="store_true")
+
+    args = parser.parse_args()
+
+    input_file = InputFileParser(args.filename)
+
+    model = ReverseLookupModel.from_input_file_parser(input_file)
+
+    # find orthologs
+    if args.noapi:
+        model.find_orthologs(database="local_files")
+    else:
+        model.find_orthologs(database="all")
+    # discard all annotations for which an ortholog was not found
+    model.annotations.filter(lambda a: a.taxon == model.target_species)
+
+    # convert to ensg
+    model.annotations.convert_ids("ensg", "gConvert")
+
+    # we don't need genes, which are not associated to any goterm
+    goterm_list = [gt.id for gt in model.goterms]
+    all_relevant_genes = [object_id for object_id, anno_set in model.annotations.dict_from_attr("object_id").items() if any(anno.term_id in goterm_list for anno in anno_set)]
+    model.annotations.filter(lambda a: a.object_id in all_relevant_genes)
+
+    # propagate associations
+    # TODO different types
+    if model.indirect_annotations_propagation is not False:
+        model.annotations.propagate_associations(model.godag)
+        
+    model.run_study()
+    
+    print(model.results_dict)
 
 
 class InputFileParser:
@@ -45,7 +91,7 @@ class InputFileParser:
         )
 
         #setup defaults
-        self.subontologies = ["BP", "CC", "MF"]
+        self.subontologies = ["biological_process", "cellular_component", "molecular_function"]
         self.target_species = "9606"
         self.ortholog_species = []
         self.obo_filepath = "go.obo"
@@ -101,11 +147,11 @@ class InputFileParser:
                     if setting_name == "subontologies":
                         if setting_value != "all":
                             setting_value = setting_value.split(',')
-                            if not all(a in ["BP", "CC", "MF"] for a in setting_value):
-                                raise ValueError(f"{setting_value} is not part of ['BP', 'CC', 'MF']")
+                            if not all(a in ["biological_process", "cellular_component", "molecular_function"] for a in setting_value):
+                                raise ValueError(f'{setting_value} is not part of ["biological_process", "cellular_component", "molecular_function"]')
                             self.subontologies = setting_value
                         else:
-                            self.subontologies = ["BP", "CC", "MF"]
+                            self.subontologies = ["biological_process", "cellular_component", "molecular_function"]
                     if setting_name == "target_species":
                         # TODO: convert to NCBI taxon if needed
                         self.target_species = setting_value
@@ -190,9 +236,9 @@ class InputFileParser:
 class ReverseLookupModel:
     def __init__(
         self,
-        goterms: set[GOTerm],
-        target_processes: list,
-        goterms_per_process: dict[str, set[str]],
+        target_processes: list[dict] = [],
+        goterms_per_process: dict[str, set[str]] = {},
+        goterms: set[GOTerm] = set(),
         products: set[Product] = set(),
         godag: Optional[GODag] = None,
         obo_filepath: str = "go.obo",
@@ -202,7 +248,7 @@ class ReverseLookupModel:
         ortholog_species: list = [],
         valid_relationships: list = ["part_of", "is_a"],
         valid_evidence_codes: str = "all",
-        subontologies: list = ["BP"],
+        subontologies: list = ["biological_process"],
         indirect_annotations_propagation: bool = False,
         alpha: float = 0.05,
         pvalcal: str = "fisher_scipy_stats",
@@ -245,20 +291,20 @@ class ReverseLookupModel:
 
     
     def parse_godag(self):
-        self.godag = GODag(self.obo_filepath)
+        self.godag = GODag.from_file(self.obo_filepath)
         # filter subontologies
         self.godag.filter(lambda a: a.namespace in self.subontologies)
 
     
     def parse_annotations(self):
-        self.annotations = Annotations().union(Annotations.from_file(fp) for fp in self.annotations_filepaths)
+        self.annotations = Annotations().union(*[Annotations.from_file(fp) for fp in self.annotations_filepaths])
         # TODO: filter evidence codes
         #self.annotations.filter(lambda a: a.evidence_code in self.valid_evidence_codes)
         # filter annotations to only leave the ones in ortholog_species
         self.annotations.filter(lambda a: a.taxon in [self.target_species, *self.ortholog_species])
 
 
-    def find_orthologs(self, target_species, database="all"):
+    def find_orthologs(self, database="all"):
         """_summary_
 
         Args:
@@ -269,9 +315,11 @@ class ReverseLookupModel:
             database_list = ["gOrth", "ensembl", "local_files"]
         if isinstance(database, str):
             database_list = [database]
+        if isinstance(database, list):
+            database_list = database
         
         for db in database_list:
-            self.annotations.find_orthologs(target_species, db, prune=False)
+            self.annotations.find_orthologs(self.target_species, db, prune=False)
 
 
     def run_study(self):
@@ -287,9 +335,27 @@ class ReverseLookupModel:
         results_dict: dict[str, list] = {}
         for key, study_set in self.goterms_per_process.items():
             results_dict[key] = study.run_study(study_set)
+        self.results_dict: dict[str, list[ReverseLookupRecord]] = results_dict
 
+    
+    @classmethod
+    def from_input_file_parser(cls, ifp: InputFileParser):
         
-
+        return cls(
+        goterms_per_process=ifp.goterms_per_process,
+        target_processes=ifp.target_processes,
+        obo_filepath=ifp.obo_filepath,
+        annotations_filepaths=ifp.annotations_filepaths,
+        target_species=ifp.target_species,
+        ortholog_species=ifp.ortholog_species,
+        valid_relationships=ifp.valid_relationships,
+        valid_evidence_codes=ifp.valid_evidence_codes,
+        subontologies=ifp.subontologies,
+        indirect_annotations_propagation=ifp.indirect_annotations_propagation,
+        alpha=ifp.alpha,
+        pvalcal=ifp.pvalcal,
+        correction_methods=ifp.correction_methods
+    )
 
 
 

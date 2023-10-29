@@ -117,31 +117,19 @@
 #		model_data_file = "model/data.json"
 #		model = ReverseLookup.load_model(model_data_file)
 ###settings
-target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
-ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus|Xenbase|NCBITaxon:8353
-fisher_test_use_online_query	False
-include_indirect_annotations	False
-uniprotkb_genename_online_query	False
-#require_product_evidence_codes	False
-pvalue	0.05
-###filepaths
-go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
-goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
-#goa_zfin TODO
-#goa_rgd TODO
-#goa_mgi TODO
-#goa_xenbase TODO
-ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
-ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
-ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt	rattus_norvegicus
-ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
-###processes [proces name] [to be expressed + or suppressed -]
+obo_file	tests/data/go1.obo
+annotations_files	tests/data/human_test.gaf
+subontologies	biological_process,cellular_component,molecular_function
+target_species	9606 # format: ncbi_taxon
+ortholog_species	7955,10116,10090,8353 # format: comma separated ncbi_taxon
+valid_EC	all
+valid_relationships	is_a,part_of
+indirect_annotations	false
+alpha	0.01
+pvalcal	fisher_scipy_stats
+corrections	bonferroni###processes [proces name] [to be expressed + or suppressed -]
 chronic_inflammation	+
 cancer	+
-###categories [category] [True / False]
-biological_process	True
-molecular_activity	True
-cellular_component	False
 ###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
 GO:0006954	chronic_inflammation	+	1	inflammatory response
 GO:0160006	chronic_inflammation	+	1	Fc receptor-mediated immune complex endocytosis
@@ -229,34 +217,34 @@ GO:0070100	chronic_inflammation	-	1	negative regulation of chemokine-mediated si
 # immune effector process parent node
 GO:0002698	chronic_inflammation	-	1	negative regulation of immune effector process
 GO:0002699	chronic_inflammation	+	1	positive regulation of immune effector process
-    GO:0032833	chronic_inflammation	-	1	negative regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
-	GO:0032834	chronic_inflammation	+	1	positive regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
-	GO:1905450	chronic_inflammation	-	1	negative regulation of Fc-gamma receptor signaling pathway involved in phagocytosis
-	GO:1905451	chronic_inflammation	+	1	positive regulation of Fc-gamma receptor signaling pathway involved in phagocytosis
-	GO:2001189	chronic_inflammation	-	1	negative regulation of T cell activation via T cell receptor contact with antigen bound to MHC molecule on antigen presenting cell
-	GO:2001190	chronic_inflammation	+	1	positive regulation of T cell activation via T cell receptor contact with antigen bound to MHC molecule on antigen presenting cell
-	GO:0045623	chronic_inflammation	-	1	negative regulation of T-helper cell differentiation
-	GO:0045624	chronic_inflammation	+	1	positive regulation of T-helper cell differentiation
-	GO:0045916	chronic_inflammation	-	1	negative regulation of complement activation
-	GO:0045917	chronic_inflammation	+	1	positive regulation of complement activation
-	GO:2001192	chronic_inflammation	-	1	negative regulation of gamma-delta T cell activation involved in immune response
-	GO:2001193	chronic_inflammation	+	1	positive regulation of gamma-delta T cell activation involved in immune response
-	GO:0002632	chronic_inflammation	-	1	negative regulation of granuloma formation
-	GO:0002633	chronic_inflammation	+	1	positive regulation of granuloma formation
-	GO:0043301	chronic_inflammation	-	1	negative regulation of leukocyte degranulation
-	GO:0043302	chronic_inflammation	+	1	positive regulation of leukocyte degranulation
-	GO:0002704	chronic_inflammation	-	1	negative regulation of leukocyte mediated immunity
-	GO:0002705	chronic_inflammation	+	1	positive regulation of leukocyte mediated immunity
-	GO:0033007	chronic_inflammation	-	1	negative regulation of mast cell activation involved in immune response
-	GO:0033008	chronic_inflammation	+	1	positive regulation of mast cell activation involved in immune response
-	GO:0043381	chronic_inflammation	-	1	negative regulation of memory T cell differentiation
-	GO:0043382	chronic_inflammation	+	1	positive regulation of memory T cell differentiation
-	GO:0032827	chronic_inflammation	-	1	negative regulation of natural killer cell differentiation involved in immune response
-	GO:0032828	chronic_inflammation	+	1	positive regulation of natural killer cell differentiation involved in immune response
-	GO:0032821	chronic_inflammation	-	1	negative regulation of natural killer cell proliferation involved in immune response
-	GO:0032822	chronic_inflammation	+	1	positive regulation of natural killer cell proliferation involved in immune response
-	GO:0002701	chronic_inflammation	-	1	negative regulation of production of molecular mediator of immune response
-	GO:0002702	chronic_inflammation	+	1	positive regulation of production of molecular mediator of immune response
+GO:0032833	chronic_inflammation	-	1	negative regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
+GO:0032834	chronic_inflammation	+	1	positive regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
+GO:1905450	chronic_inflammation	-	1	negative regulation of Fc-gamma receptor signaling pathway involved in phagocytosis
+GO:1905451	chronic_inflammation	+	1	positive regulation of Fc-gamma receptor signaling pathway involved in phagocytosis
+GO:2001189	chronic_inflammation	-	1	negative regulation of T cell activation via T cell receptor contact with antigen bound to MHC molecule on antigen presenting cell
+GO:2001190	chronic_inflammation	+	1	positive regulation of T cell activation via T cell receptor contact with antigen bound to MHC molecule on antigen presenting cell
+GO:0045623	chronic_inflammation	-	1	negative regulation of T-helper cell differentiation
+GO:0045624	chronic_inflammation	+	1	positive regulation of T-helper cell differentiation
+GO:0045916	chronic_inflammation	-	1	negative regulation of complement activation
+GO:0045917	chronic_inflammation	+	1	positive regulation of complement activation
+GO:2001192	chronic_inflammation	-	1	negative regulation of gamma-delta T cell activation involved in immune response
+GO:2001193	chronic_inflammation	+	1	positive regulation of gamma-delta T cell activation involved in immune response
+GO:0002632	chronic_inflammation	-	1	negative regulation of granuloma formation
+GO:0002633	chronic_inflammation	+	1	positive regulation of granuloma formation
+GO:0043301	chronic_inflammation	-	1	negative regulation of leukocyte degranulation
+GO:0043302	chronic_inflammation	+	1	positive regulation of leukocyte degranulation
+GO:0002704	chronic_inflammation	-	1	negative regulation of leukocyte mediated immunity
+GO:0002705	chronic_inflammation	+	1	positive regulation of leukocyte mediated immunity
+GO:0033007	chronic_inflammation	-	1	negative regulation of mast cell activation involved in immune response
+GO:0033008	chronic_inflammation	+	1	positive regulation of mast cell activation involved in immune response
+GO:0043381	chronic_inflammation	-	1	negative regulation of memory T cell differentiation
+GO:0043382	chronic_inflammation	+	1	positive regulation of memory T cell differentiation
+GO:0032827	chronic_inflammation	-	1	negative regulation of natural killer cell differentiation involved in immune response
+GO:0032828	chronic_inflammation	+	1	positive regulation of natural killer cell differentiation involved in immune response
+GO:0032821	chronic_inflammation	-	1	negative regulation of natural killer cell proliferation involved in immune response
+GO:0032822	chronic_inflammation	+	1	positive regulation of natural killer cell proliferation involved in immune response
+GO:0002701	chronic_inflammation	-	1	negative regulation of production of molecular mediator of immune response
+GO:0002702	chronic_inflammation	+	1	positive regulation of production of molecular mediator of immune response
 
 GO:0050777	chronic_inflammation	-	1	negative regulation of immune response
 GO:0050778	chronic_inflammation	+	1	positive regulation of immune response

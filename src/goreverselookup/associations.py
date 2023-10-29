@@ -107,7 +107,9 @@ class Annotations(set[Annotation]):
 
     def union(self, *others):
         # Check if all 'others' are instances of Annotations
-        if not all(isinstance(other, Annotations) for other in others):
+        if not all(
+            isinstance(other, Annotations) or all(isinstance(second_level, Annotations) for second_level in other)
+            for other in others):
             raise TypeError("All 'others' must be instances of Annotations")
 
         # Perform the set union operation and create a new Annotations instance

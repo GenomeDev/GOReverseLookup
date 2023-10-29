@@ -3,7 +3,7 @@
 ###settings
 obo_file	data/go1.obo
 annotations_files	data/human_test.gaf
-subontologies	BP,MF
+subontologies	biological_process,cellular_component,molecular_function
 target_species	9606 # format: ncbi_taxon
 ortholog_species	7955,10116,10090,8353 # format: comma separated ncbi_taxon
 valid_EC	all
@@ -14,27 +14,7 @@ pvalcal	fisher_scipy_stats
 corrections	bonferroni
 ###processes [proces name] [to be expressed + or suppressed -]
 chronic_inflammation	+
-cancer	+
-
 ###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
-GO:0006954	chronic_inflammation	+	1	inflammatory response
-GO:0160006	chronic_inflammation	+	1	Fc receptor-mediated immune complex endocytosis
-GO:0050866	chronic_inflammation	-	1	negative regulation of cell activation
-GO:0050867	chronic_inflammation	+	1	positive regulation of cell activation
-GO:0031342	chronic_inflammation	-	1	negative regulation of cell killing
-GO:0031343	chronic_inflammation	+	1	positive regulation of cell killing
-GO:2000146	chronic_inflammation	-	1	negative regulation of cell motility
-GO:2000147	chronic_inflammation	+	1	positive regulation of cell motility
-GO:1900038	chronic_inflammation	-	1	negative regulation of cellular response to hypoxia
+GO:0005829	chronic_inflammation	+	1	inflammatory response
+GO:0000002	chronic_inflammation	+	1	Fc receptor-mediated immune complex endocytosis
 
-# JNK cascade:  evidence indicates that this Janus signaling promotes cancer cell survival. JNK acts synergistically with NF-κB, JAK/STAT, and other signaling molecules to exert a survival function (https://onlinelibrary.wiley.com/doi/abs/10.1002/med.21574#:~:text=c%2DJun%20N%2Dterminal%20kinase,to%20exert%20a%20survival%20function)
-GO:0007254	cancer	+	1	JNK cascade
-GO:0004705	cancer	+	1	JUN kinase activity # 10.1002/med.21574 - JNK signaling in cancer cell survival
-GO:0046330	cancer	+	1	positive regulation of JNK cascade
-GO:0046329	cancer	-	1	negative regulation of JNK cascade
-GO:0043507	cancer	+	1	positive regulation of JUN kinase activity
-GO:0043508	cancer	-	1	negative regulation of JUN kinase activity
-
-# Wnt cascade; # ... leading to actin cytoskeleton rearrangement. In addition, Dvl activates Rac and finally JNK (c-Jun-N-terminal-kinase) thereby modulating cell migration. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5853106/; doi: 10.1016/j.critrevonc.2015.12.005)
-GO:0090263	cancer	+	1	positive regulation of canonical Wnt signaling pathway	
-GO:0090090	cancer	-	1	negative regulation of canonical Wnt signaling pathway
