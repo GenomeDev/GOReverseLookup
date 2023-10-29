@@ -58,19 +58,19 @@ class InputFileParser:
         self.correction_methods = ["bonferroni"]
 
         # required
-        self.target_processes = {}
+        self.target_processes = []
         self.goterms_per_process: dict[str, set[str]] = defaultdict(set) #only store ids
 
-        self.read_file(self.filepath)
+        self.read_file()
 
         if not self.target_processes or not self.goterms_per_process:
             raise ValueError("No target processes or goterms were provided")
-        if not all(pr["process"] in self.goterms_per_process for pr in self.target_processes):
+        if not all(any(pr["process"] in key[:-1] for key in self.goterms_per_process.keys()) for pr in self.target_processes):
             raise ValueError("There is a mismatch between target processes and goterms")
 
 
-    def read_file(self, filepath):
-        with open(filepath, "r") as read_content:
+    def read_file(self):
+        with open(self.filepath, "r") as read_content:
             read_lines = read_content.read().splitlines()[2:]  # skip first 2 lines
             section = ""  # what is the current section i am reading
             for line in read_lines:
@@ -95,12 +95,13 @@ class InputFileParser:
                         setting_value = True
                     if setting_value == "False" or setting_value == "false":
                         setting_value = False
+
                     if setting_name == "alpha":
                         self.alpha = float(setting_value)
                     if setting_name == "subontologies":
                         if setting_value != "all":
                             setting_value = setting_value.split(',')
-                            if setting_value not in ["BP", "CC", "MF"]:
+                            if not all(a in ["BP", "CC", "MF"] for a in setting_value):
                                 raise ValueError(f"{setting_value} is not part of ['BP', 'CC', 'MF']")
                             self.subontologies = setting_value
                         else:
@@ -116,7 +117,7 @@ class InputFileParser:
                     if setting_name == "obo_file":
                         self.obo_filepath = setting_value
                         # TODO: do a check
-                    if setting_name == "goa_files":
+                    if setting_name == "annotations_files":
                         self.annotations_filepaths = setting_value.split('|')
                         # TODO: do a check
                     if setting_name == "indirect_annotations":
@@ -126,6 +127,7 @@ class InputFileParser:
                             self.indirect_annotations_propagation = "all"
                         # TODO: implement custom depth, level, or other algorithm
                     if setting_name == "valid_EC":
+                        # TODO: process this
                         self.valid_evidence_codes = setting_value.split(',')
                     if setting_name == "valid_relationships":
                         self.valid_relationships = setting_value.split(',')
@@ -272,7 +274,7 @@ class ReverseLookupModel:
             self.annotations.find_orthologs(target_species, db, prune=False)
 
 
-    def run_study(self, alpha, pvalcalc, correction):
+    def run_study(self):
         """_summary_
 
         Args:
@@ -280,10 +282,10 @@ class ReverseLookupModel:
             pvalcalc (_type_): _description_
             correction (_type_): _description_
         """        
-        study = GOReverseLookupStudy(self.annotations, self.godag, alpha, pvalcalc, correction)
+        study = GOReverseLookupStudy(self.annotations, self.godag, self.alpha, self.pvalcal, self.correction_methods)
         
         results_dict: dict[str, list] = {}
-        for key, study_set in study_sets_dict.items():
+        for key, study_set in self.goterms_per_process.items():
             results_dict[key] = study.run_study(study_set)
 
         
