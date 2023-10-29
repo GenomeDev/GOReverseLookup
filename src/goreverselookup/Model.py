@@ -23,9 +23,8 @@ from .util.JsonUtil import JsonUtil, JsonToClass
 from .util.Timer import Timer
 from .ontology import GODag
 from .associations import Annotations
-from .reverse_lookup import GOReverseLookupStudy
 from collections import defaultdict
-from .reverse_lookup import  ReverseLookupRecord
+from .reverse_lookup import  GOReverseLookupStudy, ReverseLookupRecord, results_intersection
 import argparse
 from .util.WebsiteParser import WebsiteParser
 
@@ -80,8 +79,15 @@ def cli():
         
     model.run_study()
     
+    for process, subset in model.results_dict.items():
+        sign_subset = [r for r in subset if r.pvals[model.correction_methods[0]] < model.alpha]
+        subset = sign_subset
     
-    # now access model.results_dict
+    wanted_process_keys = [f"{process['process']}{process['direction']}" for process in model.target_processes]
+    wanted_significant_intersection = results_intersection(*[model.results_dict[key] for key in wanted_process_keys])
+    
+    print(wanted_significant_intersection.keys())
+    
 
 
 class InputFileParser:
