@@ -54,7 +54,7 @@ def cli():
     input_file = InputFileParser(args.filename)
 
     model = ReverseLookupModel.from_input_file_parser(input_file)
-
+    
     # find orthologs
     if args.noapi:
         model.find_orthologs(database="local_files")
@@ -67,8 +67,10 @@ def cli():
     model.annotations.convert_ids("ensg", "gConvert")
 
     # we don't need genes, which are not associated to any goterm
-    goterm_list = [gt.id for gt in model.goterms]
-    all_relevant_genes = [object_id for object_id, anno_set in model.annotations.dict_from_attr("object_id").items() if any(anno.term_id in goterm_list for anno in anno_set)]
+    all_goterms = set()
+    for key, value in model.goterms_per_process.items():
+        all_goterms.update(value)
+    all_relevant_genes = [object_id for object_id, anno_set in model.annotations.dict_from_attr("object_id").items() if any(anno.term_id in all_goterms for anno in anno_set)]
     model.annotations.filter(lambda a: a.object_id in all_relevant_genes)
 
     # propagate associations
@@ -78,7 +80,8 @@ def cli():
         
     model.run_study()
     
-    print(model.results_dict)
+    
+    # now access model.results_dict
 
 
 class InputFileParser:
@@ -234,6 +237,7 @@ class InputFileParser:
         else:
             return line
 
+
 class ReverseLookupModel:
     def __init__(
         self,
@@ -332,7 +336,6 @@ class ReverseLookupModel:
             correction (_type_): _description_
         """        
         study = GOReverseLookupStudy(self.annotations, self.godag, self.alpha, self.pvalcal, self.correction_methods)
-        
         results_dict: dict[str, list] = {}
         for key, study_set in self.goterms_per_process.items():
             results_dict[key] = study.run_study(study_set)

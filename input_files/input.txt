@@ -129,8 +129,8 @@
 #		model_data_file = "model/data.json"
 #		model = ReverseLookup.load_model(model_data_file)
 ###settings
-obo_file	tests/data/go1.obo
-annotations_files	tests/data/human_test.gaf
+obo_file	/Users/ladismrkolj/Downloads/go.obo
+annotations_files	/Users/ladismrkolj/Downloads/goa_human.gaf
 subontologies	biological_process,cellular_component,molecular_function
 target_species	9606 # format: ncbi_taxon
 ortholog_species	7955,10116,10090,8353 # format: comma separated ncbi_taxon
@@ -139,7 +139,8 @@ valid_relationships	is_a,part_of
 indirect_annotations	false
 alpha	0.01
 pvalcal	fisher_scipy_stats
-corrections	bonferroni###processes [proces name] [to be expressed + or suppressed -]
+corrections	bonferroni
+###processes [proces name] [to be expressed + or suppressed -]
 chronic_inflammation	+
 cancer	+
 ###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
