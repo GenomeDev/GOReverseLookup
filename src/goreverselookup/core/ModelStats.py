@@ -1,5 +1,6 @@
 # Stats class offers insights into the results of various model querying results.
 
+
 class ModelStats:
     @classmethod
     def init(cls):

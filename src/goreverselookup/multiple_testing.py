@@ -58,7 +58,7 @@ def multiple_correction(pvals: list[float], method: str, a=0.05) -> list[float]:
             "fdr_tsbky",
         ]:
             raise ValueError(f"{method} not in statsmodels multipletests")
-        corrected_pvals = list(multipletests(pvals, a, "bonferroni")[1])
+        corrected_pvals = list(multipletests(pvals, a, test_name)[1])
     else:
         raise ValueError(f"{method} not in available methods")
 

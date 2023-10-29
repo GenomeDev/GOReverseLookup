@@ -12,25 +12,23 @@ import logging
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
 
+
 class GOrthParser:
-    def __init__(
-            self
-    ):
+    def __init__(self):
         pass
 
     def find_orthologs(
         source_ids: Union[str, list[str], set[str]],
-        source_taxon:str,
-        target_taxon:str = "9606",
-        database: str = "gOrth"
+        source_taxon: str,
+        target_taxon: str = "9606",
+        database: str = "gOrth",
     ) -> dict[str, list[str]]:
         """
         TODO summary
         """
+
         def fetch_orthologs_with_gOrth(
-            source_ids: list[str], 
-            source_taxon: str, 
-            target_taxon: str
+            source_ids: list[str], source_taxon: str, target_taxon: str
         ) -> dict[str, list[str]]:
             """
             TODO summary
@@ -44,7 +42,9 @@ class GOrthParser:
                 },
             )
 
-            target_ids = defaultdict(list, {k: [] for k in source_ids})  # initialise with keys
+            target_ids = defaultdict(
+                list, {k: [] for k in source_ids}
+            )  # initialise with keys
             result: list[dict] = r.json()["result"]
             for entry in result:
                 entry_source_id = entry["incoming"]
@@ -54,24 +54,28 @@ class GOrthParser:
 
         if not isinstance(source_taxon, str) and not isinstance(target_taxon, str):
             raise TypeError("taxons must be str")
-        
+
         if isinstance(source_ids, str):
             source_ids_list = [source_ids]
         if isinstance(source_ids, set):
             source_ids_list = list(source_ids)
         if isinstance(source_ids, list):
             source_ids_list = source_ids
-        
+
         if database == "gOrth":
             source_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(source_taxon)
             target_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(target_taxon)
             if not source_taxon or not target_taxon:
                 return {}
-            target_ids_dict = fetch_orthologs_with_gOrth(source_ids_list, source_taxon, target_taxon)
+            target_ids_dict = fetch_orthologs_with_gOrth(
+                source_ids_list, source_taxon, target_taxon
+            )
         elif database == "local_files":
             raise NotImplementedError
         else:
-            ValueError(f"database {database} is not available as a source of ortholog information")
+            ValueError(
+                f"database {database} is not available as a source of ortholog information"
+            )
 
         return target_ids_dict
 
@@ -81,13 +85,13 @@ class HumanOrthologFinder:
         self,
         goaf: GOAnnotationsFile,
         zfin_filepath: str = "",
-        zfin_download_url:str = "",
+        zfin_download_url: str = "",
         xenbase_filepath: str = "",
-        xenbase_download_url:str = "",
+        xenbase_download_url: str = "",
         mgi_filepath: str = "",
-        mgi_download_url:str = "",
+        mgi_download_url: str = "",
         rgd_filepath: str = "",
-        rgd_download_url:str = ""
+        rgd_download_url: str = "",
     ):
         """
         Constructs the HumanOrthologFinder, which uses file-based search on pre-downloaded 3rd party database ortholog mappings to find
@@ -103,10 +107,18 @@ class HumanOrthologFinder:
 
         The files are expected to reside in app/goreverselookup/data_files/ folder.
         """
-        self.zfin = ZFINHumanOrthologFinder(filepath=zfin_filepath, download_url=zfin_download_url)
-        self.xenbase = XenbaseHumanOrthologFinder(filepath=xenbase_filepath, download_url=xenbase_download_url)
-        self.mgi = MGIHumanOrthologFinder(filepath=mgi_filepath, download_url=mgi_download_url)
-        self.rgd = RGDHumanOrthologFinder(filepath=rgd_filepath, download_url=rgd_download_url)
+        self.zfin = ZFINHumanOrthologFinder(
+            filepath=zfin_filepath, download_url=zfin_download_url
+        )
+        self.xenbase = XenbaseHumanOrthologFinder(
+            filepath=xenbase_filepath, download_url=xenbase_download_url
+        )
+        self.mgi = MGIHumanOrthologFinder(
+            filepath=mgi_filepath, download_url=mgi_download_url
+        )
+        self.rgd = RGDHumanOrthologFinder(
+            filepath=rgd_filepath, download_url=rgd_download_url
+        )
         self.goaf = goaf
 
     def find_human_ortholog(self, product):
@@ -120,17 +132,23 @@ class HumanOrthologFinder:
             The human gene symbol or None if no human ortholog was found.
         """
         if "ZFIN" in product:
-            result = self.zfin.find_human_ortholog(product)  # returns [0]: gene symbol, [1]: long name of the gene
+            result = self.zfin.find_human_ortholog(
+                product
+            )  # returns [0]: gene symbol, [1]: long name of the gene
             human_gene_symbol = result[0] if result is not None else None
         elif "Xenbase" in product:
             result = self.xenbase.find_human_ortholog(product)
             human_gene_symbol = result[0] if result is not None else None
         elif "MGI" in product:
             human_gene_symbol = self.mgi.find_human_ortholog(product)
-            human_gene_symbol = human_gene_symbol if (human_gene_symbol is not None) else None # return None if "Error" in human_gene_symbol else human_gene_symbol
+            human_gene_symbol = (
+                human_gene_symbol if (human_gene_symbol is not None) else None
+            )  # return None if "Error" in human_gene_symbol else human_gene_symbol
         elif "RGD" in product:
             human_gene_symbol = self.rgd.find_human_ortholog(product)
-            human_gene_symbol = human_gene_symbol if (human_gene_symbol is not None) else None # return None if "Error" in human_gene_symbol else human_gene_symbol
+            human_gene_symbol = (
+                human_gene_symbol if (human_gene_symbol is not None) else None
+            )  # return None if "Error" in human_gene_symbol else human_gene_symbol
         else:
             logger.info(f"No database found for {product}")
 
@@ -138,7 +156,9 @@ class HumanOrthologFinder:
 
     async def find_human_ortholog_async(self, product):
         if "ZFIN" in product:
-            result = await self.zfin.find_human_ortholog_async(product)  # returns [0]: gene symbol, [1]: long name of the gene
+            result = await self.zfin.find_human_ortholog_async(
+                product
+            )  # returns [0]: gene symbol, [1]: long name of the gene
             return result[0] if result is not None else None
         elif "Xenbase" in product:
             result = await self.xenbase.find_human_ortholog_async(product)
@@ -163,14 +183,24 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
         Parameters:
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/zfin_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
-        """        
-        self.filepath = "data_files/zfin_human_ortholog_mapping.txt" if filepath == "" else filepath
-        self.download_url = "https://zfin.org/downloads/human_orthos.txt" if download_url == "" else download_url
+        """
+        self.filepath = (
+            "data_files/zfin_human_ortholog_mapping.txt" if filepath == "" else filepath
+        )
+        self.download_url = (
+            "https://zfin.org/downloads/human_orthos.txt"
+            if download_url == ""
+            else download_url
+        )
 
-        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+        FileUtil.download_txt_file(
+            filepath=self.filepath, download_url=self.download_url
+        )
         with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
-        logger.info(f"ZFINHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        logger.info(
+            f"ZFINHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
+        )
 
     def find_human_ortholog(self, product_id):
         """
@@ -248,13 +278,25 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/xenbase_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        self.filepath = "data_files/xenbase_human_ortholog_mapping.txt" if filepath == "" else filepath
-        self.download_url = "https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt" if download_url == "" else download_url
+        self.filepath = (
+            "data_files/xenbase_human_ortholog_mapping.txt"
+            if filepath == ""
+            else filepath
+        )
+        self.download_url = (
+            "https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt"
+            if download_url == ""
+            else download_url
+        )
 
-        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+        FileUtil.download_txt_file(
+            filepath=self.filepath, download_url=self.download_url
+        )
         with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
-        logger.info(f"XenbaseHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        logger.info(
+            f"XenbaseHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
+        )
 
     def find_human_ortholog(self, product_id):
         """
@@ -288,11 +330,8 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
                     f" xenbase gene {product_id}"
                 )
                 return human_symbol, human_gene_name
-        logger.info(
-            f"DID NOT find human ortholog for xenbase gene {product_id}"
-        )
+        logger.info(f"DID NOT find human ortholog for xenbase gene {product_id}")
         return None
-
 
     async def find_human_ortholog_async(self, product_id):
         """
@@ -326,9 +365,7 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
                     f" xenbase gene {product_id}"
                 )
                 return human_symbol, human_gene_name
-        logger.info(
-            f"DID NOT find human ortholog for xenbase gene {product_id}"
-        )
+        logger.info(f"DID NOT find human ortholog for xenbase gene {product_id}")
         return None
 
 
@@ -343,13 +380,21 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/mgi_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        self.filepath = "data_files/mgi_human_ortholog_mapping.txt" if filepath == "" else filepath
-        self.download_url = "https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt" if download_url == "" else download_url
+        self.filepath = (
+            "data_files/mgi_human_ortholog_mapping.txt" if filepath == "" else filepath
+        )
+        self.download_url = (
+            "https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt"
+            if download_url == ""
+            else download_url
+        )
 
         FileUtil.download_file(filepath=self.filepath, download_url=self.download_url)
         with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
-        logger.info(f"MGIHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        logger.info(
+            f"MGIHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
+        )
 
     def find_human_ortholog(self, product_id):
         """
@@ -407,9 +452,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
                 )
                 return human_symbol  # return here doesnt affect line counter 'i', since if gene is found i is no longer needed
             i += 1
-        logger.info(
-            f"DID NOT find human ortholog for mgi gene {product_id}"
-        )
+        logger.info(f"DID NOT find human ortholog for mgi gene {product_id}")
         return None
 
     async def find_human_ortholog_async(self, product_id):
@@ -468,9 +511,7 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
                 )
                 return human_symbol  # return here doesnt affect line counter 'i', since if gene is found i is no longer needed
             i += 1
-        logger.info(
-            f"DID NOT find human ortholog for mgi gene {product_id}"
-        )
+        logger.info(f"DID NOT find human ortholog for mgi gene {product_id}")
         return None
 
 
@@ -485,10 +526,18 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/rgd_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        self.filepath = "data_files/rgd_human_ortholog_mapping.txt" if filepath == "" else filepath
-        self.download_url = "https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt" if download_url == "" else download_url
+        self.filepath = (
+            "data_files/rgd_human_ortholog_mapping.txt" if filepath == "" else filepath
+        )
+        self.download_url = (
+            "https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt"
+            if download_url == ""
+            else download_url
+        )
 
-        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+        FileUtil.download_txt_file(
+            filepath=self.filepath, download_url=self.download_url
+        )
         with open(self.filepath, "r") as read_content:
             self._readlines = read_content.readlines()
         logger.info(
@@ -535,9 +584,7 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                     f"Found human ortholog {human_symbol} for RGD gene {product_id}"
                 )
                 return human_symbol
-        logger.info(
-            f"DID NOT find human ortholog for RGD gene {product_id}"
-        )
+        logger.info(f"DID NOT find human ortholog for RGD gene {product_id}")
         return None
         # return f"[RgdError_No-human-ortholog-found:product_id={product_id}"
 
@@ -581,7 +628,5 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
                     f"Found human ortholog {human_symbol} for RGD gene {product_id}"
                 )
                 return human_symbol
-        logger.info(
-            f"DID NOT find human ortholog for RGD gene {product_id}"
-        )
+        logger.info(f"DID NOT find human ortholog for RGD gene {product_id}")
         return None

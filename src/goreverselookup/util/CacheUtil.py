@@ -155,7 +155,7 @@ class Cacher:
         """
         if not hasattr(cls, "is_init"):
             cls.init()
-            
+
         if cls.is_init is False:
             cls.init()  # attempt cacher init, if the user forgot to initialise it
 
@@ -216,7 +216,7 @@ class Cacher:
                     )
 
     @classmethod
-    def get_data(cls, data_location: str, data_key: str, debug_log:bool=False):
+    def get_data(cls, data_location: str, data_key: str, debug_log: bool = False):
         if cls.is_init is False:
             cls.init()
 
@@ -372,7 +372,7 @@ class ConnectionCacher(Cacher):
                     )  # save cached urls
 
     @classmethod
-    def get_url_response(cls, url: str, debug_log:bool=False):
+    def get_url_response(cls, url: str, debug_log: bool = False):
         """
         Obtains the response of the 'url' from previously cached urls, if the same url already exists.
         Previously cached urls and their responses are stored in root/cache/connection_cache.json.

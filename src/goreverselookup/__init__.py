@@ -1,7 +1,7 @@
 from .Model import ReverseLookup
 from .Workflows import WorkflowOne, PrimaryWorkflow
 
-from .core.ModelSettings import ModelSettings,OrganismInfo
+from .core.ModelSettings import ModelSettings, OrganismInfo
 from .core.ModelStats import ModelStats
 from .core.GOTerm import GOTerm
 from .core.Metrics import (
@@ -15,10 +15,7 @@ from .core.miRNA import miRNA
 from .core.Product import Product
 from .core.Report import ReportGenerator
 
-from .parse.GOAFParser import (
-	GOAnnotationsFile,
-	GOAFMaster
-	)
+from .parse.GOAFParser import GOAnnotationsFile, GOAFMaster
 from .parse.OBOParser import OboParser
 from .parse.OrthologParsers import (
     HumanOrthologFinder,
@@ -45,8 +42,8 @@ __all__ = [
     "WorkflowOne",
     "PrimaryWorkflow",
     "ModelSettings",
-	"OrganismInfo",
-	"ModelStats",
+    "OrganismInfo",
+    "ModelStats",
     "GOTerm",
     "nterms",
     "adv_product_score",
@@ -57,7 +54,7 @@ __all__ = [
     "Product",
     "ReportGenerator",
     "GOAnnotationsFile",
-	"GOAFMaster",
+    "GOAFMaster",
     "OboParser",
     "HumanOrthologFinder",
     "ZFINHumanOrthologFinder",

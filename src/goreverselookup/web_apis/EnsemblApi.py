@@ -66,14 +66,14 @@ class EnsemblApi:
 
         # Check if the url is cached
         previous_response = Cacher.get_data("url", url)
-        if previous_response is not None:  # "error" check is a bugfix for this response: {'error': 'No valid lookup found for symbol Oxct2a'}
+        if (
+            previous_response is not None
+        ):  # "error" check is a bugfix for this response: {'error': 'No valid lookup found for symbol Oxct2a'}
             response_json = previous_response
         else:
             try:
                 response = self.s.get(
-                    url, 
-                    headers={"Content-Type": "application/json"}, 
-                    timeout=5
+                    url, headers={"Content-Type": "application/json"}, timeout=5
                 )
                 response.raise_for_status()
                 response_json = response.json()["data"][0]["homologies"]
@@ -101,7 +101,9 @@ class EnsemblApi:
         logger.info(f"Received ortholog for id {full_id} -> {ortholog}")
         return ortholog
 
-    async def get_human_ortholog_async(self, id, session: aiohttp.ClientSession, taxon=""):
+    async def get_human_ortholog_async(
+        self, id, session: aiohttp.ClientSession, taxon=""
+    ):
         """
         Given a source ID, detect organism and returns the corresponding human ortholog using the Ensembl API.
         Example source IDs are: UniProtKB:P21709, RGD:6494870, ZFIN:ZDB-GENE-040426-1432, Xenbase:XB-GENE-479318 and MGI:95537.
@@ -113,7 +115,8 @@ class EnsemblApi:
 
         This function uses request caching. It will use previously saved url request responses instead of performing new (the same as before) connections
         """
-        def taxon_to_label(taxon:str):
+
+        def taxon_to_label(taxon: str):
             """
             Converts a NCBI taxon to a suitable ensembl label
             """
@@ -158,7 +161,7 @@ class EnsemblApi:
         if id_url == None:
             # attempt one final split
             id_url = id.split(":")[1]
-        
+
         if taxon != "" and taxon is not None:
             species = taxon_to_label(taxon=taxon)
 
@@ -173,7 +176,9 @@ class EnsemblApi:
             response_json = previous_response
         else:
             try:
-                response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=10)
+                response = await session.get(
+                    url, headers={"Content-Type": "application/json"}, timeout=10
+                )
                 # response.raise_for_status()
                 response_json = await response.json()
                 Cacher.store_data("url", url, response_json)
@@ -198,7 +203,9 @@ class EnsemblApi:
             try:
                 response_json = response_json["data"][0]["homologies"]
             except (KeyError, IndexError):
-                logger.warning(f"Key error or list index out of range when parsing ['data'][0]['homologies] for id {id}.")
+                logger.warning(
+                    f"Key error or list index out of range when parsing ['data'][0]['homologies] for id {id}."
+                )
                 logger.debug(f"response json = {response_json}")
                 return None
             if response_json == []:  # if there are no homologies, return None
@@ -208,12 +215,34 @@ class EnsemblApi:
             ortholog = ""
 
             # debug check if any zfin,mgi,rgd,xenbase actually make it up to here
-            if species in ["zebrafish", "mouse", "rat", "xenopus_tropicalis", "danio_rerio", "mus_musculus", "rattus_norvegicus", "xenopus"]:
-                pass # TODO: remove this
-            
+            if species in [
+                "zebrafish",
+                "mouse",
+                "rat",
+                "xenopus_tropicalis",
+                "danio_rerio",
+                "mus_musculus",
+                "rattus_norvegicus",
+                "xenopus",
+            ]:
+                pass  # TODO: remove this
+
             # debug check if any non-homo-sapiens uniprotkb genes get processed
-            if species in ["zebrafish", "mouse", "rat", "xenopus_tropicalis", "danio_rerio", "mus_musculus", "rattus_norvegicus", "xenopus"] and "UniProtKB" in id:
-                pass # TODO: remove this
+            if (
+                species
+                in [
+                    "zebrafish",
+                    "mouse",
+                    "rat",
+                    "xenopus_tropicalis",
+                    "danio_rerio",
+                    "mus_musculus",
+                    "rattus_norvegicus",
+                    "xenopus",
+                ]
+                and "UniProtKB" in id
+            ):
+                pass  # TODO: remove this
 
             for ortholog_dict in response_json:
                 if ortholog_dict["target"]["species"] == "homo_sapiens":
@@ -453,7 +482,9 @@ class EnsemblApi:
         Returns:
             dict: Information about the gene
         """
-        if ("Error" in id):  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
+        if (
+            "Error" in id
+        ):  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
             logger.debug(
                 f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene"
                 " does not have a human ortholog and you are safe to ignore it."
@@ -643,7 +674,7 @@ class EnsemblApi:
         Cacher.store_data("ensembl", ensembl_data_key, return_value)
         return return_value
 
-    async def id_to_ensembl_id(source_id:str):
+    async def id_to_ensembl_id(source_id: str):
         """
         Converts 'source_id' (eg. a UniProtKB gene id) to an Ensembl id.
         """

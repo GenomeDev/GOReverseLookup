@@ -6,13 +6,20 @@ import logging
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
 
+
 class OrganismInfo:
-    def __init__(self, label:str="", database:str="", ncbi_id_full:str="", ncbi_id:int=-1):
+    def __init__(
+        self,
+        label: str = "",
+        database: str = "",
+        ncbi_id_full: str = "",
+        ncbi_id: int = -1,
+    ):
         """
         Representation of metadata information about a specific organism.
           - (str) label: eg. danio_rerio
           - (str) database: The database associated with this organism - for Danio rerio, this would be set to "ZFIN". If left empty, will be automatically set to UniProtKB
-          - (str) ncbi_id_full: ncbitaxon id in the full form, eg. NCBITaxon:7955 
+          - (str) ncbi_id_full: ncbitaxon id in the full form, eg. NCBITaxon:7955
           - (str) ncbi_id: ncbitaxon number, eg. 7955. If it isn't set, it will be automatically parsed from ncbi_id_full
         """
         self.label = label
@@ -21,7 +28,7 @@ class OrganismInfo:
         else:
             self.database = database
         self.ncbi_id_full = ncbi_id_full
-        
+
         if ncbi_id == -1 and ncbi_id_full != "":
             # attempt autoparse
             if ":" in ncbi_id_full:
@@ -30,19 +37,21 @@ class OrganismInfo:
                     ncbi_number = int(ncbi_number)
                     self.ncbi_id = ncbi_number
                 except Exception as e:
-                    logger.warning(f"Failed to convert ncbi_id_full {ncbi_id_full} to ncbi_id number!")
-        
+                    logger.warning(
+                        f"Failed to convert ncbi_id_full {ncbi_id_full} to ncbi_id number!"
+                    )
+
         if ncbi_id != -1:
             self.ncbi_id = ncbi_id
-    
+
     def to_json(self):
         return {
-            'label': self.label,
-            'database': self.database,
-            'ncbi_id_full': self.ncbi_id_full,
-            'ncbi_id': self.ncbi_id
+            "label": self.label,
+            "database": self.database,
+            "ncbi_id_full": self.ncbi_id_full,
+            "ncbi_id": self.ncbi_id,
         }
-    
+
     @classmethod
     def from_json(cls, json):
         """
@@ -50,14 +59,14 @@ class OrganismInfo:
         """
         assert isinstance(json, dict)
         return cls(
-            label=json.get('label'),
-            database=json.get('database'),
-            ncbi_id_full=json.get('ncbi_id_full'),
-            ncbi_id=json.get('ncbi_id')
+            label=json.get("label"),
+            database=json.get("database"),
+            ncbi_id_full=json.get("ncbi_id_full"),
+            ncbi_id=json.get("ncbi_id"),
         )
-    
+
     @classmethod
-    def parse_organism_info_str(cls, metadata:str, as_dict:bool=False):
+    def parse_organism_info_str(cls, metadata: str, as_dict: bool = False):
         """
         Accepts the organism info string in the following format: organism_label|organism_database|ncbi_taxon,
         such as: danio_rerio|ZFIN|NCBITaxon:7955.
@@ -73,18 +82,20 @@ class OrganismInfo:
         """
         # perform metadata integrity check
         if metadata.count("|") != 2:
-            raise Exception(f"Supplied metadata '{metadata}' is not in the correct format. Ensure you follow the format organism_label|organism_database|ncbi_taxon.")
-        
+            raise Exception(
+                f"Supplied metadata '{metadata}' is not in the correct format. Ensure you follow the format organism_label|organism_database|ncbi_taxon."
+            )
+
         metadata = metadata.split("|")
-        label = metadata[0] # organism label
-        database = metadata[1] # organism database
-        ncbitaxon = metadata[2] # organism ncbitaxon
+        label = metadata[0]  # organism label
+        database = metadata[1]  # organism database
+        ncbitaxon = metadata[2]  # organism ncbitaxon
         ncbitaxon_full = ""
         ncbitaxon_id = -1
         if isinstance(ncbitaxon, str):
             if ":" in ncbitaxon:
                 # ncbitaxon in full form eg. "NCBITaxon:9606"
-                ncbitaxon_full = ncbitaxon 
+                ncbitaxon_full = ncbitaxon
                 ncbitaxon_id = int(ncbitaxon.split(":")[1])
             else:
                 if ncbitaxon.isnumeric():
@@ -92,15 +103,19 @@ class OrganismInfo:
                     ncbitaxon_full = f"NCBITaxon:{ncbitaxon}"
                     ncbitaxon_id = int(ncbitaxon)
         if as_dict == False:
-            return cls(label=label, database=database, ncbi_id_full=ncbitaxon_full, ncbi_id=ncbitaxon_id)
+            return cls(
+                label=label,
+                database=database,
+                ncbi_id_full=ncbitaxon_full,
+                ncbi_id=ncbitaxon_id,
+            )
         else:
             return {
-                'label': label,
-                'database': database,
-                'ncbi_id_full': ncbitaxon_full,
-                'ncbi_id': ncbitaxon_id
+                "label": label,
+                "database": database,
+                "ncbi_id_full": ncbitaxon_full,
+                "ncbi_id": ncbitaxon_id,
             }
-
 
 
 class ModelSettings:
@@ -162,17 +177,21 @@ class ModelSettings:
 
     # note: specifying ModelSettings inside the ModelSettings class is allowed because of the 'from __future__ import annotations' import.
     def __init__(self) -> ModelSettings:
-        self.homosapiens_only = False # TODO: remove or implement
+        self.homosapiens_only = False  # TODO: remove or implement
         self.require_product_evidence_codes = False
         self.fisher_test_use_online_query = False
-        self.include_indirect_annotations = False  # previously: include_all_goterm_parents
+        self.include_indirect_annotations = (
+            False  # previously: include_all_goterm_parents
+        )
         self.uniprotkb_genename_online_query = False
         self.pvalue = 0.05
         self.goterms_set = []
         self.datafile_paths = {}
         self.target_organism = None
         self.ortholog_organisms = None
-        self.ortholog_organisms_ncbi_full_ids = [] # a list containing only the full ids for all ortholog organisms
+        self.ortholog_organisms_ncbi_full_ids = (
+            []
+        )  # a list containing only the full ids for all ortholog organisms
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:
@@ -181,24 +200,30 @@ class ModelSettings:
         is performed from the saved json file.
         """
         instance = cls()  # create an instance of the class
-        for attr_name in dir(instance):  # iterate through class variables (ie settings in ModelSettings)
-            if not callable(getattr(instance, attr_name)) and not attr_name.startswith("__"):
+        for attr_name in dir(
+            instance
+        ):  # iterate through class variables (ie settings in ModelSettings)
+            if not callable(getattr(instance, attr_name)) and not attr_name.startswith(
+                "__"
+            ):
                 if attr_name in json_data:  # check if attribute exists in json data
                     value_to_set = json_data[f"{attr_name}"]
 
                     # handling for target_organism and ortholog_organisms
-                    if attr_name == 'target_organism':
+                    if attr_name == "target_organism":
                         value_to_set = OrganismInfo.from_json(value_to_set)
-                    if attr_name == 'ortholog_organisms':
+                    if attr_name == "ortholog_organisms":
                         res = []
                         for json_element in value_to_set:
                             res.append(OrganismInfo.from_json(json_element))
                         value_to_set = res
 
-                    # set the attribute    
+                    # set the attribute
                     setattr(instance, attr_name, value_to_set)  # set the attribute
                 else:
-                    logger.warning(f"Attribute {attr_name} doesn't exist in json_data for ModelSettings!")
+                    logger.warning(
+                        f"Attribute {attr_name} doesn't exist in json_data for ModelSettings!"
+                    )
         return instance
 
     def to_json(self):
@@ -214,7 +239,9 @@ class ModelSettings:
                     attr_value = attr_value.to_json()
                 if attr_name == "ortholog_organisms":
                     res = []
-                    for ortholog_organism in attr_value: # attr_value is a list of OrthologOrganism objects
+                    for (
+                        ortholog_organism
+                    ) in attr_value:  # attr_value is a list of OrthologOrganism objects
                         assert isinstance(ortholog_organism, OrganismInfo)
                         res.append(ortholog_organism.to_json)
                     attr_value = res
@@ -226,13 +253,20 @@ class ModelSettings:
     def set_setting(self, setting_name: str, setting_value):
         if setting_name == "ortholog_organisms":
             # fill out self.ortholog_organisms_ncbi_full_ids
-            for key,organism_info in setting_value.items():
+            for key, organism_info in setting_value.items():
                 assert isinstance(organism_info, OrganismInfo)
                 if organism_info.ncbi_id_full != "":
-                    if organism_info.ncbi_id_full not in self.ortholog_organisms_ncbi_full_ids:
-                        self.ortholog_organisms_ncbi_full_ids.append(organism_info.ncbi_id_full)
+                    if (
+                        organism_info.ncbi_id_full
+                        not in self.ortholog_organisms_ncbi_full_ids
+                    ):
+                        self.ortholog_organisms_ncbi_full_ids.append(
+                            organism_info.ncbi_id_full
+                        )
                 else:
-                    logger.warning(f"Couldn't set ncbi_id_full for OrganismInfo of {organism_info.label}")
+                    logger.warning(
+                        f"Couldn't set ncbi_id_full for OrganismInfo of {organism_info.label}"
+                    )
         if hasattr(self, setting_name):
             setattr(self, setting_name, setting_value)
         else:
@@ -244,8 +278,8 @@ class ModelSettings:
     def get_setting(self, setting_name: str):
         if hasattr(self, setting_name):
             return getattr(self, setting_name)
-    
-    def get_datafile_path(self, datafile_name:str):
+
+    def get_datafile_path(self, datafile_name: str):
         """
         Returns the local or absolute filepath to 'datafile_name'.
 
@@ -262,11 +296,13 @@ class ModelSettings:
           - ortho_mapping_xenbase_human
         """
         if datafile_name in self.datafile_paths:
-            return self.datafile_paths[datafile_name]['local_filepath']
+            return self.datafile_paths[datafile_name]["local_filepath"]
         else:
-            logger.warning(f"datafile_name {datafile_name} not found in (ModelSettings).datafile_paths")
-    
-    def get_datafile_paths(self, *datafile_types:str):
+            logger.warning(
+                f"datafile_name {datafile_name} not found in (ModelSettings).datafile_paths"
+            )
+
+    def get_datafile_paths(self, *datafile_types: str):
         """
         Gets the paths to multiple datafiles. Datafile paths are loaded from the 'filepaths' section in input.txt.
         Allowed datafile types (the values of datafile_type parameter) are:
@@ -304,22 +340,24 @@ class ModelSettings:
             "ortho_mapping_zfin_human",
             "ortho_mapping_rgd_human",
             "ortho_mapping_mgi_human",
-            "ortho_mapping_xenbase_human"
+            "ortho_mapping_xenbase_human",
         ]
         if len(datafile_types) == 1 and datafile_types[0] == "ALL":
             input_keys = all_keys
         else:
             input_keys = datafile_types
-        
+
         if any(input_key not in all_keys for input_key in input_keys):
-            raise Exception(f"One or more input keys from {input_keys} are not valid. Valid keys are: {all_keys}")
+            raise Exception(
+                f"One or more input keys from {input_keys} are not valid. Valid keys are: {all_keys}"
+            )
 
         result = {}
         for datafile_type in input_keys:
             result[datafile_type] = self.get_datafile_path(datafile_type)
         return result
 
-    def get_datafile_url(self, datafile_name:str):
+    def get_datafile_url(self, datafile_name: str):
         """
         Returns the download url to 'datafile_name'.
 
@@ -336,11 +374,13 @@ class ModelSettings:
           - ortho_mapping_xenbase_human
         """
         if datafile_name in self.datafile_paths:
-            return self.datafile_paths[datafile_name]['download_url']
+            return self.datafile_paths[datafile_name]["download_url"]
         else:
-            logger.warning(f"datafile_name {datafile_name} not found in (ModelSettings).datafile_paths")
-    
-    def get_datafile_urls(self, *datafile_types:str):
+            logger.warning(
+                f"datafile_name {datafile_name} not found in (ModelSettings).datafile_paths"
+            )
+
+    def get_datafile_urls(self, *datafile_types: str):
         """
         Gets the download urls to multiple datafiles. Datafile urls are loaded from the 'filepaths' section in input.txt.
         Allowed datafile types (the values of datafile_types parameter) are:
@@ -378,18 +418,19 @@ class ModelSettings:
             "ortho_mapping_zfin_human",
             "ortho_mapping_rgd_human",
             "ortho_mapping_mgi_human",
-            "ortho_mapping_xenbase_human"
+            "ortho_mapping_xenbase_human",
         ]
         if len(datafile_types) == 1 and datafile_types[0] == "ALL":
             input_keys = all_keys
         else:
             input_keys = datafile_types
-        
+
         if any(input_key not in all_keys for input_key in input_keys):
-            raise Exception(f"One or more input keys from {input_keys} are not valid. Valid keys are: {all_keys}")
+            raise Exception(
+                f"One or more input keys from {input_keys} are not valid. Valid keys are: {all_keys}"
+            )
 
         result = {}
         for datafile_type in input_keys:
             result[datafile_type] = self.get_datafile_url(datafile_type)
         return result
-    

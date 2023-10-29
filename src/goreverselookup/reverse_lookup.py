@@ -129,7 +129,7 @@ class GOReverseLookupStudy:
             )  # for each object id (product id) check how many goterms in study are associated to it
 
             if study_count == 0:
-                pass  # this ensures pvalcalc is only done with annotations with at least one association to study set of goterms.
+                continue  # this ensures pvalcalc is only done with annotations with at least one association to study set of goterms.
 
             study_n = len(studyset)  # N of study set
 

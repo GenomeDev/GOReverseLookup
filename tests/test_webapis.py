@@ -61,5 +61,3 @@ class TestEnsemblAPI:
         source_id, expected = ensembl_data_parametrized
         info = ensemblapi.get_info(source_id)
         assert info == expected
-
- 

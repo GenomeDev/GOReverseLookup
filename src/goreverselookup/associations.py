@@ -213,6 +213,8 @@ class Annotations(set[Annotation]):
             src_taxon,
             annos,
         ) in anno_by_taxon.items():  # perhaps there are multiple taxons in Annotations
+            if src_taxon == taxon:
+                continue
             object_ids = set(a.object_id.split(":", 1)[1] for a in annos)
             orthologs_dict = _find_orthologs(
                 list(object_ids), src_taxon, taxon, database
@@ -224,15 +226,15 @@ class Annotations(set[Annotation]):
             ):  # for each annotation create new ortholog objects, then delete the original
                 obj_id_without_prexix = anno.object_id.split(":", 1)[1]
                 for ortlg in orthologs_dict.get(
-                    obj_id_without_prexix, []
+                    obj_id_without_prexix, set()
                 ):  # there could be more tha one ortholog
                     new_anno = anno.copy()
                     new_anno.object_id = ortlg
                     new_anno.taxon = taxon
                     # new_anno.evidence_code = "something" # in future change evidence code to record it was obtained by ortholog search
                     self.add(new_anno)
-                if prune is True:
-                    self.remove(anno)  # TODO: should this only be done if prune?
+                if orthologs_dict.get(obj_id_without_prexix, set()) or prune is True:
+                    self.remove(anno)
 
     def filter(self, keep_if):
         """_summary_
@@ -254,7 +256,7 @@ class Annotations(set[Annotation]):
             converted_dict = _convert_ids(list(object_ids), taxon, namespace, database)
             for anno in annos:
                 obj_id_without_prexix = anno.object_id.split(":", 1)[1]
-                for conv_id in converted_dict.get(obj_id_without_prexix, []):
+                for conv_id in converted_dict.get(obj_id_without_prexix, set()):
                     new_anno = anno.copy()
                     new_anno.object_id = conv_id
                     # new_anno.evidence_code = "something" # in future change evidence code to record it was obtained by ortholog search

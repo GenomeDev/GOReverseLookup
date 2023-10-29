@@ -1,6 +1,6 @@
 import pytest
 
-from goreverselookup.ortholog import find_orthologs, gOrth, ensemblOrthologs
+from goreverselookup.ortholog import find_orthologs, gOrth, async_ensembl_orthologs
 
 
 def test_gOrth():
@@ -40,9 +40,12 @@ def test_multiple_same_incoming_find_orthologs(db):
     assert "ENSG00000105854" in result["ZDB-GENE-040912-6"]
     assert "ENSG00000168938" in result["ZDB-GENE-170217-1"]
 
+
 @pytest.mark.asyncio
-async def test_ensemblOrtholog():
-    result = await ensemblOrthologs(["ZDB-GENE-040912-6", "ZDB-GENE-170217-1"], "danio_rerio", "homo_sapiens")
+async def test_async_ensembl_ortholog():
+    result = await async_ensembl_orthologs(
+        ["ZDB-GENE-040912-6", "ZDB-GENE-170217-1"], "danio_rerio", "homo_sapiens"
+    )
     assert result == {
         "ZDB-GENE-040912-6": ["ENSG00000105854"],
         "ZDB-GENE-170217-1": ["ENSG00000168938"],

@@ -12,42 +12,47 @@ import logging
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
 
+
 class GOAFMaster:
     def __init__(
-            self,
-            goa_filepaths: dict = {
-                'homo_sapiens': {
-                    'organism': "homo_sapiens",
-                    'ncbi_taxon_id': "9606",
-                    'local_filepath': "data_files/goa_human.gaf",
-                    'download_url': "http://geneontology.org/gene-associations/goa_human.gaf.gz",
-                },
-                'danio_rerio': {
-                    'organism': "danio_rerio",
-                    'ncbi_taxon_id': "7955",
-                    'local_filepath': "data_files/zfin.gaf",
-                    'download_url': "http://current.geneontology.org/annotations/zfin.gaf.gz"
-                },
-                'rattus_norvegicus': {
-                    'organism': "rattus_norvegicus",
-                    'ncbi_taxon_id': "10116",
-                    'local_filepath': "data_files/rgd.gaf",
-                    'download_url': "http://current.geneontology.org/annotations/rgd.gaf.gz"
-                },
-                'mus_musculus': {
-                    'organism': "mus_musculus",
-                    'ncbi_taxon_id': "10090",
-                    'local_filepath': "data_files/mgi.gaf",
-                    'download_url': "http://current.geneontology.org/annotations/mgi.gaf.gz"
-                },
-                'xenopus': {
-                    'organism': "xenopus",
-                    'ncbi_taxon_id': "8353",
-                    'local_filepath': "data_files/xenbase.gaf",
-                    'download_url': "http://current.geneontology.org/annotations/xenbase.gaf.gz"
-                }
+        self,
+        goa_filepaths: dict = {
+            "homo_sapiens": {
+                "organism": "homo_sapiens",
+                "ncbi_taxon_id": "9606",
+                "local_filepath": "data_files/goa_human.gaf",
+                "download_url": "http://geneontology.org/gene-associations/goa_human.gaf.gz",
             },
-            go_categories: list = ["biological_process", "molecular_activity", "cellular_component"]
+            "danio_rerio": {
+                "organism": "danio_rerio",
+                "ncbi_taxon_id": "7955",
+                "local_filepath": "data_files/zfin.gaf",
+                "download_url": "http://current.geneontology.org/annotations/zfin.gaf.gz",
+            },
+            "rattus_norvegicus": {
+                "organism": "rattus_norvegicus",
+                "ncbi_taxon_id": "10116",
+                "local_filepath": "data_files/rgd.gaf",
+                "download_url": "http://current.geneontology.org/annotations/rgd.gaf.gz",
+            },
+            "mus_musculus": {
+                "organism": "mus_musculus",
+                "ncbi_taxon_id": "10090",
+                "local_filepath": "data_files/mgi.gaf",
+                "download_url": "http://current.geneontology.org/annotations/mgi.gaf.gz",
+            },
+            "xenopus": {
+                "organism": "xenopus",
+                "ncbi_taxon_id": "8353",
+                "local_filepath": "data_files/xenbase.gaf",
+                "download_url": "http://current.geneontology.org/annotations/xenbase.gaf.gz",
+            },
+        },
+        go_categories: list = [
+            "biological_process",
+            "molecular_activity",
+            "cellular_component",
+        ],
     ):
         """
         This is a master-class, which allows managing of several GOAnnotationsFiles (for different organisms). Parameters:
@@ -80,60 +85,94 @@ class GOAFMaster:
         """
         self.goa_filepaths = goa_filepaths
         self.go_categories = go_categories
-        self.goa_files = {} # dict mapping organism labels to respective goa files
+        self.goa_files = {}  # dict mapping organism labels to respective goa files
 
         for organism_key, file_raw_info in goa_filepaths.items():
             goa_file = GOAnnotationsFile(
-                filepath=file_raw_info['local_filepath'],
-                download_url=file_raw_info['download_url'],
+                filepath=file_raw_info["local_filepath"],
+                download_url=file_raw_info["download_url"],
                 go_categories=go_categories,
-                organism_label=file_raw_info['organism'],
-                organism_ncbi_taxon_id=file_raw_info['ncbi_taxon_id']
+                organism_label=file_raw_info["organism"],
+                organism_ncbi_taxon_id=file_raw_info["ncbi_taxon_id"],
             )
             self.goa_files[organism_key] = goa_file
 
-    def get_all_products_for_goterm(self, goterm_id:str, organism_labels=['homo_sapiens', 'danio_rerio', 'rattus_norvegicus', 'mus_musculus', 'xenopus'], indirect_annotations:bool = False, obo_parser:OboParser=None):
+    def get_all_products_for_goterm(
+        self,
+        goterm_id: str,
+        organism_labels=[
+            "homo_sapiens",
+            "danio_rerio",
+            "rattus_norvegicus",
+            "mus_musculus",
+            "xenopus",
+        ],
+        indirect_annotations: bool = False,
+        obo_parser: OboParser = None,
+    ):
         """
         Finds all genes associated to goterm_id across differeng GAF files (specified by organims_labels, which should match the organism labels used to create the GOAFMaster instance).
-        
+
         Returns:
           - [0]: a list of all gene ids associated with goterm_id from all of the specified organism_labels (all of the specified gaf files)
           - [1]: a dict mapping organism label keys to found gene ids
 
         Example usage:
         (GOAFMaster).get_all_products_for_goterm(GOID, ["homo_sapiens", "danio_rerio"])
-        -> returns: 
+        -> returns:
              [0]: [ABC1, VEGFA, ..., ijp2, tsp5, mmp1, ...]
              [1]: {
                     'homo_sapiens': [ABC1, VEGFA],
                     'danio_rerio': [ijp2, tsp5, mmp1]
                   }
         """
-        annotated_genes_simple_list = [] # list of annotated genes to goterm_id; source organism isn't known
-        annotated_genes_dict = {} # dict between organism label (key) and associated genes
+        annotated_genes_simple_list = (
+            []
+        )  # list of annotated genes to goterm_id; source organism isn't known
+        annotated_genes_dict = (
+            {}
+        )  # dict between organism label (key) and associated genes
         for organism_label in organism_labels:
             if organism_label not in self.goa_files:
-                logger.warning(f"Organism label '{organism_label}' was NOT found in self.goa_files. Was the correct GOA file created during construction of GOAFMaster?")
+                logger.warning(
+                    f"Organism label '{organism_label}' was NOT found in self.goa_files. Was the correct GOA file created during construction of GOAFMaster?"
+                )
                 continue
             goa_current = self.goa_files[organism_label]
             assert isinstance(goa_current, GOAnnotationsFile)
-            current_genes = goa_current.get_all_products_for_goterm(goterm_id=goterm_id, indirect_annotations=indirect_annotations, obo_parser=obo_parser)
+            current_genes = goa_current.get_all_products_for_goterm(
+                goterm_id=goterm_id,
+                indirect_annotations=indirect_annotations,
+                obo_parser=obo_parser,
+            )
             annotated_genes_simple_list = [*annotated_genes_simple_list, *current_genes]
             annotated_genes_dict[organism_label] = current_genes
 
         return [annotated_genes_simple_list, annotated_genes_dict]
-    
-    def get_all_goterms_for_product(self, product_id: str, organism_labels=['homo_sapiens', 'danio_rerio', 'rattus_norvegicus', 'mus_musculus', 'xenopus'], indirect_annotations:bool=False, obo_parser:OboParser=None):
+
+    def get_all_goterms_for_product(
+        self,
+        product_id: str,
+        organism_labels=[
+            "homo_sapiens",
+            "danio_rerio",
+            "rattus_norvegicus",
+            "mus_musculus",
+            "xenopus",
+        ],
+        indirect_annotations: bool = False,
+        obo_parser: OboParser = None,
+    ):
         """
         Finds all GO Terms associated to product_id across differeng GAF files (specified by organims_labels, which should match the organism labels used to create the GOAFMaster instance).
-        
+
         Returns:
           - [0]: a list of all GO Term ids associated with product_id from all of the specified organism_labels (all of the specified gaf files)
           - [1]: a dict mapping organism label keys to found GO Term ids
 
         Example usage:
         (GOAFMaster).get_all_goterms_for_product(gene_id, ["homo_sapiens", "danio_rerio"])
-        -> returns: 
+        -> returns:
              [0]: [ABC1, VEGFA, ..., ijp2, tsp5, mmp1, ...]
              [1]: {
                     'homo_sapiens': [ABC1, VEGFA],
@@ -142,31 +181,41 @@ class GOAFMaster:
         """
         annotated_termids_simple_list = []
         annotated_termids_dict = {}
-        
+
         for organism_label in organism_labels:
             if organism_label not in self.goa_files:
-                logger.warning(f"Organism label '{organism_label}' was NOT found in self.goa_files. Was the correct GOA file created during construction of GOAFMaster?")
+                logger.warning(
+                    f"Organism label '{organism_label}' was NOT found in self.goa_files. Was the correct GOA file created during construction of GOAFMaster?"
+                )
                 continue
             goa_current = self.goa_files[organism_label]
             assert isinstance(goa_current, GOAnnotationsFile)
-            current_termids = goa_current.get_all_terms_for_product(product=product_id, indirect_annotations=indirect_annotations, obo_parser=obo_parser)
-            annotated_termids_simple_list = [*annotated_termids_simple_list, *current_termids]
+            current_termids = goa_current.get_all_terms_for_product(
+                product=product_id,
+                indirect_annotations=indirect_annotations,
+                obo_parser=obo_parser,
+            )
+            annotated_termids_simple_list = [
+                *annotated_termids_simple_list,
+                *current_termids,
+            ]
             annotated_termids_dict[organism_label] = current_termids
 
         return [annotated_termids_simple_list, annotated_termids_dict]
-    
+
+
 class GOAnnotationsFile:
     def __init__(
         self,
         filepath: str = "data_files/goa_human.gaf",
-        download_url = "http://geneontology.org/gene-associations/goa_human.gaf.gz",
+        download_url="http://geneontology.org/gene-associations/goa_human.gaf.gz",
         go_categories: list = [
             "biological_process",
             "molecular_activity",
             "cellular_component",
         ],
-        organism_label = "",
-        organism_ncbi_taxon_id = ""
+        organism_label="",
+        organism_ncbi_taxon_id="",
     ) -> None:
         """
         TODO: update comment
@@ -184,7 +233,7 @@ class GOAnnotationsFile:
                                   the GOAF file read phase - lines not containing a desired category (from go_categories) won't be read.
           - (str) organism_label: a descriptive label of the organism, for which this GAF is constructed (eg. homo_sapiens)
           - (str) organism_ncbi_taxon_id: ncbi taxon id for the organism, for which this GAF is constructed(eg. 9606 for homo_sapiens)
-                                  
+
         See also:
           - http://geneontology.org/docs/download-go-annotations/
           - http://current.geneontology.org/products/pages/downloads.html
@@ -202,7 +251,9 @@ class GOAnnotationsFile:
 
         # self._check_file()
         if not os.path.exists(filepath) or FileUtil.is_file_empty(filepath):
-            FileUtil.download_zip_file(filepath=filepath, download_url=download_url, zip_specifier="rt")
+            FileUtil.download_zip_file(
+                filepath=filepath, download_url=download_url, zip_specifier="rt"
+            )
 
         logger.info("  - GOAF filepath exists.")
         with open(self._filepath, "r") as read_content:
@@ -305,7 +356,12 @@ class GOAnnotationsFile:
                 return "cellular_component"
         return None
 
-    def get_all_products_for_goterm(self, goterm_id: str, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
+    def get_all_products_for_goterm(
+        self,
+        goterm_id: str,
+        indirect_annotations: bool = False,
+        obo_parser: OboParser = None,
+    ) -> List[str]:
         """
         This method returns all unique products associated with the GO term id.
         The return of this function is influenced by the go_categories supplied to the constructor of the GOAF!
@@ -336,9 +392,8 @@ class GOAnnotationsFile:
             for child_goterm_id in child_goterm_ids:
                 child_products = self.terms_dict.get(child_goterm_id, [])
                 indirect_products += child_products
-            
+
             return set(direct_products + indirect_products)
-            
 
     def populate_poducts_dict(self):
         """
@@ -348,11 +403,24 @@ class GOAnnotationsFile:
         GO Terms (eg. ['GO:0003723', ...])
         """
         self.products_dict = {}
-        for line in self._readlines:  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
+        for (
+            line
+        ) in (
+            self._readlines
+        ):  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
             chunks = line.split("\t")
-            self.products_dict.setdefault(chunks[2], set()).add(chunks[4])  # create a key with the line's product gene name (if the key already exists, don't re-create the key - specified by the setdefault method) and add the associated GO Term to the value set. eg. {'NUDT4B': {'GO:0003723'}}, after first line is processed, {'NUDT4B': {'GO:0003723'}, 'NUDT4B': {'GO:0046872'}} after second line ...
-        for key,values in self.products_dict.items():  # the set() above prevents the value elements (GO Terms) in dictionary to be repeated
-            self.products_dict[key] = list(values)  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
+            self.products_dict.setdefault(chunks[2], set()).add(
+                chunks[4]
+            )  # create a key with the line's product gene name (if the key already exists, don't re-create the key - specified by the setdefault method) and add the associated GO Term to the value set. eg. {'NUDT4B': {'GO:0003723'}}, after first line is processed, {'NUDT4B': {'GO:0003723'}, 'NUDT4B': {'GO:0046872'}} after second line ...
+        for (
+            key,
+            values,
+        ) in (
+            self.products_dict.items()
+        ):  # the set() above prevents the value elements (GO Terms) in dictionary to be repeated
+            self.products_dict[key] = list(
+                values
+            )  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
 
     def populate_terms_dict(self):
         """
@@ -362,13 +430,31 @@ class GOAnnotationsFile:
         associated product gene names (eg. ['NUDT4B', ...])
         """
         self.terms_dict = {}
-        for line in self._readlines:  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
+        for (
+            line
+        ) in (
+            self._readlines
+        ):  # example line: 'UniProtKB \t A0A024RBG1 \t NUDT4B \t enables \t GO:0003723 \t GO_REF:0000043 \t IEA \t UniProtKB-KW:KW-0694 \t F \t Diphosphoinositol polyphosphate phosphohydrolase NUDT4B \t NUDT4B \t protein \t taxon:9606 \t 20230306 \t UniProt'
             chunks = line.split("\t")
-            self.terms_dict.setdefault(chunks[4], set()).add(chunks[2])  # create a key with the line's GO Term (if the key already exists, don't re-create the key - specified by the setdefault method) and add the product' gene name to the value set. eg. {'GO:0003723': {'NUDT4B'}}, after first line is processed, {'GO:0003723': {'NUDT4B'}, 'GO:0046872': {'NUDT4B'}} after second line ...
-        for key,values in self.terms_dict.items():  # the previous set() prevents the value elements (product gene names) in dictionary to be repeated
-            self.terms_dict[key] = list(values)  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
+            self.terms_dict.setdefault(chunks[4], set()).add(
+                chunks[2]
+            )  # create a key with the line's GO Term (if the key already exists, don't re-create the key - specified by the setdefault method) and add the product' gene name to the value set. eg. {'GO:0003723': {'NUDT4B'}}, after first line is processed, {'GO:0003723': {'NUDT4B'}, 'GO:0046872': {'NUDT4B'}} after second line ...
+        for (
+            key,
+            values,
+        ) in (
+            self.terms_dict.items()
+        ):  # the previous set() prevents the value elements (product gene names) in dictionary to be repeated
+            self.terms_dict[key] = list(
+                values
+            )  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
 
-    def get_all_terms_for_product(self, product: str, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
+    def get_all_terms_for_product(
+        self,
+        product: str,
+        indirect_annotations: bool = False,
+        obo_parser: OboParser = None,
+    ) -> List[str]:
         """
         Gets all GO Terms associated to a product gene name.
         The return of this function is influenced by the go_categories supplied to the constructor of the GOAF!
@@ -397,9 +483,8 @@ class GOAnnotationsFile:
             for goterm_id in direct_annotations:
                 children = obo_parser.get_child_terms(goterm_id)
                 indirect_annotations += children
-            
-            return (direct_annotations + indirect_annotations)
 
+            return direct_annotations + indirect_annotations
 
     def get_all_terms(self) -> List[str]:
         """

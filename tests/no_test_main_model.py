@@ -24,9 +24,11 @@ ModelStats.init()
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file("input_files/input.txt")
-model.goterms = model.goterms[0:5] # TODO: remove this
+model.goterms = model.goterms[0:5]  # TODO: remove this
 # model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) # TODO: reenable this
-model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=30)
+model.fetch_all_go_term_products(
+    web_download=True, run_async=True, delay=0.5, max_connections=30
+)
 model.create_products_from_goterms()
 model.products_perform_idmapping()
 model.fetch_orthologs_products_batch_gOrth(target_taxon_number="9606")
@@ -55,5 +57,7 @@ model.score_products(
 # -> Pvalcalculator.score_products(model, scoreclass, correction)
 
 # model.model_settings.pvalue = 0.10  # set pvalue to be used in statistical analysis
-model.perform_statistical_analysis(test_name="fisher_test", filepath="results/statistically_relevant_genes.json")
+model.perform_statistical_analysis(
+    test_name="fisher_test", filepath="results/statistically_relevant_genes.json"
+)
 model.save_model("results/data.json")

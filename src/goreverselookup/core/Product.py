@@ -24,14 +24,14 @@ class Product:
         genename: str = None,
         uniprot_id: str = None,
         description: str = None,
-        ensg_id: Union[str,list] = None,
+        ensg_id: Union[str, list] = None,
         enst_id: str = None,
         refseq_nt_id: str = None,
         mRNA: str = None,
         scores: dict = None,
         had_orthologs_computed: bool = False,
         had_fetch_info_computed: bool = False,
-        gorth_ortholog_exists: bool = False
+        gorth_ortholog_exists: bool = False,
     ):
         """
         A class representing a product (e.g. a gene or protein).
@@ -133,7 +133,9 @@ class Product:
                     )
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
                 # do a file-based ortholog search using HumanOrthologFinder
-                human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(self.id_synonyms[0])
+                human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(
+                    self.id_synonyms[0]
+                )
                 offline_queried_ortholog = human_ortholog_gene_id  # this is used for acceleration so as not to repeat find_human_ortholog in the online algorithm section
                 if human_ortholog_gene_id is not None:
                     self.genename = human_ortholog_gene_id
@@ -145,14 +147,20 @@ class Product:
                     # 14.08.2023: replaced online uniprot info query with goaf.get_uniprotkb_genename, as it is more successful and does the same as the uniprot query
                     # online uniprot info query is performed only for debugging purposes with _d_compare_goaf
                     if _d_compare_goaf is True:
-                        info_dict = uniprot_api.get_uniprot_info(self.id_synonyms[0])  # bugfix
+                        info_dict = uniprot_api.get_uniprot_info(
+                            self.id_synonyms[0]
+                        )  # bugfix
                     else:
-                        info_dict = {"genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])}
+                        info_dict = {
+                            "genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])
+                        }
                 else:  # self.uniprot_id exists
                     if _d_compare_goaf is True:
                         info_dict = uniprot_api.get_uniprot_info(self.uniprot_id)
                     else:
-                        info_dict = {"genename": goaf.get_uniprotkb_genename(self.uniprot_id)}
+                        info_dict = {
+                            "genename": goaf.get_uniprotkb_genename(self.uniprot_id)
+                        }
                 # if compare is set to True, then only log the comparison between
                 if _d_compare_goaf is True:
                     if self.genename != info_dict.get("genename"):
@@ -171,19 +179,31 @@ class Product:
                     self.genename = info_dict.get("genename")
 
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
-                if offline_queried_ortholog is None:  # if algorithm enters this section due to _d_compare_goaf == True, then this accelerates code, as it prevents double calculations
-                    human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(self.id_synonyms[0])  # file-based search; alternative spot for GOAF analysis
+                if (
+                    offline_queried_ortholog is None
+                ):  # if algorithm enters this section due to _d_compare_goaf == True, then this accelerates code, as it prevents double calculations
+                    human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(
+                        self.id_synonyms[0]
+                    )  # file-based search; alternative spot for GOAF analysis
                 else:
                     human_ortholog_gene_id = offline_queried_ortholog
-                if human_ortholog_gene_id is None:  # if file-based search finds no ortholog
-                    logger.warning(f"human ortholog finder did not find ortholog for {self.id_synonyms[0]}")
+                if (
+                    human_ortholog_gene_id is None
+                ):  # if file-based search finds no ortholog
+                    logger.warning(
+                        f"human ortholog finder did not find ortholog for {self.id_synonyms[0]}"
+                    )
                     if self.ensg_id is not None:
                         if "ENSG" in self.ensg_id:
                             human_ortholog_gene_ensg_id = self.ensg_id
                         else:
-                            human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.ensg_id)
+                            human_ortholog_gene_ensg_id = (
+                                ensembl_api.get_human_ortholog(self.ensg_id)
+                            )
                     else:
-                        human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0])
+                        human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(
+                            self.id_synonyms[0]
+                        )
 
                     if human_ortholog_gene_ensg_id is not None:
                         enst_dict = ensembl_api.get_info(human_ortholog_gene_ensg_id)
@@ -193,8 +213,10 @@ class Product:
                                 DROP_MIRNA_FROM_ENSEMBL_QUERY is True
                                 and "MIR" in human_ortholog_gene_id
                             ):
-                                human_ortholog_gene_id = None  # Ensembl query returned a miRNA, return None
-        
+                                human_ortholog_gene_id = (
+                                    None  # Ensembl query returned a miRNA, return None
+                                )
+
                         if _d_compare_goaf is True:
                             if self.genename != human_ortholog_gene_id:
                                 logger.warning(
@@ -227,7 +249,9 @@ class Product:
                                     self.uniprot_id = enst_dict.get("uniprot_id")
                 else:
                     if _d_compare_goaf is True:
-                        if self.genename != human_ortholog_gene_id:  # with the current workflow, these will always be the same
+                        if (
+                            self.genename != human_ortholog_gene_id
+                        ):  # with the current workflow, these will always be the same
                             logger.warning(
                                 f"GOAF-obtained genename ({self.genename}) is not the"
                                 " same as file-search-obtained-genename"
@@ -286,46 +310,70 @@ class Product:
         if not ensembl_api:
             ensembl_api = EnsemblApi()
 
-        if len(self.id_synonyms) == 1 and "UniProtKB" in self.id_synonyms[0] and self.taxon == "NCBITaxon:9606":
+        if (
+            len(self.id_synonyms) == 1
+            and "UniProtKB" in self.id_synonyms[0]
+            and self.taxon == "NCBITaxon:9606"
+        ):
             if self.uniprot_id is None or self.uniprot_id == "":
                 # 14.08.2023: replaced online uniprot info query with goaf.get_uniprotkb_genename, as it is more successful and does the same as the uniprot query
                 if (
                     model_settings is not None
                     and model_settings.uniprotkb_genename_online_query is True
                 ):
-                    info_dict = await uniprot_api.get_uniprot_info_async(self.id_synonyms[0], session)
+                    info_dict = await uniprot_api.get_uniprot_info_async(
+                        self.id_synonyms[0], session
+                    )
                 else:
-                    info_dict = {"genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])} # TODO: implement goafmaster -> human!!!
+                    info_dict = {
+                        "genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])
+                    }  # TODO: implement goafmaster -> human!!!
             else:
                 if (
                     model_settings is not None
                     and model_settings.uniprotkb_genename_online_query is True
                 ):
-                    info_dict = await uniprot_api.get_uniprot_info_async(self.uniprot_id, session)
+                    info_dict = await uniprot_api.get_uniprot_info_async(
+                        self.uniprot_id, session
+                    )
                 else:
-                    info_dict = {"genename": goaf.get_uniprotkb_genename(self.uniprot_id)}
+                    info_dict = {
+                        "genename": goaf.get_uniprotkb_genename(self.uniprot_id)
+                    }
             if info_dict is not None:
                 self.genename = info_dict.get("genename")
         elif len(self.id_synonyms) == 1:
             # UniProtKBs with non-homosapiens-taxon are also processed here (besides ZFIN, RGD, MGI, Xenbase, ...)
-            
+
             if "UniProtKB" in self.id_synonyms[0]:
-                _d=0
-                pass # TODO: remove this, for debug only for non-hsapiens uniprotkb genes
-            
-            human_ortholog_gene_id = (await human_ortholog_finder.find_human_ortholog_async(self.id_synonyms[0]))
+                _d = 0
+                pass  # TODO: remove this, for debug only for non-hsapiens uniprotkb genes
+
+            human_ortholog_gene_id = (
+                await human_ortholog_finder.find_human_ortholog_async(
+                    self.id_synonyms[0]
+                )
+            )
             if human_ortholog_gene_id is None:
-                logger.debug(f"Human ortholog finder did not find ortholog for {self.id_synonyms[0]}. Trying Ensembl query.")
+                logger.debug(
+                    f"Human ortholog finder did not find ortholog for {self.id_synonyms[0]}. Trying Ensembl query."
+                )
                 if self.ensg_id is not None:
                     if "ENSG" in self.ensg_id:
                         human_ortholog_gene_ensg_id = self.ensg_id
                     else:
-                        human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.ensg_id)
+                        human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(
+                            self.ensg_id
+                        )
                 else:
-                    human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(self.id_synonyms[0])
-                    
+                    human_ortholog_gene_ensg_id = ensembl_api.get_human_ortholog(
+                        self.id_synonyms[0]
+                    )
+
                 if human_ortholog_gene_ensg_id is not None:
-                    enst_dict = await ensembl_api.get_info_async(human_ortholog_gene_ensg_id, session)
+                    enst_dict = await ensembl_api.get_info_async(
+                        human_ortholog_gene_ensg_id, session
+                    )
                     self.genename = enst_dict.get("genename")
 
                     # update 19.08.2023: attempt to obtain as many values as possible for this Product already from
@@ -346,17 +394,17 @@ class Product:
                 self.genename = human_ortholog_gene_id
 
         ModelStats.product_ortholog_query_results[self.id_synonyms[0]] = {
-            'initial_taxon': self.taxon,
-            'ensg_id': self.ensg_id,
-            'enst_id': self.enst_id,
-            'uniprot_id': self.uniprot_id
+            "initial_taxon": self.taxon,
+            "ensg_id": self.ensg_id,
+            "enst_id": self.enst_id,
+            "uniprot_id": self.uniprot_id,
         }
 
         if self.genename != None:
             logger.info(f"Fetched orthologs for: {self.genename}")
         elif self.uniprot_id != None:
             logger.info(f"Fetched orthologs for: {self.uniprot_id}")
-            
+
         self.had_orthologs_computed = True
 
     async def fetch_ortholog_async_semaphore(
@@ -374,7 +422,7 @@ class Product:
                 goaf=goaf,
                 human_ortholog_finder=human_ortholog_finder,
                 uniprot_api=uniprot_api,
-                ensembl_api=ensembl_api
+                ensembl_api=ensembl_api,
             )
 
     def fetch_info(

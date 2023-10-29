@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import aiohttp
 from contextlib import asynccontextmanager
-from typing import List, Dict
+from typing import Optional
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -21,6 +21,11 @@ from .parse.OrthologParsers import HumanOrthologFinder
 from .parse.OBOParser import OboParser
 from .util.JsonUtil import JsonUtil, JsonToClass
 from .util.Timer import Timer
+from .ontology import GODag
+from .associations import Annotations
+from .reverse_lookup import GOReverseLookupStudy
+from collections import defaultdict
+
 
 import logging
 
@@ -29,100 +34,271 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class TargetProcess:
-    def __init__(self, name: str, direction: str) -> None:
+class InputFileParser:
+    def __init__(self, filepath:str) -> None:
+        self.filepath = filepath
+        # Define constants used in parsing the file
+        self.LINE_ELEMENT_DELIMITER = "\t"  # Data is tab separated
+        self.COMMENT_DELIMITER = "#"  # Character used to denote a comment
+        self.LOGIC_LINE_DELIMITER = (
+            "###"  # Special set of characters to denote a "logic line"
+        )
+
+        #setup defaults
+        self.subontologies = ["BP", "CC", "MF"]
+        self.target_species = "9606"
+        self.ortholog_species = []
+        self.obo_filepath = "go.obo"
+        self.annotations_filepaths = ["goa_human.gaf"]
+        self.indirect_annotations_propagation = False
+        self.valid_relationships = ["part_of", "is_a"]
+        self.valid_evidence_codes = "all"
+        self.alpha = 0.05
+        self.pvalcal = "fisher_scipy_stats"
+        self.correction_methods = ["bonferroni"]
+
+        # required
+        self.target_processes = {}
+        self.goterms_per_process: dict[str, set[str]] = defaultdict(set) #only store ids
+
+        self.read_file(self.filepath)
+
+        if not self.target_processes or not self.goterms_per_process:
+            raise ValueError("No target processes or goterms were provided")
+        if not all(pr["process"] in self.goterms_per_process for pr in self.target_processes):
+            raise ValueError("There is a mismatch between target processes and goterms")
+
+
+    def read_file(self, filepath):
+        with open(filepath, "r") as read_content:
+            read_lines = read_content.read().splitlines()[2:]  # skip first 2 lines
+            section = ""  # what is the current section i am reading
+            for line in read_lines:
+                line = self._process_comment(line)
+                line = line.strip()
+                if line == "":
+                    continue
+                if "settings" in line:
+                    section = "settings"
+                    continue
+                elif "processes" in line:
+                    section = "process"
+                    continue
+                elif "GO_terms" in line:
+                    section = "GO"
+                    continue
+                if section == "settings":
+                    chunks = line.split(self.LINE_ELEMENT_DELIMITER)
+                    setting_name = chunks[0]
+                    setting_value = chunks[1]  # is string now
+                    if setting_value == "True" or setting_value == "true":
+                        setting_value = True
+                    if setting_value == "False" or setting_value == "false":
+                        setting_value = False
+                    if setting_name == "alpha":
+                        self.alpha = float(setting_value)
+                    if setting_name == "subontologies":
+                        if setting_value != "all":
+                            setting_value = setting_value.split(',')
+                            if setting_value not in ["BP", "CC", "MF"]:
+                                raise ValueError(f"{setting_value} is not part of ['BP', 'CC', 'MF']")
+                            self.subontologies = setting_value
+                        else:
+                            self.subontologies = ["BP", "CC", "MF"]
+                    if setting_name == "target_species":
+                        # TODO: convert to NCBI taxon if needed
+                        self.target_species = setting_value
+                        # TODO: do a check
+                    if setting_name == "ortholog_species":
+                        # TODO: convert to NCBI taxon if needed
+                        self.ortholog_species = setting_value.split(',')
+                        # TODO: do a check
+                    if setting_name == "obo_file":
+                        self.obo_filepath = setting_value
+                        # TODO: do a check
+                    if setting_name == "goa_files":
+                        self.annotations_filepaths = setting_value.split('|')
+                        # TODO: do a check
+                    if setting_name == "indirect_annotations":
+                        if setting_value is False:
+                            self.indirect_annotations_propagation = setting_value
+                        if setting_value is True or setting_value == "all":
+                            self.indirect_annotations_propagation = "all"
+                        # TODO: implement custom depth, level, or other algorithm
+                    if setting_name == "valid_EC":
+                        self.valid_evidence_codes = setting_value.split(',')
+                    if setting_name == "valid_relationships":
+                        self.valid_relationships = setting_value.split(',')
+                    if setting_name == "pvalcal":
+                        self.pvalcal == setting_value
+                    if setting_name == "corrections":
+                        self.correction_methods = setting_value.split(',')
+
+                elif section == "process":
+                    chunks = line.split(self.LINE_ELEMENT_DELIMITER)
+                    self.target_processes.append(
+                        {"process": chunks[0], "direction": chunks[1]}
+                    )
+
+                elif section == "GO":
+                    chunks = line.split(self.LINE_ELEMENT_DELIMITER)
+                    if len(chunks) == 5:
+                        d = {
+                            "id": chunks[0],
+                            "processes": {
+                                "process": chunks[1],
+                                "direction": chunks[2],
+                            },
+                            "weight": int(chunks[3]),
+                            "name": chunks[4],
+                        }
+                    else:
+                        d = {
+                            "id": chunks[0],
+                            "processes": {
+                                "process": chunks[1],
+                                "direction": chunks[2],
+                            },
+                            "weight": int(chunks[3]),
+                        }
+                    
+                    key = f"{d['processes']['process']}{d['processes']['direction']}"
+                    self.goterms_per_process[key].add(d["id"])
+
+
+    def _process_comment(self, line):
         """
-        A class representing a target process. NOT USED CURRENTLY
+        Processes a comment in the line: returns the part of the line before the comment. The input file should be structured to contain
+        three sections - 'settings', 'processes' and 'GO_terms', annotated using the LOGIC_LINE_DELIMITER.
 
-        Args:
-            name (str)
-            direction (str): + or -
-            goterms (set): a set of all goterms which are
+        For the construction of input.txt, please refer to the Readme file. [TODO]
+
+        Parameters:
+        - line: the line whose comment to process
         """
-        self.name = name
-        self.direction = direction
+        if self.LOGIC_LINE_DELIMITER in line:
+            # Logic lines should be marked with "###" at the start. For a logic line, the returned result is line without the line_keep_delimiter
+            return line.replace(self.LOGIC_LINE_DELIMITER, "")
 
+        if self.COMMENT_DELIMITER in line:
+            return line.split(self.COMMENT_DELIMITER)[0]
+        else:
+            return line
 
-class ReverseLookup:
+class ReverseLookupModel:
     def __init__(
         self,
-        goterms: List[GOTerm],
-        target_processes: List[Dict[str, str]],
-        products: List[Product] = [],
-        miRNAs: List[miRNA] = [],
-        miRNA_overlap_treshold: float = 0.6,
-        execution_times: dict = {},
-        statistically_relevant_products={},
-        go_categories: List[str] = [
-            "biological_process",
-            "molecular_activity",
-            "cellular_component",
-        ],
-        model_settings: ModelSettings = None,
-        obo_parser: OboParser = None,
+        goterms: set[GOTerm],
+        target_processes: list,
+        goterms_per_process: dict[str, set[str]],
+        products: set[Product] = set(),
+        godag: Optional[GODag] = None,
+        obo_filepath: str = "go.obo",
+        annotations: Optional[Annotations] = None,
+        annotations_filepaths: list = ["goa_human.gaf"],
+        target_species: str = "9606",
+        ortholog_species: list = [],
+        valid_relationships: list = ["part_of", "is_a"],
+        valid_evidence_codes: str = "all",
+        subontologies: list = ["BP"],
+        indirect_annotations_propagation: bool = False,
+        alpha: float = 0.05,
+        pvalcal: str = "fisher_scipy_stats",
+        correction_methods: list = ["bonferroni"],
     ):
         """
         A class representing a reverse lookup for gene products and their associated Gene Ontology terms.
-
-        Args:
-            goterms (set): A set of GOTerm objects.
-            target_processes (list): A list of dictionaries containing process names and directions.
-            products (set, optional): A set of Product objects. Defaults to an empty set.
-            miRNAs
-            miRNA_overlap_threshold
-            execution_times: a dictionary of function execution times, no use to the user. Used during model saving and loadup.
-            statistically_relevant_products: TODO - load and save the model after perform_statistical_analysis is computed
-            go_categories: When querying GO Term data, which GO categories should be allowed. By default, all three categories are allowed ("biological_process", "molecular_activity", "cellular_component").
-                        Choosing the correct categories affects primarily the Fisher scoring, when GO Terms are queried for each product either from the GOAF or from the web. Excluding some GO categories (such as cellular_component)
-                        when researching only GO Terms connected to biological processes and/or molecular activities helps to produce more accurate statistical scores.
-            model_settings: used for saving and loading model settings
-            obo_parser: Used for parsing the Gene Ontology's .obo file. If it isn't supplied, it will be automatically created
         """
         self.goterms = goterms
+        self.goterms_per_process = goterms_per_process
         self.products = products
         self.target_processes = target_processes
-        self.miRNAs = miRNAs
-        self.miRNA_overlap_treshold = miRNA_overlap_treshold
-        self.model_settings = model_settings
-        self.execution_times = execution_times  # dict of execution times, logs of runtime for functions
-        self.timer = Timer()
+        self.godag = godag
+        self.obo_filepath = obo_filepath
+        self.annotations = annotations
+        self.annotations_filepaths = annotations_filepaths
+        self.target_species = target_species
+        self.ortholog_species = ortholog_species
+        self.valid_relationships = valid_relationships
+        self.valid_evidence_codes = valid_evidence_codes
+        self.subontologies = subontologies
+        self.indirect_annotations_propagation = indirect_annotations_propagation
+        self.alpha = alpha
+        self.pvalcal = pvalcal
+        self.correction_methods = correction_methods
 
-        # placeholder to populate after perform_statistical_analysis is called
-        self.statistically_relevant_products = statistically_relevant_products
+        if self.obo_filepath:
+            self.parse_godag()
+        if self.annotations_filepaths:
+            self.parse_annotations()
 
-        # GO categories - determines which categories of GO terms are chosen during the Fisher score computation (either from the GO Annotations File or from a gene id to GO Terms API query)
-        self.go_categories = go_categories
+        #if goterms_per_process:
+        #    goterms_with_process = defaultdict(set)
+        #    for process, goterm_set in goterms_per_process.items():
+        #        for goterm in goterm_set:
+        #            goterms_with_process[goterm].add(process)
+        #
+        #    for goterm, process_set in goterms_with_process.items():
+        #        self.goterms.add(GOTerm(id=goterm, processes=))
 
-        self.goaf = GOAnnotationsFile(filepath=self.model_settings.get_datafile_path("goa_human"), go_categories=go_categories)
-        
-        if self.goaf is None:
-            logger.warning("MODEL COULD NOT CREATE A GO ANNOTATIONS FILE!")
-            logger.warning(f"  - goa_human = {self.model_settings.get_datafile_path('goa_human')}")
-
-        self.go_api = GOApi() # this enables us to use go_api inside Metrics.py, as importing GOApi inside Metrics.py creates circular imports.
-
-        if obo_parser is not None:
-            self.obo_parser = obo_parser
-        else:
-            # obo parser is none
-            if (
-                self.model_settings.datafile_paths["go_obo"] is not None
-                and self.model_settings.datafile_paths["go_obo"]["local_filepath"] != ""
-            ):
-                self.obo_parser = OboParser(obo_filepath=self.model_settings.get_datafile_path('go_obo'), obo_download_url=self.model_settings.get_datafile_url('go_obo'))
-            else:
-                self.obo_parser = OboParser()
-        
-        ModelStats.goterm_count = len(self.goterms)
-        ModelStats.product_count = len(self.products)
-        
-    def set_model_settings(self, model_settings: ModelSettings):
-        """
-        Sets self.model_settings to the model settings supplied in the parameter.
-        """
-        self.model_settings = model_settings
     
-    def get_goterm(self, goterm_id:str):
+    def parse_godag(self):
+        self.godag = GODag(self.obo_filepath)
+        # filter subontologies
+        self.godag.filter(lambda a: a.namespace in self.subontologies)
+
+    
+    def parse_annotations(self):
+        self.annotations = Annotations().union(Annotations.from_file(fp) for fp in self.annotations_filepaths)
+        # TODO: filter evidence codes
+        #self.annotations.filter(lambda a: a.evidence_code in self.valid_evidence_codes)
+        # filter annotations to only leave the ones in ortholog_species
+        self.annotations.filter(lambda a: a.taxon in [self.target_species, *self.ortholog_species])
+
+
+    def find_orthologs(self, target_species, database="all"):
+        """_summary_
+
+        Args:
+            target_species (_type_): _description_
+            database (str, optional): _description_. Defaults to "all".
+        """        
+        if database == "all":
+            database_list = ["gOrth", "ensembl", "local_files"]
+        if isinstance(database, str):
+            database_list = [database]
+        
+        for db in database_list:
+            self.annotations.find_orthologs(target_species, db, prune=False)
+
+
+    def run_study(self, alpha, pvalcalc, correction):
+        """_summary_
+
+        Args:
+            alpha (_type_): _description_
+            pvalcalc (_type_): _description_
+            correction (_type_): _description_
+        """        
+        study = GOReverseLookupStudy(self.annotations, self.godag, alpha, pvalcalc, correction)
+        
+        results_dict: dict[str, list] = {}
+        for key, study_set in study_sets_dict.items():
+            results_dict[key] = study.run_study(study_set)
+
+        
+
+
+
+
+
+
+
+
+
+
+
+    def get_goterm(self, goterm_id: str):
         """
         Returns the GO Term object associated with the input 'goterm_id' string
         """
@@ -140,7 +316,9 @@ class ReverseLookup:
         else:
             logger.warning(f"ModelSettings object has no attribute {setting}!")
 
-    def fetch_all_go_term_names_descriptions(self, run_async=True, req_delay=0.1, max_connections=50):
+    def fetch_all_go_term_names_descriptions(
+        self, run_async=True, req_delay=0.1, max_connections=50
+    ):
         """
         Iterates over all GOTerm objects in the go_term set and calls the fetch_name_description method for each object.
         """
@@ -180,13 +358,15 @@ class ReverseLookup:
         """
         connector = aiohttp.TCPConnector(
             limit=max_connections, limit_per_host=max_connections
-        ) 
+        )
         async with aiohttp.ClientSession(connector=connector) as session:
             tasks = []
             for goterm in self.goterms:
                 if goterm.name is None or goterm.description is None:
                     task = asyncio.create_task(
-                        goterm.fetch_name_description_async(api=api, session=session, req_delay=req_delay)
+                        goterm.fetch_name_description_async(
+                            api=api, session=session, req_delay=req_delay
+                        )
                     )
                     tasks.append(task)
             await asyncio.gather(*tasks)
@@ -325,7 +505,9 @@ class ReverseLookup:
                     if (
                         goterm.products == [] or recalculate is True
                     ):  # to prevent recalculation of products if they are already computed
-                        goterm.fetch_products(source, model_settings=self.model_settings)
+                        goterm.fetch_products(
+                            source, model_settings=self.model_settings
+                        )
 
         if "fetch_all_go_term_products" not in self.execution_times:
             self.execution_times[
@@ -373,7 +555,9 @@ class ReverseLookup:
         ]
         api = GOApi()
 
-        connector = aiohttp.TCPConnector(limit=max_connections, limit_per_host=max_connections)  # default is 100
+        connector = aiohttp.TCPConnector(
+            limit=max_connections, limit_per_host=max_connections
+        )  # default is 100
         async with aiohttp.ClientSession(connector=connector) as session:
             for goterm in self.goterms:
                 url = api.get_products(
@@ -419,7 +603,7 @@ class ReverseLookup:
     # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     async def _fetch_all_goterm_products_async_v3(
         self,
-        model_settings:ModelSettings,
+        model_settings: ModelSettings,
         max_connections=100,
         request_params={"rows": 10000000},
         req_delay=0.5,
@@ -437,7 +621,10 @@ class ReverseLookup:
             for goterm in self.goterms:
                 if goterm.products == [] or recalculate is True:
                     task = goterm.fetch_products_async_v3(
-                        session, model_settings=model_settings, request_params=request_params, req_delay=req_delay
+                        session,
+                        model_settings=model_settings,
+                        request_params=request_params,
+                        req_delay=req_delay,
                     )
                     tasks.append(task)
             # perform multiple tasks at once asynchronously
@@ -477,9 +664,20 @@ class ReverseLookup:
                 if product not in products_set:
                     products_set.update(product)
                     if ":" in product:
-                        product_object = Product.from_dict({"id_synonyms": [product], "taxon": term.products_taxa_dict[product]})
+                        product_object = Product.from_dict(
+                            {
+                                "id_synonyms": [product],
+                                "taxon": term.products_taxa_dict[product],
+                            }
+                        )
                     else:
-                        product_object = Product.from_dict({"id_synonyms": [product], "genename": product, "taxon": term.products_taxa_dict[product]})
+                        product_object = Product.from_dict(
+                            {
+                                "id_synonyms": [product],
+                                "genename": product,
+                                "taxon": term.products_taxa_dict[product],
+                            }
+                        )
                     self.products.append(product_object)
 
         # Iterate over each product in the products_set and create a new Product object from the product ID using the
@@ -493,7 +691,9 @@ class ReverseLookup:
                     Product.from_dict({"id_synonyms": [product], "genename": product})
                 )
         """
-        logger.info(f"Created {len(self.products)} Product objects from GOTerm object definitions")
+        logger.info(
+            f"Created {len(self.products)} Product objects from GOTerm object definitions"
+        )
         ModelStats.product_count = len(self.products)
 
         if "create_products_from_goterms" not in self.execution_times:
@@ -549,9 +749,7 @@ class ReverseLookup:
             ] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
-    def fetch_uniprot_product_ensg_ids(
-            self
-    ):
+    def fetch_uniprot_product_ensg_ids(self):
         """
         Fetches the ENSG identifiers for the gene products, which have a UniProtKB identifier.
         This operation relies on a bulk request to the UniProtKB servers to perform the id mapping between UniProtKB
@@ -564,7 +762,7 @@ class ReverseLookup:
                 self.create_products_from_goterms()
             if self.products == [] or self.products is None:
                 raise Exception("Model has no defined gene products!")
-        
+
         uniprot_product_ids = []
         for product in self.products:
             assert isinstance(product, Product)
@@ -572,26 +770,31 @@ class ReverseLookup:
                 continue
             if "UniProtKB" in product.uniprot_id:
                 uniprot_product_ids.append(product.uniprot_id)
-        
-        logger.info(f"Performing batch UniProtKB id to Ensembl gene id mapping for {len(uniprot_product_ids)} genes.")
-        uniprot_to_ensembl_idmap = uniprot_api.idmapping_ensembl_batch(uniprot_ids=uniprot_product_ids)
-        successful_conversions = uniprot_to_ensembl_idmap['results']
-        failed_conversions = uniprot_to_ensembl_idmap['failedIds']
-        logger.info(f"UniProtKB->Ensembl id mapping results: successful = {len(successful_conversions)}, failed = {len(failed_conversions)}")
-        
+
+        logger.info(
+            f"Performing batch UniProtKB id to Ensembl gene id mapping for {len(uniprot_product_ids)} genes."
+        )
+        uniprot_to_ensembl_idmap = uniprot_api.idmapping_ensembl_batch(
+            uniprot_ids=uniprot_product_ids
+        )
+        successful_conversions = uniprot_to_ensembl_idmap["results"]
+        failed_conversions = uniprot_to_ensembl_idmap["failedIds"]
+        logger.info(
+            f"UniProtKB->Ensembl id mapping results: successful = {len(successful_conversions)}, failed = {len(failed_conversions)}"
+        )
+
         # update self.produts
         for idmap in successful_conversions:
-            uniprot_id = idmap['from']
-            ensembl_id = idmap['to']
+            uniprot_id = idmap["from"]
+            ensembl_id = idmap["to"]
             for product in self.products:
                 if product.uniprot_id == None:
                     continue
                 if uniprot_id in product.uniprot_id:
                     product.ensg_id = ensembl_id
-    
+
     def products_perform_idmapping(
-        self,
-        from_databases:list = ["UniProtKB", "ZFIN", "MGI", "RGD", "Xenbase"]
+        self, from_databases: list = ["UniProtKB", "ZFIN", "MGI", "RGD", "Xenbase"]
     ):
         """
         First, attempts to map all non-UniProtKB gene product ids (from self.products) to the UniProtKB gene ids.
@@ -606,44 +809,51 @@ class ReverseLookup:
                 raise Exception("Model has no defined gene products!")
 
         ### Run 1: map all non-uniprotkb ids to uniprotkb ids
-        non_uniprot_dbs = [db for db in from_databases if "UniProtKB" not in db] # select all dbs besides uniprot
-        non_uniprot_dbs_product_dict = {} # mapping {'ZFIN': [list_of_zfin_product_ids], ...}
-        for db in non_uniprot_dbs: # initialise with empty values
+        non_uniprot_dbs = [
+            db for db in from_databases if "UniProtKB" not in db
+        ]  # select all dbs besides uniprot
+        non_uniprot_dbs_product_dict = (
+            {}
+        )  # mapping {'ZFIN': [list_of_zfin_product_ids], ...}
+        for db in non_uniprot_dbs:  # initialise with empty values
             non_uniprot_dbs_product_dict[db] = set()
-        
+
         for product in self.products:
             if "UniProtKB" in product.id_synonyms[0]:
-                continue # don't perform uniprotkb-uniprotkb mappings
-            p_id = product.id_synonyms[0] # ZFIN:XXXX
-            p_id_db = p_id.split(":")[0] # ZFIN
+                continue  # don't perform uniprotkb-uniprotkb mappings
+            p_id = product.id_synonyms[0]  # ZFIN:XXXX
+            p_id_db = p_id.split(":")[0]  # ZFIN
             non_uniprot_dbs_product_dict[p_id_db].update([p_id])
-        
+
         # convert sets to lists
         for db, db_set in non_uniprot_dbs_product_dict.items():
             non_uniprot_dbs_product_dict[db] = list(db_set)
-        
+
         for db, db_ids_list in non_uniprot_dbs_product_dict.items():
             if db_ids_list == []:
                 logger.info(f"Skipping {db}, as there are no associated genes.")
                 continue
             idmappings = uniprot_api.idmapping_batch(
-                ids = db_ids_list,
-                from_db=db,
-                to_db="UniProtKB"
+                ids=db_ids_list, from_db=db, to_db="UniProtKB"
             )
-            successful_mappings = idmappings['results']
-            failed_mappings = idmappings['failedIds']
-            logger.info(f"{db} id mapping conversion to UniProtKB: {len(successful_mappings)} successful mappings, {len(failed_mappings)} failed mappings.")
+            successful_mappings = idmappings["results"]
+            failed_mappings = idmappings["failedIds"]
+            logger.info(
+                f"{db} id mapping conversion to UniProtKB: {len(successful_mappings)} successful mappings, {len(failed_mappings)} failed mappings."
+            )
             for idmap in successful_mappings:
-                initial_id = idmap['from']
-                uniprot_id = idmap['to']['primaryAccession']
+                initial_id = idmap["from"]
+                uniprot_id = idmap["to"]["primaryAccession"]
                 uniprot_id_full = f"UniProtKB:{uniprot_id}"
                 for product in self.products:
                     if len(product.id_synonyms) == 0:
                         continue
-                    if initial_id in product.id_synonyms[0] and db in product.id_synonyms[0]:
+                    if (
+                        initial_id in product.id_synonyms[0]
+                        and db in product.id_synonyms[0]
+                    ):
                         product.uniprot_id = uniprot_id_full
-        
+
         ### Run 2: attempt Ensembl gene mappings
         self.fetch_uniprot_product_ensg_ids()
 
@@ -658,33 +868,39 @@ class ReverseLookup:
             if ":" in ncbi_id:
                 ncbi_id = ncbi_id.split(":")[1]
             taxa_ids.append(ncbi_id)
-        
+
         # initialise empty dict
         ortholog_query_dict = {}
         for taxon_number in taxa_ids:
             ortholog_query_dict[taxon_number] = []
-        
+
         # iterate over products, construct ortholog_query_dict
         # first pass: browsing id synonyms
         for product in self.products:
-            product_id_short = "" # mustn't be UniProtKB:xxxx but just 'xxxx'
+            product_id_short = ""  # mustn't be UniProtKB:xxxx but just 'xxxx'
             if len(product.id_synonyms) > 0:
                 id_syn = product.id_synonyms[0]
                 if ":" in id_syn:
                     product_id_short = id_syn.split(":")[1]
-            if product_id_short == "": # if there is now id synonym, fall back to ensg id
+            if (
+                product_id_short == ""
+            ):  # if there is now id synonym, fall back to ensg id
                 if product.ensg_id is not None:
                     product_id_short = product.ensg_id
-            if product_id_short == "": 
+            if product_id_short == "":
                 continue
-            
-            product_taxon_number = product.taxon.split(":")[1] if ":" in product.taxon else product.taxon
+
+            product_taxon_number = (
+                product.taxon.split(":")[1] if ":" in product.taxon else product.taxon
+            )
             ortholog_query_dict[product_taxon_number].append(product_id_short)
 
         # perform search and modify self.products with the search results
         gprofiler = gProfiler()
         for taxon, ids in ortholog_query_dict.items():
-            ortholog_query_results = gprofiler.find_orthologs(source_ids=ids, source_taxon=taxon, target_taxon=target_taxon_number) #all ortholog query results for this taxon
+            ortholog_query_results = gprofiler.find_orthologs(
+                source_ids=ids, source_taxon=taxon, target_taxon=target_taxon_number
+            )  # all ortholog query results for this taxon
             # process results for this taxon
             for id, ortholog_results in ortholog_query_results.items():
                 p = self.get_product(id)
@@ -698,11 +914,10 @@ class ReverseLookup:
                     # this is the ideal case -> gOrth returns only one ortholog id
                     p.gorth_ortholog_exists = True
                     p.ensg_id = ortholog_results[0]
-        
+
         # TODO: start from here! finish implementation of this function into the code,
         # modify ortholog query code to take into account (Product).gorth_ortholog_exists
 
-    
     def fetch_ortholog_products(
         self,
         refetch: bool = False,
@@ -780,12 +995,16 @@ class ReverseLookup:
                     goaf=self.goaf,
                     zfin_filepath=third_party_db_files["ortho_mapping_zfin_human"],
                     zfin_download_url=third_party_db_urls["ortho_mapping_zfin_human"],
-                    xenbase_filepath=third_party_db_files["ortho_mapping_xenbase_human"],
-                    xenbase_download_url=third_party_db_urls["ortho_mapping_xenbase_human"],
+                    xenbase_filepath=third_party_db_files[
+                        "ortho_mapping_xenbase_human"
+                    ],
+                    xenbase_download_url=third_party_db_urls[
+                        "ortho_mapping_xenbase_human"
+                    ],
                     mgi_filepath=third_party_db_files["ortho_mapping_mgi_human"],
                     mgi_download_url=third_party_db_urls["ortho_mapping_mgi_human"],
                     rgd_filepath=third_party_db_files["ortho_mapping_rgd_human"],
-                    rgd_download_url=third_party_db_urls["ortho_mapping_rgd_human"]
+                    rgd_download_url=third_party_db_urls["ortho_mapping_rgd_human"],
                 )
                 uniprot_api = UniProtApi()
                 ensembl_api = EnsemblApi()
@@ -864,7 +1083,7 @@ class ReverseLookup:
             mgi_filepath=third_party_db_files["ortho_mapping_mgi_human"],
             mgi_download_url=third_party_db_urls["ortho_mapping_mgi_human"],
             rgd_filepath=third_party_db_files["ortho_mapping_rgd_human"],
-            rgd_download_url=third_party_db_urls["ortho_mapping_rgd_human"]
+            rgd_download_url=third_party_db_urls["ortho_mapping_rgd_human"],
         )
         uniprot_api = UniProtApi()
         ensembl_api = EnsemblApi()
@@ -879,7 +1098,7 @@ class ReverseLookup:
         )
         semaphore = asyncio.Semaphore(semaphore_connections)
         async with aiohttp.ClientSession(connector=connector) as session:
-        # async with create_session() as session:
+            # async with create_session() as session:
             tasks = []
             for product in self.products:
                 if product.had_orthologs_computed is False or refetch is True:
@@ -1396,7 +1615,8 @@ class ReverseLookup:
                     "enst_id",
                     "refseq_nt_id",
                     "mRNA",
-                ] if getattr(obj,attr) is not None
+                ]
+                if getattr(obj, attr) is not None
             )
             or any(identifier in id for id in obj.id_synonyms)
         )
@@ -1980,20 +2200,31 @@ class ReverseLookup:
         obo_parser = None
         if settings.include_indirect_annotations is True:
             if settings.datafile_paths != {} and "go_obo" in settings.datafile_paths:
-                if(
-                    settings.datafile_paths['go_obo'] is not None
+                if (
+                    settings.datafile_paths["go_obo"] is not None
                     and settings.get_datafile_path("go_obo") != ""
                 ):
-                    obo_parser = OboParser(obo_filepath=settings.get_datafile_path("go_obo"), obo_download_url=settings.get_datafile_url("go_obo"))
+                    obo_parser = OboParser(
+                        obo_filepath=settings.get_datafile_path("go_obo"),
+                        obo_download_url=settings.get_datafile_url("go_obo"),
+                    )
             else:
                 obo_parser = OboParser()
             for goterm in goterms:
-                assert isinstance(goterm, GOTerm) # TODO: FIX HERE !!!!!!!!! obo now returns a dict and not a goterm!!!
+                assert isinstance(
+                    goterm, GOTerm
+                )  # TODO: FIX HERE !!!!!!!!! obo now returns a dict and not a goterm!!!
                 if goterm.parent_term_ids == [] or goterm.parent_term_ids is None:
-                    goterm_obo = GOTerm.from_dict(obo_parser.all_goterms[goterm.id].__dict__)  # obo representation of this goterm is in json form
-                    goterm.update(goterm_obo)  # update current goterm with information from .obo file
+                    goterm_obo = GOTerm.from_dict(
+                        obo_parser.all_goterms[goterm.id].__dict__
+                    )  # obo representation of this goterm is in json form
+                    goterm.update(
+                        goterm_obo
+                    )  # update current goterm with information from .obo file
 
-                    goterm_parent_ids = obo_parser.get_parent_terms(goterm.id)  # calculate parent term ids for this goterm
+                    goterm_parent_ids = obo_parser.get_parent_terms(
+                        goterm.id
+                    )  # calculate parent term ids for this goterm
                     goterm.parent_term_ids = goterm_parent_ids  # update parent term ids
 
         products = []
@@ -2017,247 +2248,6 @@ class ReverseLookup:
             obo_parser=obo_parser,
         )
 
-    @classmethod
-    def from_input_file(cls, filepath: str) -> "ReverseLookup":
-        """
-        Creates a ReverseLookup object from a text file.
-
-        Args:
-            filepath (str): The path to the input text file.
-
-        Returns:
-            ReverseLookup: A ReverseLookup object.
-        """
-        # Define constants used in parsing the file
-        LINE_ELEMENT_DELIMITER = "\t"  # Data is tab separated
-        COMMENT_DELIMITER = "#"  # Character used to denote a comment
-        LOGIC_LINE_DELIMITER = "###" # Special set of characters to denote a "logic line"
-
-        target_processes = []
-        go_categories = []
-        go_terms = []
-        settings = ModelSettings()
-        
-        def process_comment(line):
-            """
-            Processes a comment in the line: returns the part of the line before the comment. The input file should be structured to contain
-            three sections - 'settings', 'processes' and 'GO_terms', annotated using the LOGIC_LINE_DELIMITER.
-
-            For the construction of input.txt, please refer to the Readme file. [TODO]
-
-            Parameters:
-            - line: the line whose comment to process
-            """
-            if LOGIC_LINE_DELIMITER in line:
-                # Logic lines should be marked with "###" at the start. For a logic line, the returned result is line without the line_keep_delimiter
-                return line.replace(LOGIC_LINE_DELIMITER, "")
-
-            if COMMENT_DELIMITER in line:
-                return line.split(COMMENT_DELIMITER)[0]
-            else:
-                return line
-
-        filepath_readlines = 0
-        with open(filepath, 'r') as f:
-            filepath_readlines = len(f.readlines())
-
-        def process_file(filepath: str):
-            with open(filepath, "r") as read_content:
-                read_lines = read_content.read().splitlines()[2:]  # skip first 2 lines
-                section = ""  # what is the current section i am reading
-                for line in read_lines:
-                    line = process_comment(line)
-                    line = line.strip()
-                    if line == "":
-                        continue
-                    if "settings" in line:
-                        section = "settings"
-                        continue
-                    elif "filepaths" in line:
-                        section = "filepaths"
-                        continue
-                    elif "processes" in line:
-                        section = "process"
-                        continue
-                    elif "categories" in line:
-                        section = "categories"
-                        continue
-                    elif "GO_terms" in line:
-                        section = "GO"
-                        continue
-                    if section == "settings":
-                        chunks = line.split(LINE_ELEMENT_DELIMITER)
-                        setting_name = chunks[0]
-                        setting_value = chunks[1]  # is string now
-                        if setting_value == "True" or setting_value == "true":
-                            setting_value = True
-                        if setting_value == "False" or setting_value == "false":
-                            setting_value = False
-                        if setting_name == "pvalue":
-                            setting_value = float(chunks[1])
-                        if setting_name == "goterms_set":
-                            if setting_value != 'all':
-                                if ',' in setting_value:
-                                    # e.g. split 'human,rattus_norvegicus' into ["human", "rattus_norvegicus"]
-                                    setting_value = setting_value.split(',')
-                                else:
-                                    # 'human' -> ["human"]
-                                    setting_value = [setting_value]
-                        if setting_name == "target_organism":
-                            organism_info = OrganismInfo.parse_organism_info_str(metadata=setting_value)
-                            setting_value = organism_info
-                        if setting_name == "ortholog_organisms":
-                            organism_info_dict = {}
-                            for organism_info_str in setting_value.split(","): # split at commas
-                                organism_info = OrganismInfo.parse_organism_info_str(metadata=organism_info_str)
-                                # create multiple annotations in dict both for the label and for the ncbitaxon full id
-                                if organism_info.label != "":
-                                    organism_info_dict[organism_info.label] = organism_info
-                                if organism_info.ncbi_id_full != "":
-                                    organism_info_dict[organism_info.ncbi_id_full] = organism_info
-                            setting_value = organism_info_dict
-                        settings.set_setting(setting_name=setting_name, setting_value=setting_value)
-                    elif section == "filepaths":
-                        chunks = line.split(LINE_ELEMENT_DELIMITER)
-                        datafile_name = chunks[0]
-                        datafile_local_path = chunks[1]
-                        if len(chunks) >= 2: # for backwards compatibility
-                            datafile_download_url = chunks[2]
-                            try:
-                                organism = chunks[3]
-                            except Exception as e:
-                                logger.info(f"'organism' wasn't defined for {datafile_name}. Was that intended?")
-                        else:
-                            datafile_download_url = None
-                            organism = None
-                        
-                        settings.datafile_paths[datafile_name] = {
-                            'organism': organism,
-                            'local_filepath': datafile_local_path,
-                            'download_url': datafile_download_url
-                        }
-                    elif section == "process":
-                        chunks = line.split(LINE_ELEMENT_DELIMITER)
-                        target_processes.append({"process": chunks[0], "direction": chunks[1]})
-                    elif section == "categories":
-                        chunks = line.split(LINE_ELEMENT_DELIMITER)
-                        category = chunks[0]
-                        category_value = chunks[1]
-                        if category_value == "True":
-                            go_categories.append(category)
-                    elif section == "GO":
-                        chunks = line.split(LINE_ELEMENT_DELIMITER)
-                        if len(chunks) == 5:
-                            d = {
-                                "id": chunks[0],
-                                "processes": {
-                                    "process": chunks[1],
-                                    "direction": chunks[2],
-                                },
-                                "weight": int(chunks[3]),
-                                "name": chunks[4],
-                            }
-                        else:
-                            d = {
-                                "id": chunks[0],
-                                "processes": {
-                                    "process": chunks[1],
-                                    "direction": chunks[2],
-                                },
-                                "weight": int(chunks[3]),
-                            }
-                        if not any(
-                            d["id"] == goterm.id for goterm in go_terms
-                        ):  # TODO: check this !!!!!
-                            go_terms.append(GOTerm.from_dict(d))
-                        else:  # TODO: check this !!!!!
-                            next(
-                                goterm for goterm in go_terms if d["id"] == goterm.id
-                            ).add_process(
-                                {"process": chunks[1], "direction": chunks[2]}
-                            )
-
-        try:
-            process_file(filepath)
-        except OSError:
-            logger.error(f"ERROR while opening filepath {filepath}")
-            return
-
-        # PROCESS INPUT FILE
-        """
-        if not os.path.isabs(filepath): # this process with traceback.extract_stack works correctly on mac, but not on windows.
-            current_dir = os.path.dirname(os.path.abspath(traceback.extract_stack()[0].filename))
-            mac_filepath = os.path.join(current_dir, filepath) 
-        try:
-            os.makedirs(os.path.dirname(mac_filepath), exist_ok=True) # this approach works on a mac computer
-            process_file(mac_filepath)
-        except OSError:
-            # # first pass is allowed, on Windows 10 this tries to create a file at 
-            # 'C:\\Program Files\\Python310\\lib\\diabetes_angio_1/general.txt'
-            # which raises a permission error.
-            # fallback if the above fails
-            try:
-                win_filepath = FileUtil.find_win_abs_filepath(filepath)
-                os.makedirs(os.path.dirname(win_filepath), exist_ok=True)
-                process_file(win_filepath)
-            except OSError:
-                logger.error(f"ERROR while opening win filepath {win_filepath}")
-                return
-        """
-        obo_parser = None
-        if settings.include_indirect_annotations:
-            if settings.datafile_paths != {} and "go_obo" in settings.datafile_paths:
-                if(
-                    settings.datafile_paths['go_obo'] is not None
-                    and settings.get_datafile_path("go_obo") != ""
-                ):
-                    obo_parser = OboParser(obo_filepath=settings.get_datafile_path("go_obo"), obo_download_url=settings.get_datafile_url("go_obo"))
-            else:
-                obo_parser = OboParser()
-            logger.info(f"Starting OboParser to find all GO Term parents and children using data file {obo_parser.filepath}")
-
-            # update goterms to include all parents and children
-            with logging_redirect_tqdm():
-                for goterm in tqdm(go_terms, desc="Compute indirect nodes"):
-                    assert isinstance(goterm, GOTerm)
-                    if goterm.parent_term_ids == [] or goterm.parent_term_ids is None:
-                        goterm_obo = GOTerm.from_dict(obo_parser.all_goterms[goterm.id].__dict__)  # obo representation of this goterm
-                        goterm.update(goterm_obo)  # update current goterm with information from .obo file
-
-                        goterm_parent_ids = obo_parser.get_parent_terms(goterm.id)  # calculate parent term ids for this goterm
-                        goterm_children_ids = obo_parser.get_child_terms(goterm.id)  # calculdate child term ids for this goterm
-                        goterm.parent_term_ids = goterm_parent_ids  # update parent term ids
-                        # goterm.child_term_ids = goterm_children_ids  # update child term ids
-            logger.info("Indirect annotations have been computed.")
-
-            """      
-            for goterm in go_terms:
-                assert isinstance(goterm, GOTerm)
-                if goterm.parent_term_ids == [] or goterm.parent_term_ids == None:
-                    goterm_obo = obo_parser.all_goterms[goterm.id] # obo representation of this goterm
-                    goterm.update(goterm_obo) # update current goterm with information from .obo file
-
-                    goterm_parent_ids = obo_parser.get_parent_terms(goterm.id) # calculate parent term ids for this goterm
-                    goterm_children_ids = obo_parser.get_child_terms(goterm.id) # calculdate child term ids for this goterm
-                    goterm.parent_term_ids = goterm_parent_ids # update parent term ids
-                    # goterm.child_term_ids = goterm_children_ids # update child term ids
-            """
-
-        logger.info("Creating model from input file with:")
-        logger.info(f"  - input file filepath: {filepath}")
-        logger.info(f"  - input file line count: {filepath_readlines}")
-        logger.info(f"  - count GO Terms: {len(go_terms)} ")
-        logger.info(f"  - target_processes: {target_processes}")
-        logger.info(f"  - GO categories: {go_categories}")
-        logger.info(f"  - model settings: {settings.to_json()}")
-        logger.info(f"  - obo_parser: {obo_parser}")
-        return cls(
-            go_terms,
-            target_processes=target_processes,
-            go_categories=go_categories,
-            model_settings=settings,
-            obo_parser=obo_parser,
-        )
 
     @classmethod
     def from_dict(cls, data: Dict[str, List[Dict]]) -> "ReverseLookup":

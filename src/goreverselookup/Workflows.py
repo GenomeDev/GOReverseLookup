@@ -322,10 +322,10 @@ class PrimaryWorkflow(Workflow):
     def create_workflow(self, debug: bool = False, fetch_mirna=False):
         # Fetch all GO term names and descriptions
         self.add_function(
-            self.model.fetch_all_go_term_names_descriptions, 
+            self.model.fetch_all_go_term_names_descriptions,
             run_async=True,
             req_delay=0.5,
-            max_connections=20
+            max_connections=20,
         )
         # Fetch all GO term products
         self.add_function(

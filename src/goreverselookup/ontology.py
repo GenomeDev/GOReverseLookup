@@ -267,6 +267,16 @@ class GODag(dict[str, GOTerm]):
             if rec.depth is None:
                 _init_depth(rec)
 
+    def filter(self, keep_if):
+        """_summary_
+
+        Args:
+            keep_if (_type_): _description_
+        """
+        keys_to_delete = [key for key, goterm in self.items() if not keep_if(goterm)]
+        for key in keys_to_delete:
+            del self[key]
+
     @staticmethod
     def id2int(go_id):
         """Given a GO ID, return the int value."""

@@ -5,6 +5,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,9 +42,9 @@ class gProfiler:
             dict[str, list[str]]: _description_
         """
         USE_UNIPROT_IDMAP_NOTATION = True
-        # example notation: 
+        # example notation:
         # {
-        #   'results': [{'from': 'P15692', 'to': 'ENSG00000112715.26'}, {'from': 'P16612', 'to': 'ENSRNOG00000019598'}, {'from': 'P40763', 'to': 'ENSG00000168610.16'}, {'from': 'P42227', 'to': 'ENSMUSG00000004040'}, {'from': 'P52631', 'to': 'ENSRNOG00000019742'}], 
+        #   'results': [{'from': 'P15692', 'to': 'ENSG00000112715.26'}, {'from': 'P16612', 'to': 'ENSRNOG00000019598'}, {'from': 'P40763', 'to': 'ENSG00000168610.16'}, {'from': 'P42227', 'to': 'ENSMUSG00000004040'}, {'from': 'P52631', 'to': 'ENSRNOG00000019742'}],
         #   'failedIds': ['O73682']
         # }
 
@@ -83,22 +84,19 @@ class gProfiler:
                 converted_ids[entry_source_id].append(entry["converted"])
             else:
                 failedIds.append(entry_source_id)
-        
+
         if USE_UNIPROT_IDMAP_NOTATION == False:
             return converted_ids
-        
-         # return idmap as uniprot notation
+
+        # return idmap as uniprot notation
         idmap_uniprot_notation_results = []
         for from_id, to_id in converted_ids.items():
-            res = {
-                'from': from_id,
-                'to': to_id
-            }
+            res = {"from": from_id, "to": to_id}
             idmap_uniprot_notation_results.append(res)
-        
+
         idmap_uniprot_notation = {
-            'results': idmap_uniprot_notation_results,
-            'failedIds': failedIds
+            "results": idmap_uniprot_notation_results,
+            "failedIds": failedIds,
         }
         return idmap_uniprot_notation
 
@@ -156,12 +154,13 @@ class gProfiler:
                 target_ids[entry_source_id].append(entry["ortholog_ensg"])
         return target_ids
 
+
 class gProfilerUtil:
     def __init__():
         pass
 
     @classmethod
-    def NCBITaxon_to_gProfiler(cls, taxon:Union[str,int]):
+    def NCBITaxon_to_gProfiler(cls, taxon: Union[str, int]):
         """
         Converts an NCBI-type taxon to a respective GProfiler taxon.
         Note: gprofiler - https://biit.cs.ut.ee/gprofiler/

@@ -5,6 +5,7 @@ import os
 from goreverselookup import PrimaryWorkflow
 from goreverselookup import Cacher, ModelStats
 from goreverselookup import LogConfigLoader
+
 # setup logger
 import logging
 
@@ -21,5 +22,7 @@ Cacher.init(cache_dir="cache")
 ModelStats.init()
 
 # Cacher.clear_cache("ALL")
-workflow = PrimaryWorkflow(input_file_fpath="input_files/input.txt", save_folder_dir="results")
+workflow = PrimaryWorkflow(
+    input_file_fpath="input_files/input.txt", save_folder_dir="results"
+)
 workflow.run_workflow()

@@ -17,13 +17,16 @@ def NCBITaxon_to_gProfiler(taxon):
         taxon_equivalents[r["taxonomy_id"]] = r["id"]
     return taxon_equivalents.get(str(taxon), None)
 
+
 def NCBITaxon_to_ensembl(taxon):
     """_summary_
 
     Args:
         taxon (_type_): _description_
-    """    
-    r = requests.get("https://rest.ensembl.org/info/species?content-type=application/json")
+    """
+    r = requests.get(
+        "https://rest.ensembl.org/info/species?content-type=application/json"
+    )
     taxon_equivalents = {}
     results = r.json()
     for r in results["species"]:

@@ -239,12 +239,12 @@ class FileUtil:
                 return True
         except FileNotFoundError:
             logger.warning(f"File {filepath} wasn't found!")
-    
+
     @classmethod
-    def download_file(cls, filepath:str, download_url:str):
+    def download_file(cls, filepath: str, download_url: str):
         """
         Downloads the file specified by 'download_url' to 'filepath'.
-        
+
         Warning: For .txt web files, rather use the download_text_file function.
         """
         if os.path.exists(filepath) and not cls.is_file_empty(filepath):
@@ -254,15 +254,17 @@ class FileUtil:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         response = requests.get(download_url, stream=True)
         if response.status_code == 200:
-            with open(filepath, 'wb') as file:
+            with open(filepath, "wb") as file:
                 shutil.copyfileobj(response.raw, file)
             if not cls.is_file_empty(filepath):
                 logger.info(f"Successfully downloaded {download_url} to {filepath}!")
         else:
-            raise Exception(f"Failed to download {download_url}! Response code: {response.status_code}, reason: {response.reason}")
+            raise Exception(
+                f"Failed to download {download_url}! Response code: {response.status_code}, reason: {response.reason}"
+            )
 
     @classmethod
-    def download_txt_file(cls, filepath:str, download_url:str):
+    def download_txt_file(cls, filepath: str, download_url: str):
         """
         Use this function to download .txt files from the web.
 
@@ -276,9 +278,11 @@ class FileUtil:
                 f.write(response.content)
         if not cls.is_file_empty(filepath):
             logger.info(f"Successfully downloaded {download_url} to {filepath}")
-    
+
     @classmethod
-    def download_zip_file(cls, filepath:str, download_url:str, zip_specifier:str="rt"):
+    def download_zip_file(
+        cls, filepath: str, download_url: str, zip_specifier: str = "rt"
+    ):
         """
         Downloads a zip file from 'download_url' into 'filepath'.
         Use the appropriate 'zip_specifier'.

@@ -11,9 +11,22 @@ import logging
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
 
+
 # workaround class, as importing GOTerm would cause a circular import
 class GOTerm_placeholder:
-    def __init__(self, id: str, processes: List[Dict] = None, name: Optional[str] = None, description: Optional[str] = None, category: Optional[str] = None, parent_term_ids: Optional[List[str]] = None, is_obsolete:bool = False, weight: float = 1.0, products: List[str] = [], http_error_codes:dict={}):
+    def __init__(
+        self,
+        id: str,
+        processes: List[Dict] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        category: Optional[str] = None,
+        parent_term_ids: Optional[List[str]] = None,
+        is_obsolete: bool = False,
+        weight: float = 1.0,
+        products: List[str] = [],
+        http_error_codes: dict = {},
+    ):
         """
         A placeholder class to construct GO Terms
 
@@ -36,7 +49,11 @@ class GOTerm_placeholder:
 
 
 class OboParser:
-    def __init__(self, obo_filepath: str = "data_files/go.obo", obo_download_url:str = "https://purl.obolibrary.org/obo/go.obo"):
+    def __init__(
+        self,
+        obo_filepath: str = "data_files/go.obo",
+        obo_download_url: str = "https://purl.obolibrary.org/obo/go.obo",
+    ):
         """
         Parses the Gene Ontology OBO file.
 
@@ -63,11 +80,11 @@ class OboParser:
 
         # read all GO terms from the OBO file
         all_goterms = {}  # mapping of all go ids to GOTerm objects
-        all_valid_goterms = {} # mapping of all valid GOTerms (which are not obsolete)
-        all_valid_BP_goterms = {} # mapping of all valid "Biological Process" GO Terms
-        all_valid_MF_goterms = {} # mapping of all valid "Molecular Function" GO Terms
-        all_valid_CC_goterms = {} # mapping of all valid "Cellular Component" GO Terms
-        all_obsolete_goterms = {} # mapping of all obsolete GOTerms
+        all_valid_goterms = {}  # mapping of all valid GOTerms (which are not obsolete)
+        all_valid_BP_goterms = {}  # mapping of all valid "Biological Process" GO Terms
+        all_valid_MF_goterms = {}  # mapping of all valid "Molecular Function" GO Terms
+        all_valid_CC_goterms = {}  # mapping of all valid "Cellular Component" GO Terms
+        all_obsolete_goterms = {}  # mapping of all obsolete GOTerms
 
         # exe version bugfix:
         if not os.path.exists(obo_filepath):
@@ -112,7 +129,7 @@ class OboParser:
                             all_obsolete_goterms[current_goterm.id] = current_goterm
                         else:
                             all_valid_goterms[current_goterm.id] = current_goterm
-                        
+
                         match current_goterm.category:
                             case "molecular_function":
                                 all_valid_MF_goterms[current_goterm.id] = current_goterm
@@ -132,12 +149,16 @@ class OboParser:
                         case "name":
                             term_data["name"] = line_value
                         case "def":
-                            line_value = line_value.strip('"')  # definition line value contains double quotes in obo, strip them
+                            line_value = line_value.strip(
+                                '"'
+                            )  # definition line value contains double quotes in obo, strip them
                             term_data["description"] = line_value
                         case "namespace":
                             term_data["category"] = line_value
                         case "is_a":
-                            line_value = line_value.split(" ")[0]  # GO:0000090 ! mitotic anaphase -> split into GO:0000090
+                            line_value = line_value.split(" ")[
+                                0
+                            ]  # GO:0000090 ! mitotic anaphase -> split into GO:0000090
                             term_data["parent_term_ids"].append(line_value)
                         case "is_obsolete":
                             is_obsolete = True if line_value == "true" else False
@@ -161,12 +182,16 @@ class OboParser:
         self.all_valid_MF_goterms = all_valid_MF_goterms
         self.all_valid_CC_goterms = all_valid_CC_goterms
         self.all_obsolete_goterms = all_obsolete_goterms
-        self.previously_computed_parents_cache = {}  # cache dictionary between already computed goterms and their parents
-        self.previously_computed_children_cache = {} # cache dictionary between already computed goterms and their children
+        self.previously_computed_parents_cache = (
+            {}
+        )  # cache dictionary between already computed goterms and their parents
+        self.previously_computed_children_cache = (
+            {}
+        )  # cache dictionary between already computed goterms and their children
         logger.info("Obo parser init completed.")
 
     def get_parent_terms(
-        self, term_id: str, return_as_json:bool = False, ordered: bool = True
+        self, term_id: str, return_as_json: bool = False, ordered: bool = True
     ):
         """
         Gets all of GO Term parents of 'term_id'.
@@ -227,7 +252,7 @@ class OboParser:
         Returns: A list of children GO Terms (either ids or classes)
 
         Example usage: We want to query child terms of 'GO:0003924 GTPase activity'
-        When looking at Amigo2's inferred tree view for GO:0003924 (https://amigo.geneontology.org/amigo/term/GO:0003924#display-lineage-tab), we see the following structure: 
+        When looking at Amigo2's inferred tree view for GO:0003924 (https://amigo.geneontology.org/amigo/term/GO:0003924#display-lineage-tab), we see the following structure:
         GO:0003924 GTPase activity
           - (is_a_relation) GO:0003925 G protein activity
           - (capable_of_relation) GO:1905360 GTPase complex
@@ -236,13 +261,13 @@ class OboParser:
           - GO:0034260 negative regulation of GTPase activity
           - GO:0043547 positive regulation of GTPase activity
           - GO:0043087 regulation of GTPase activity
-        
+
         We construct the following code:
             from goreverselookup import OboParser
             obo_parser = OboParser()
             child_terms = obo_parser.get_child_terms("GO:0003924")
             -> return: 3 children: ['GO:0003925', 'GO:0061791', 'GO:1990606']
-        
+
         As we can see, the program returns only the children terms of GO:0003924 that are quatified with the
         'is_a_relation' relationship. It correctly queries the children, even the nested children.
         """
@@ -278,7 +303,15 @@ class OboParser:
         self.previously_computed_children_cache[term_id] = children
         return children
 
-    def get_goterms(self, validity="valid", go_categories:list=["molecular_function", "biological_process", "cellular_component"]): # TODO: CONTINUE WITH IMPLEMENTATION OF GO CATEGORIES
+    def get_goterms(
+        self,
+        validity="valid",
+        go_categories: list = [
+            "molecular_function",
+            "biological_process",
+            "cellular_component",
+        ],
+    ):  # TODO: CONTINUE WITH IMPLEMENTATION OF GO CATEGORIES
         """
         Returns all GOTerms with respect to the validity scope.
 
@@ -291,7 +324,7 @@ class OboParser:
             return self.all_goterms
         if validity == "obsolete":
             return self.all_obsolete_goterms
-        
+
         if validity == "valid":
             # return valid goterms with respect to selected go_categories
             return_result = {}
@@ -304,6 +337,8 @@ class OboParser:
                     case "cellular_component":
                         return_result = {**return_result, **self.all_valid_CC_goterms}
             return return_result
-        
-        logger.warning(f"get_all_goterms was called with an inappropritate validity scope '{validity}'. Possible scopes are 'all', 'valid' and 'obsolete'.")
+
+        logger.warning(
+            f"get_all_goterms was called with an inappropritate validity scope '{validity}'. Possible scopes are 'all', 'valid' and 'obsolete'."
+        )
         return None
