@@ -6,11 +6,12 @@ import asyncio
 from ..util.CacheUtil import Cacher
 
 import logging
+#import aiologger
+#from aiologger import Logger
+#from aiologger.levels import LogLevel
 
-# from logging import config
-# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
-
+# logger = Logger.with_default_handlers(name="async-logger", level=LogLevel.DEBUG)
 
 class EnsemblApi:
     def __init__(self):
@@ -112,11 +113,14 @@ class EnsemblApi:
 
         Parameters:
           - (str) id
+          - (aiohttp.ClientSession) session
+          - (str) taxon: A full NCBITaxon (eg. NCBITaxon:9606).
+                         Currently, only the following taxa are supported: NCBITaxon:9606 (Homo Sapiens), NCBITaxon:7955 (Danio rerio),  NCBITaxon:10116 (Rattus norvegicus), NCBITaxon:10090 (Mus musculus), NCBITaxon:8353 (Xenopus)
 
         This function uses request caching. It will use previously saved url request responses instead of performing new (the same as before) connections
         """
-
-        def taxon_to_label(taxon: str):
+        # TODO: implement modular taxon numbers!!
+        def taxon_to_label(taxon:str):
             """
             Converts a NCBI taxon to a suitable ensembl label
             """
@@ -473,7 +477,7 @@ class EnsemblApi:
         Cacher.store_data("ensembl", ensembl_data_key, return_value)
         return return_value
 
-    async def get_info_async(self, id: str, session: aiohttp.ClientSession):
+    async def get_info_async(self, id: str, session: aiohttp.ClientSession, request_timeout = 15):
         """Can receive Ensembl id or symbol (human)
 
         Args:
@@ -481,6 +485,8 @@ class EnsemblApi:
 
         Returns:
             dict: Information about the gene
+        
+        WARNING: Leave request timeout at 15 or greater. When request timeout is 5, many requests fail.
         """
         if (
             "Error" in id
@@ -490,6 +496,10 @@ class EnsemblApi:
                 " does not have a human ortholog and you are safe to ignore it."
             )
             return {}
+        
+        # some ids can have a ".", such as ENSDARG0001245.1 -> remove what is after the .
+        if "." in id:
+            id = id.split(".")[0]
 
         ensembl_data_key = (
             f"[{self.__class__.__name__}][{self.get_info_async.__name__}][id={id}]"
@@ -526,12 +536,12 @@ class EnsemblApi:
             if previous_response is not None:
                 response_json = previous_response
             else:
-                response = await session.get(
-                    url, headers={"Content-Type": "application/json"}, timeout=5
-                )
-                # response.raise_for_status()
+                headers = {"content-type": "application/json"}
+                full_url = f"{url}?{'&'.join([f'{key}={value}' for key, value in headers.items()])}"
+                logger.debug(f"Attempting url: {full_url}")
+                response = await session.get(url, headers={"content-type": "application/json"}, timeout=request_timeout)
+                response.raise_for_status()
                 response_json = await response.json()
-                # ConnectionCacher.store_url(url, response_json)
                 Cacher.store_data("url", url, response_json)
                 await asyncio.sleep(self.async_request_sleep_delay)
         except (
@@ -542,7 +552,9 @@ class EnsemblApi:
             aiohttp.ClientResponseError,
             aiohttp.ClientOSError,
             aiohttp.ClientPayloadError,
-        ):
+            asyncio.exceptions.TimeoutError
+        ) as e:
+            logger.debug(f"Exception {e} with url {url}. Continuing info query with alternate urls.")
             # If the request fails, try the xrefs URL instead
             try:
                 # TODO: 19.08.2023: the below link doesn't work for any other {species} in endpoint other than human. Ie.
@@ -550,16 +562,14 @@ class EnsemblApi:
                 # The xrefs link is supposed to work for parameter 'id's which are not ENSG
                 ensembl_id = ""
                 if "ENS" not in id:
-                    # parameter id is not ensembl, attempt to find ensembl id
-                    url = (  # cross references
-                        f"https://rest.ensembl.org/xrefs/{endpoint}?"
-                    )
+                    # parameter id is not ensembl, attempt to find ensembl id cross references
+                    url = f"https://rest.ensembl.org/xrefs/{endpoint}?"
                     previous_response = Cacher.get_data("url", url)
                     if previous_response is not None:
                         response_json = previous_response
                     else:
                         response = await session.get(
-                            url, headers={"Content-Type": "application/json"}, timeout=5
+                            url, headers={"Content-Type": "application/json"}, timeout=request_timeout
                         )
                         # response.raise_for_status()
                         response_json = await response.json()
@@ -581,7 +591,7 @@ class EnsemblApi:
                         response_json = previous_response
                     else:
                         response = await session.get(
-                            url, headers={"Content-Type": "application/json"}, timeout=5
+                            url, headers={"Content-Type": "application/json"}, timeout=request_timeout
                         )
                         # response.raise_for_status()
                         response_json = await response.json()
@@ -592,7 +602,6 @@ class EnsemblApi:
             except Exception as e:
                 logger.warning(f"Failed to fetch Ensembl info for {id}. Error = {e}")
                 return {}
-
         if "error" in response_json or response_json is None:
             logger.warning(f"Failed to fetch Ensembl info for {id}.")
             return {}
@@ -662,7 +671,7 @@ class EnsemblApi:
                     if entry.get("dbname") == "Uniprot/SWISSPROT":
                         uniprot_id = entry.get("primary_id")
 
-        logger.debug(f"Received info data for id {id}.")
+        logger.debug(f"Received info data for id {id}: ensg_id = {ensg_id}, genename = {name}, enst_id = {ensembl_transcript_id}, uniprot_id = {uniprot_id}")
         return_value = {
             "ensg_id": ensg_id,
             "genename": name,
@@ -673,8 +682,8 @@ class EnsemblApi:
         }
         Cacher.store_data("ensembl", ensembl_data_key, return_value)
         return return_value
-
-    async def id_to_ensembl_id(source_id: str):
+    
+    async def id_to_ensembl_id(source_id:str):
         """
         Converts 'source_id' (eg. a UniProtKB gene id) to an Ensembl id.
         """

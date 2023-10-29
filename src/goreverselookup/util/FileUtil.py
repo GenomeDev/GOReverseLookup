@@ -163,6 +163,13 @@ class FileUtil:
                 if "\n" not in line:
                     line = f"{line}\n"
                 f.write(line)
+    
+    @classmethod
+    def create_empty_file(cls, filepath:str):
+        with open(filepath, "w"):
+            pass
+        if os.path.exists(filepath):
+            logger.info(f"Creates empty file at {filepath}")
 
     @classmethod
     def is_file_empty(cls, filepath: str):

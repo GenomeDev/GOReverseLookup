@@ -243,17 +243,15 @@ class GOAnnotationsFile:
         self.organism_ncbi_taxon_id = organism_ncbi_taxon_id
 
         if filepath == "" or filepath is None:
-            self._filepath = "app/goreverselookup/data_files/goa_human.gaf"
+            self._filepath = "data_files/goa_human.gaf"
         else:
             self._filepath = filepath
 
         logger.info(f"Attempting to create GOAF using: {self._filepath}")
 
         # self._check_file()
-        if not os.path.exists(filepath) or FileUtil.is_file_empty(filepath):
-            FileUtil.download_zip_file(
-                filepath=filepath, download_url=download_url, zip_specifier="rt"
-            )
+        if not os.path.exists(self._filepath) or FileUtil.is_file_empty(self._filepath):
+            FileUtil.download_zip_file(filepath=self._filepath, download_url=download_url, zip_specifier="rt")
 
         logger.info("  - GOAF filepath exists.")
         with open(self._filepath, "r") as read_content:

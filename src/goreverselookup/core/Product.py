@@ -8,6 +8,8 @@ from ..parse.OrthologParsers import HumanOrthologFinder
 from ..parse.GOAFParser import GOAnnotationsFile
 from ..web_apis.EnsemblApi import EnsemblApi
 from ..web_apis.UniprotApi import UniProtApi
+from ..util.WebsiteParser import WebsiteParser
+from ..util.ApiUtil import EnsemblUtil
 
 import logging
 
@@ -31,13 +33,15 @@ class Product:
         scores: dict = None,
         had_orthologs_computed: bool = False,
         had_fetch_info_computed: bool = False,
-        gorth_ortholog_exists: bool = False,
+        gorth_ortholog_exists: bool = None
     ):
         """
         A class representing a product (e.g. a gene or protein).
 
         Args:
             id_synonyms (str): The list of ID of the product and synonyms. -> after ortholog translation it turns out that some products are the same. Example: RGD:3774, Xenbase:XB-GENE-5818802, UniProtKB:Q9NTG7
+            taxon (str)
+            genename (str)
             uniprot_id (str): The UniProt ID of the product.
             description (str): A description of the product.
             ensg_id (str): Ensembl gene ID or gene IDs
@@ -47,7 +51,7 @@ class Product:
             scores (dict): A dictionary of scores associated with the product (e.g. expression score, functional score).
             had_orthologs_computed (bool): If this Product instance has had the fetch_ortholog function called already.
             had_fetch_info_computed (bool): If this Product instance has had the fetch_info function called already.
-            gorth_ortholog_exists (bool): True, if gOrth (from gProfiler) finds either 1 or multiple ortholog ids, otherwise false (if no orthologs are found via gOrth)
+            gorth_ortholog_exists (bool): True, if gOrth (from gProfiler) finds either 1 or multiple ortholog ids, otherwise false (if no orthologs are found via gOrth). None if gOrth query wasn't performed.
         """
         self.id_synonyms = id_synonyms
         self.taxon = taxon
@@ -110,6 +114,8 @@ class Product:
 
             TODO: If there are multiple id_synonym(s), currently only the first is browsed. Implement logic for many id_synonyms / check if there are any products with multiple id synonyms.
         """
+        # TODO: this function isn't updated to the latest pipeline; update to be the same as fetch_ortholog_async
+
         DROP_MIRNA_FROM_ENSEMBL_QUERY = True  # returns None if Ensembl query returns a miRNA (MIRxxx) as the gene name.
 
         if not human_ortholog_finder:
@@ -266,10 +272,11 @@ class Product:
         self,
         session: aiohttp.ClientSession,
         goaf: GOAnnotationsFile,
+        target_organism_id_number:Optional[int] = None,
         human_ortholog_finder: Optional[HumanOrthologFinder] = None,
         uniprot_api: Optional[UniProtApi] = None,
         ensembl_api: Optional[EnsemblApi] = None,
-        model_settings: Optional[ModelSettings] = None,
+        model_settings: Optional[ModelSettings] = None
     ) -> None:
         """
         Fetches the ortholog for this product. If the ortholog query was successful, then self.genename is updated to the correct human ortholog gene name.
@@ -309,13 +316,123 @@ class Product:
             uniprot_api = UniProtApi()
         if not ensembl_api:
             ensembl_api = EnsemblApi()
+        
+        if target_organism_id_number is None:
+            if model_settings is None:
+                raise Exception(f"target_organism_id_number or a ModelSettings instance was not passed to the ortholog query function. The target species cannot be assumed!")
+        
+        target_organism_id_num = None
+        if target_organism_id_number is not None:
+            target_organism_id_num = target_organism_id_number
+        if model_settings is not None:
+            # check for match if model_settings and target_organism_id_number are both supplied as params
+            if model_settings.target_organism is not None:
+                if target_organism_id_num is not None:
+                    if model_settings.target_organism.ncbi_id != target_organism_id_num:
+                        logger.warning(f"ModelSettings target organism id number {model_settings.target_organism.ncbi_id} doesn't match with target_organism_id_num {target_organism_id_num} supplied to the ortholog query function. ModelSettings id number will be used for ortholog query.")
+                target_organism_id_num = model_settings.target_organism.ncbi_id
+        
+        # if "UniProtKB" is in any id_synonym and self.taxon is 9606:
+            # if model_settings is not None and model_settings.uniprotkb_genename_online_query
+                # 
+        if any("UniProtKB" in syn for syn in self.id_synonyms) and f"{target_organism_id_num}" in self.taxon:
+            # no ortholog query is performed on Homo Sapiens, just info fetch
+            uniprot_id = next((syn for syn in self.id_synonyms if "UniProtKB" in syn), None) # select the UniProtKB id
+            # fallback: check also self.uniprot_id
+            if uniprot_id is None and self.uniprot_id is not None:
+                uniprot_id = self.uniprot_id
 
-        if (
-            len(self.id_synonyms) == 1
-            and "UniProtKB" in self.id_synonyms[0]
-            and self.taxon == "NCBITaxon:9606"
-        ):
-            if self.uniprot_id is None or self.uniprot_id == "":
+            # perform online or offline query
+            if(
+                model_settings is not None
+                and model_settings.uniprotkb_genename_online_query == True
+            ):
+                info_dict = await uniprot_api.get_uniprot_info_async(uniprot_id=uniprot_id, session=session)
+            else:
+                info_dict = {"genename": goaf.get_uniprotkb_genename(uniprot_id)} # TODO: implement goafmaster -> human!!!
+            self.genename = info_dict.get("genename")
+            # TODO: query other data from info_dict, if it exists !
+        else:
+            # checked here are: UniProtKB not from the homo sapiens taxon, ZFIN, MGI, RGD, Xenbase, etc.
+            # autoselect the first id synonym or uniprotkb, uniprotkb has precedence
+            initial_gene_id = None
+            ortholog_gene_ensg_id = None
+
+            if self.uniprot_id is not None:
+                initial_gene_id = self.uniprot_id
+            else:
+                initial_gene_id = self.id_synonyms[0]
+            
+            # check gOrth ortholog query status (gOrth batch ortholog query can be performed prior to a regular ortholog query)
+            # if gOrth didn't discover ortholog, and model_settings.gorth_ortholog_refetch is False, then don't query ortholog
+            should_query_ortholog = True
+            if (
+                model_settings is not None
+                and model_settings.gorth_ortholog_refetch == False
+                and self.gorth_ortholog_exists == False
+            ): # if gOrth ortholog query did not find orthologs, but gorth_ortholog_refetch is False in model settings -> don't fetch
+                should_query_ortholog = False
+                return None
+            
+            # check ensg id (this can be computed by gOrth batch ortholog query)
+            if (
+                self.ensg_id is not None 
+                and self.gorth_ortholog_exists == True
+            ):
+                # this is either a definitive ortholog queried by gOrth or an indefinitive ortholog queried by gOrth using model_settings.gorth_ortholog_fetch_for_indefinitive_orthologs = False -> no need to query ortholog
+                # if model_settings.gorth_ortholog_fetch_for_indefinitive_orthologs is True, then
+                # self.ensg_id will NOT be set (in the gOrth query function), thus ortholog will be queried in the regular pipeline.
+                should_query_ortholog = False
+                ortholog_gene_ensg_id = self.ensg_id
+            
+            # get the stable id prefix of the target organism. If target organism is zebrafish, then stable id prefix is "ENSDAR".
+            # If the Ensembl id of this product is already the same as stable id prefix (in our case, ENSDAR), then don't query ortholog.
+            if self.ensg_id is not None:
+                target_organism_stable_id_prefix = WebsiteParser.get_ensembl_stable_id_prefixes_table()[f"{target_organism_id_num}"]['stable_id_prefix'] # ex. "ENSDAR" for danio rerio, "ENS" for human
+                current_organism_stable_id_prefix = EnsemblUtil.split_ensembl_id(self.ensg_id)['stable_id_prefix']
+                if target_organism_stable_id_prefix == current_organism_stable_id_prefix:
+                    # (Product).fetch_ortholog_async was called with same target organism as is the organism assigned to this product -> this ortholog has already been found!
+                    should_query_ortholog = False
+                    ortholog_gene_ensg_id = self.ensg_id
+            
+            if should_query_ortholog:
+                # attempt offline, file-based search for
+                human_ortholog_gene_symbol = None
+                if self.id_synonyms[0].split(":")[0] in HumanOrthologFinder.get_supported_organism_dbs():
+                    human_ortholog_gene_symbol = (await human_ortholog_finder.find_human_ortholog_async(self.id_synonyms[0]))
+
+                if human_ortholog_gene_symbol is None:
+                    logger.info(f"HumanOrthologFinder did not find gene symbol for {self.id_synonyms[0]}. Attempting Ensembl ortholog query.")
+                    # TODO: IMPLEMENT MODULAR TAXON NUMBERS!
+                    ortholog_gene_ensg_id = await ensembl_api.get_human_ortholog_async(id=initial_gene_id, session=session, taxon=f"NCBITaxon:{target_organism_id_num}") # TODO: implement modular taxon numbers!
+            else:
+                # ensg id already exists
+                if self.ensg_id is not None:
+                    ortholog_gene_ensg_id = self.ensg_id
+            
+            # ortholog_gene_ensg_id should now be filled out
+            if ortholog_gene_ensg_id is not None:
+                enst_dict = await ensembl_api.get_info_async(ortholog_gene_ensg_id, session)
+                self.genename = enst_dict.get("genename")
+
+                if self.ensg_id == "" or self.ensg_id is None:
+                    self.ensg_id = enst_dict.get("ensg_id")
+                if self.description == "" or self.description is None:
+                    self.description = enst_dict.get("description")
+                if self.enst_id == "" or self.enst_id is None:
+                    self.enst_id = enst_dict.get("enst_id")
+                if self.refseq_nt_id == "" or self.refseq_nt_id is None:
+                    self.refseq_nt_id == enst_dict.get("refseq_nt_id")
+                if self.uniprot_id == "" or self.uniprot_id is None:
+                    uniprot_id = enst_dict.get("uniprot_id")
+                    if uniprot_id is not None and uniprot_id != "":
+                        self.uniprot_id = enst_dict.get("uniprot_id")
+            else:
+                self.genename = ortholog_gene_ensg_id
+
+        """
+        if len(self.id_synonyms) == 1 and "UniProtKB" in self.id_synonyms[0] and self.taxon == "NCBITaxon:9606":
+            if self.uniprot_id is None or self.uniprot_id == "": # self.uniprot_id field doesn't exist, but uniprot is in id_synonyms
                 # 14.08.2023: replaced online uniprot info query with goaf.get_uniprotkb_genename, as it is more successful and does the same as the uniprot query
                 if (
                     model_settings is not None
@@ -325,10 +442,8 @@ class Product:
                         self.id_synonyms[0], session
                     )
                 else:
-                    info_dict = {
-                        "genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])
-                    }  # TODO: implement goafmaster -> human!!!
-            else:
+                    info_dict = {"genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])} # TODO: implement goafmaster -> human!!!
+            else: # self.uniprot_id field exists
                 if (
                     model_settings is not None
                     and model_settings.uniprotkb_genename_online_query is True
@@ -392,6 +507,7 @@ class Product:
                             self.uniprot_id = enst_dict.get("uniprot_id")
             else:
                 self.genename = human_ortholog_gene_id
+        """ 
 
         ModelStats.product_ortholog_query_results[self.id_synonyms[0]] = {
             "initial_taxon": self.taxon,
@@ -412,6 +528,8 @@ class Product:
         session: aiohttp.ClientSession,
         semaphore: asyncio.Semaphore,
         goaf: GOAnnotationsFile,
+        target_organism_taxon_number:int=9606,
+        model_settings: Optional[ModelSettings] = None,
         human_ortholog_finder: Optional[HumanOrthologFinder] = None,
         uniprot_api: Optional[UniProtApi] = None,
         ensembl_api: Optional[EnsemblApi] = None,
@@ -420,6 +538,8 @@ class Product:
             await self.fetch_ortholog_async(
                 session=session,
                 goaf=goaf,
+                target_organism_id_number=target_organism_taxon_number,
+                model_settings=model_settings,
                 human_ortholog_finder=human_ortholog_finder,
                 uniprot_api=uniprot_api,
                 ensembl_api=ensembl_api,

@@ -173,6 +173,13 @@ class ModelSettings:
 
                            Do ntoe that the ortholog OrganismInfo instances are annotated twice, once for the label and once for the NCBITaxon (and can thus be
                            queried with both of these variables), if the label and taxon were specified.
+      - gorth_ortholog_refetch: When querying for orthologs, gOrth batch query can be called prior to a regular ortholog query pipeline using (ReverseLookup).fetch_orthologs_products_batch_gOrth.
+                                If this setting is True, then the regular ortholog query pipeline will refetch the orthologs that were labelled by gOrth as non-existant.
+      - gorth_ortholog_fetch_for_indefinitive_orthologs: When querying for orthologs using gOrth batch query, there can be multiple ENSG ortholog ids mapped to a single initial gene identifier. In the regular ortholog query
+                                                         pipeline (which is using Ensembl), the best of these homology mappings is selected (it has the highest "percentage identity"). However, gOrth returns homologies without percentage
+                                                         identities. These are called "indefinitive" orthologs. If this settings it True, then gOrth will not assign any ENSG id to the (Product).ensg_id field in the case of indefinitive orthologs,
+                                                         thus the ortholog query will automatically fall back onto the regular pipeline. If this setting is False, then the FIRST ENSG id returned (among many homologies) will be assigned to (Product).ensg_id,
+                                                         but it may not have the highest percentage identity. TODO: communicate with the gOrth team to resolve this.
     """
 
     # note: specifying ModelSettings inside the ModelSettings class is allowed because of the 'from __future__ import annotations' import.
@@ -187,11 +194,11 @@ class ModelSettings:
         self.pvalue = 0.05
         self.goterms_set = []
         self.datafile_paths = {}
-        self.target_organism = None
-        self.ortholog_organisms = None
-        self.ortholog_organisms_ncbi_full_ids = (
-            []
-        )  # a list containing only the full ids for all ortholog organisms
+        self.target_organism:OrganismInfo = None
+        self.ortholog_organisms:list[OrganismInfo] = None
+        self.ortholog_organisms_ncbi_full_ids = [] # a list containing only the full ids for all ortholog organisms
+        self.gorth_ortholog_refetch = False
+        self.gorth_ortholog_fetch_for_indefinitive_orthologs = True
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:
@@ -212,10 +219,10 @@ class ModelSettings:
                     # handling for target_organism and ortholog_organisms
                     if attr_name == "target_organism":
                         value_to_set = OrganismInfo.from_json(value_to_set)
-                    if attr_name == "ortholog_organisms":
-                        res = []
-                        for json_element in value_to_set:
-                            res.append(OrganismInfo.from_json(json_element))
+                    if attr_name == 'ortholog_organisms':
+                        res = {}
+                        for label, organism_info_json_element in value_to_set.items():
+                            res[label] = (OrganismInfo.from_json(organism_info_json_element))
                         value_to_set = res
 
                     # set the attribute
@@ -238,17 +245,15 @@ class ModelSettings:
                     assert isinstance(attr_value, OrganismInfo)
                     attr_value = attr_value.to_json()
                 if attr_name == "ortholog_organisms":
-                    res = []
-                    for (
-                        ortholog_organism
-                    ) in attr_value:  # attr_value is a list of OrthologOrganism objects
+                    res = {}
+                    for label,ortholog_organism in attr_value.items(): # attr_value is a list of OrthologOrganism objects
                         assert isinstance(ortholog_organism, OrganismInfo)
-                        res.append(ortholog_organism.to_json)
+                        res[label] = (ortholog_organism.to_json())
                     attr_value = res
 
                 # append to json_data result dict
                 json_data[attr_name] = attr_value
-            return json_data
+        return json_data
 
     def set_setting(self, setting_name: str, setting_value):
         if setting_name == "ortholog_organisms":
