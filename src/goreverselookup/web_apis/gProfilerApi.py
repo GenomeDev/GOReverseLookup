@@ -118,6 +118,8 @@ class gProfiler:
         Returns:
             dict[str, list[str]]: _description_
         """
+        if source_ids == [] or source_ids == "":
+            return None
 
         if ":" in source_taxon:
             source_taxon = source_taxon.split(":")[1]
@@ -145,6 +147,7 @@ class gProfiler:
                 "query": source_ids_list,
             },
         )
+        r.raise_for_status()
 
         target_ids = defaultdict(
             list, {k: [] for k in source_ids_list}

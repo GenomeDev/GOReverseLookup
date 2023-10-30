@@ -47,6 +47,15 @@
 #			We implemented a gOrth batch ortholog query (https://biit.cs.ut.ee/gprofiler/orth), which is called using (ReverseLookup).fetch_orthologs_products_batch_gOrth(target_taxon_number=...) function.
 #			The function attempts to find orthologs to genes in a single batch request. If 'gorth_ortholog_refetch' is True, then the genes for which orthologs were not found,
 #			will be re-fetched using the regular asynchronous ortholog query pipeline. If 'gorth_ortholog_refetch' is False, then the genes for which orthologs were not found will not be queried for orthologs again.
+#
+#			Warning: For some identifiers, gOrth ortholog query can be inconsistent. For example, consider the MGI id MGI:96824 (Tlr4) (UniProtKB:Q9QUK6): gOrth query from "Mus musculus" to "Homo sapiens" using ENTREZGENE-ACC finds no ortholog for
+#			the MGI id (96824), however it finds an ortholog when querying using the UniProtKB id (Q9QUK6) for the same gene. On the other hand, gOrth query for MGI:99512 (Wdr47) (UniProtKB:Q8CGF6) is consistent both for the MGI and for the UniProtKB identifiers.
+#			In the default code example, the algorithm attempts to map "3rd party" identifiers (such as ZFIN, RGD, ...) to respective UniProtKB and Ensembl identifiers, prior to executing the gOrth ortholog mappings, since mapping using UniProt or Ensembl ids was shown
+#			to be more reliable.
+#			
+#			For developers: It is highly advisable to call (ReverseLookup).products_perform_idmapping() prior to calling (ReverseLookup).fetch_orthologs_products_batch_gOrth(), so as to map as many "3rd party" ids (RGD, ZFIN, etc) to UniProtKB and Ensembl ids, which
+#			are then implicitly used inside fetch_orthologs_products_batch_gOrth() to obtain the best gOrth ortholog mapping results.
+#
 #	- gorth_ortholog_fetch_for_indefinitive_orthologs
 #			The gOrth batch query implementation can return the following options: a) multiple orthologous genes (these are called "indefinitive orthologs"), b) a single orthologous gene (called a "definitive ortholog") or 
 #			c) no orthologous genes. In our asynchronos ortholog query pipeline implementation, when multiple orthologous genes are returned from Ensembl, the orthologous gene with the highest percentage identity ("perc_id") is
@@ -147,7 +156,7 @@ goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa
 #goa_xenbase TODO
 ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
 ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
-ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt	rattus_norvegicus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
 ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
 ###processes [proces name] [to be expressed + or suppressed -]
 chronic_inflammation	+

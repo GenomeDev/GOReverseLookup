@@ -537,9 +537,7 @@ class ReverseLookup:
             ] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
-    def fetch_uniprot_product_ensg_ids(
-            self
-    ):
+    def fetch_uniprot_product_ensg_ids(self):
         """
         Fetches the ENSG identifiers for the gene products, which have a UniProtKB identifier.
         This operation relies on a bulk request to the UniProtKB servers to perform the id mapping between UniProtKB
@@ -571,6 +569,8 @@ class ReverseLookup:
         for idmap in successful_conversions:
             uniprot_id = idmap['from']
             ensembl_id = idmap['to']
+            if "." in ensembl_id: # ENSGxxxx.1 -> ENSGxxxx
+                ensembl_id = ensembl_id.split(".")[0]
             for product in self.products:
                 if product.uniprot_id == None:
                     continue
@@ -638,56 +638,91 @@ class ReverseLookup:
     def fetch_orthologs_products_batch_gOrth(self, target_taxon_number="9606"):
         """
         Fetches a whole batch of gene product orthologs using gOrth (https://biit.cs.ut.ee/gprofiler/orth).
+
+        Note: This function automatically uses the ENTREZGENE-ACC gOrth namespace (list of all namespaces: https://biit.cs.ut.ee/gprofiler/page/namespaces-list).
+        In general, the ENTREZGENE_ACC gOrth namespace works correctly with the following tested identifier types:
+          - UniProtKB
+          - MGI
+
+        WARNING: The following identifiers are known NOT to work with the ENTREZGENE-ACC namespace:
+          - RGD
+        For these identifiers, it is highly advisable to call (ReverseLookup).products_perform_idmapping() prior to calling
+        fetch_orthologs_products_batch_gOrth, so that RGD ids will be mapped to their respective UniProt and Ensembl ids, which work
+        with the ENTREZGENE-ACC namespace.
         """
         # divide products into distinct groups
-        taxa_ids = []
-        taxa_ids.append(f"{self.model_settings.target_organism.ncbi_id}")
-        for ncbi_id in self.model_settings.ortholog_organisms:
-            if ":" in ncbi_id:
-                ncbi_id = ncbi_id.split(":")[1]
-            taxa_ids.append(ncbi_id)
+        taxa_ids = set()
+        taxa_ids.add(f"{self.model_settings.target_organism.ncbi_id}")
+        for label,ortholog_organism in self.model_settings.ortholog_organisms.items():
+            taxa_ids.add(f"{ortholog_organism.ncbi_id}")
+        taxa_ids = list(taxa_ids)
+        #for ncbi_id in self.model_settings.ortholog_organisms:
+        #    if ":" in ncbi_id:
+        #        ncbi_id = ncbi_id.split(":")[1]
+        #    taxa_ids.append(ncbi_id)
         
-        # initialise empty dict
+        # initialise empty dict; format: {'taxon_id_number': [LIST OF ASSOCIATED TAXON IDs]}
         ortholog_query_dict = {}
         for taxon_number in taxa_ids:
             ortholog_query_dict[taxon_number] = []
         
-        # iterate over products, construct ortholog_query_dict
-        # first pass: browsing id synonyms
+        # iterate over products, construct ortholog_query_dict with id synonyms, uniprot ids and ensembl ids
         for product in self.products:
-            product_id_short = "" # mustn't be UniProtKB:xxxx but just 'xxxx'
-            if len(product.id_synonyms) > 0:
+            product_taxon_number = product.taxon.split(":")[1] if ":" in product.taxon else product.taxon
+
+            if int(product_taxon_number) == self.model_settings.target_organism.ncbi_id: # don't query orthologs if product taxon is the same as target organism taxon
+                continue
+
+            product_ids_short = [] # mustn't be UniProtKB:xxxx but just 'xxxx'
+            if len(product.id_synonyms) > 0: # search id synonyms
                 id_syn = product.id_synonyms[0]
                 if ":" in id_syn:
-                    product_id_short = id_syn.split(":")[1]
-            if product_id_short == "": # if there is now id synonym, fall back to ensg id
-                if product.ensg_id is not None:
-                    product_id_short = product.ensg_id
-            if product_id_short == "": 
+                    p_id_short = id_syn.split(":")[1]
+                    product_ids_short.append(p_id_short)
+            if product.uniprot_id is not None: # add uniprot query if uniprot for id synonym has been precomputed
+                product_ids_short.append(product.uniprot_id.split(":")[1]) if ":" in product.uniprot_id else product_ids_short.append(f"{product.uniprot_id}")     
+            if product.ensg_id is not None: # add ensembl query if ensembl id for id synonym has been precomputed
+                # ENSRNOG0000145.2 -> ENSRNOG0000145
+                product_ids_short.append(product.ensg_id.split(".")[0]) if "." in product.ensg_id else product_ids_short.append(f"{product.ensg_id}")
+            if product_ids_short == []: 
+                # continue if no id has been found
                 continue
             
-            product_taxon_number = product.taxon.split(":")[1] if ":" in product.taxon else product.taxon
-            ortholog_query_dict[product_taxon_number].append(product_id_short)
+            for p_id in product_ids_short:
+                ortholog_query_dict[product_taxon_number].append(p_id)
 
         num_queried_orthologs_definitive = 0
         num_queried_orthologs_indefinitive = 0
         num_no_orthologs = 0
 
+        total_ortholog_query_count = 0
+        max_single_ortholog_query_count = 0
+        for taxon_id, input_ids_to_query in ortholog_query_dict.items():
+            total_ortholog_query_count += len(input_ids_to_query)
+            max_single_ortholog_query_count = max(max_single_ortholog_query_count, len(input_ids_to_query))
+
+        logger.info(f"gOrth query begin: querying a total of {total_ortholog_query_count} ids, maximum query count per request: {max_single_ortholog_query_count}.")
         # perform search and modify self.products with the search results
         gprofiler = gProfiler()
         for taxon, ids in ortholog_query_dict.items():
             ortholog_query_results = gprofiler.find_orthologs(source_ids=ids, source_taxon=taxon, target_taxon=target_taxon_number) #all ortholog query results for this taxon
+            if ortholog_query_results is None:
+                # None can be returned from gprofiler.find_orthologs if source_ids is []
+                continue
+
             # process results for this taxon
             for id, ortholog_results in ortholog_query_results.items():
                 p = self.get_product(id)
-                if ortholog_results == []:
+                if ortholog_results == [] and p.gorth_ortholog_exists != True: # p.gorth_ortholog_exists != True is set if this product had already been determined to have an existing ortholog. For example, ENSRNOGxxxx determines a valid gOrth ortholog, sets it, but then RGD:xxxx (pointing to the same gene) finds no gOrth ortholog -> RGD results in this case shouldn't disturb the successful ensembl gOrth ortholog query.
                     p.gorth_ortholog_exists = False
-                    num_no_orthologs += 1
-                if len(ortholog_results) > 1:
-                    p.gorth_ortholog_exists = True
-                    num_queried_orthologs_indefinitive += 1
+                    p.gorth_ortholog_status = "none"
 
-                    # determine autoselect
+                if len(ortholog_results) > 1 and p.gorth_ortholog_status != "definitive": # if a valid gOrth ortholog has been found, overwrite any prior queries that didn't find an ortholog for this product. Don't overwrite and prior "definitive"-ly queried gOrth orthologs!
+                    # more than 1 ortholog ids found = "indefinitive ortholog"
+                    p.gorth_ortholog_exists = True
+                    p.gorth_ortholog_status = "indefinitive"
+
+                    # determine autoselect first indefinitive ortholog (based on model settings)
                     autoselect_first_among_multiple_ensg_orthologs = False
                     if self.model_settings is not None:
                         if self.model_settings.gorth_ortholog_fetch_for_indefinitive_orthologs == False:
@@ -697,14 +732,28 @@ class ReverseLookup:
                             autoselect_first_among_multiple_ensg_orthologs = True
 
                     if autoselect_first_among_multiple_ensg_orthologs:
+                        if p.ensg_id is not None: # move existing ensembl id among id synonyms
+                            p.id_synonyms.append(p.ensg_id)
                         p.ensg_id = ortholog_results[0]
                         logger.warning(f"Autoselected ortholog {p.ensg_id} among {len(ortholog_results)}, but it MAY NOT have the highest percentage identity!")
                         # TODO: this only takes the first ENS id. Implement perc_id (percentage identity) checks!!
-                if len(ortholog_results) == 1:
-                    # this is the ideal case -> gOrth returns only one ortholog id
+                
+                if len(ortholog_results) == 1 and p.gorth_ortholog_status != "definitive": # p.gorth_ortholog_status != "definitive" to prevent duplicates
+                    # this is the ideal case -> gOrth returns only one ortholog id = "definitive ortholog"
                     p.gorth_ortholog_exists = True
+                    p.gorth_ortholog_status = "definitive"
+                    if p.ensg_id is not None: # move existing ensembl id among id synonyms
+                        p.id_synonyms.append(p.ensg_id)
                     p.ensg_id = ortholog_results[0]
-                    num_queried_orthologs_definitive += 1
+        
+        for p in self.products:
+            match p.gorth_ortholog_status:
+                case "none":
+                    num_no_orthologs +=1
+                case "indefinitive":
+                    num_queried_orthologs_indefinitive += 1
+                case "definitive":
+                    num_queried_orthologs_definitive +=1
         
         # print some statistics for the user:
         logger.info(f"Finished gOrth batch ortholog query. Results:")
@@ -1426,6 +1475,25 @@ class ReverseLookup:
         """
         Return product based on any id
         """
+        for product in self.products:
+            if any(identifier in id for id in product.id_synonyms):
+                return product
+            if any(
+                identifier in getattr(product, attr) for attr in [
+                    "genename",
+                    "description",
+                    "uniprot_id",
+                    "ensg_id",
+                    "enst_id",
+                    "refseq_nt_id",
+                    "mRNA"
+                ] if getattr(product,attr) is not None
+            ):
+                return product
+        logger.debug(f"Couldn't find product for {identifier}")
+        return None
+
+        """
         product = next(
             obj
             for obj in self.products
@@ -1444,6 +1512,7 @@ class ReverseLookup:
             or any(identifier in id for id in obj.id_synonyms)
         )
         return product
+        """
 
     def save_model(self, filepath: str) -> None:
         data = {}

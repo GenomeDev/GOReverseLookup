@@ -667,6 +667,9 @@ class UniProtApi:
           - use 'curl -k https://rest.uniprot.org/configure/idmapping/fields' or 'curl http://rest.uniprot.org/configure/idmapping/fields' in CMD (after installing curl as per https://linuxhint.com/install-use-curl-windows/) 
             to find all available to and from parameters. Note the '-k' flag forces curl to omit ssl security verification, otherwise it throws an error for https in my case.
             see https://jsonformatter.org/f5632a for a list of all possible values
+        
+        WARNING: For MGI ids (eg. MGI:1932410), Uniprot idmapping service expects the FULL id (MGI:1932410) and not the processed version of the id (1932410). For Zebrafish ids (eg. ZFIN:ZDB-GENE-040426-2477), the Uniprot idmapping
+        service expects processed ids (without "ZFIN:", eg. ZDB-GENE-040426-2477).
         """
         def check_idmapping_results_ready(job_id, session:requests.Session, api_url="https://rest.uniprot.org"):
             while True:
@@ -782,6 +785,9 @@ class UniProtApi:
         # check uniprot ids
         processed_ids = []
         for id in ids:
+            if "MGI:" in id:
+                processed_ids.append(id)
+                continue
             processed_ids.append(id.split(":")[1]) if ":" in id else processed_ids.append(id)
         ids = processed_ids
 
