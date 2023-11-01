@@ -139,7 +139,7 @@
 #		model = ReverseLookup.load_model(model_data_file)
 ###settings
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
-ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus|Xenbase|NCBITaxon:8353
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
 fisher_test_use_online_query	False
 include_indirect_annotations	False
 uniprotkb_genename_online_query	False

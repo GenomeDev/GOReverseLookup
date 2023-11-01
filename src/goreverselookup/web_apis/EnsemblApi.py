@@ -4,6 +4,7 @@ import aiohttp
 import asyncio
 
 from ..util.CacheUtil import Cacher
+from ..util.ApiUtil import EnsemblUtil
 
 import logging
 #import aiologger
@@ -37,6 +38,8 @@ class EnsemblApi:
           - (str) id
 
         This function uses request caching. It will use previously saved url request responses instead of performing new (the same as before) connections
+
+        TODO: update to full taxon modularity
         """
         ensembl_data_key = (
             f"[{self.__class__.__name__}][{self.get_human_ortholog.__name__}][id={id}]"
@@ -234,6 +237,90 @@ class EnsemblApi:
             Cacher.store_data("ensembl", ensembl_data_key, ortholog)
             logger.info(f"Received ortholog for id {id} -> {ortholog}")
             return ortholog
+    
+    async def get_ortholog_async(self, id, session: aiohttp.ClientSession, source_taxon:str, target_taxon:str):
+        """
+        Given a source ID, detect organism and returns the corresponding ortholog (for the target taxon).
+        Example source IDs are: RGD:6494870, ZFIN:ZDB-GENE-040426-1432, Xenbase:XB-GENE-479318 and MGI:95537.
+
+        Parameters:
+          - (str) id: A 3rd party id (such as ZFIN:ZDB-GENE-040425-1432) or an Ensembl id (eg. ENSGxxxx)
+          - (aiohttp.ClientSession) session
+          - (str) taxon: A full NCBITaxon (eg. NCBITaxon:9606).
+
+        Warning: Using UniProtKB ids always fails. See https://pastebin.com/ffMyJTBK. 
+
+        This function uses request caching. It will use previously saved url request responses instead of performing new (the same as before) connections
+        """
+        ensembl_data_key = f"[{self.__class__.__name__}][{self.get_human_ortholog_async.__name__}][id={id}]"
+        previous_result = Cacher.get_data("ensembl", ensembl_data_key)
+        if previous_result is not None:
+            logger.debug(f"Returning cached ortholog for id {id}: {previous_result}")
+            return previous_result
+        
+        id_url = None
+        if "MGI" in id: # MGI ids are expected in MGI:XXXX format
+            id_url = id
+        else:
+            # UniProtKB, ZFIN, Xenbase, RGD are expected without the starting database identifier
+            if ":" in id:
+                id_url = id.split(":")[1]
+        
+        source_species_label = EnsemblUtil.taxon_to_ensembl_label(source_taxon)
+        target_species_label = EnsemblUtil.taxon_to_ensembl_label(target_taxon)
+
+        # this link doesn't work for UniProtKB ids (see https://pastebin.com/ffMyJTBK)
+        # works for ZDB-GENE-... ids and for Ensembl ids (example: ZDB-GENE-990708-7, OTPB_DANRE, UniProtKB:Q6DGH9, ENSDARG00000058379)
+        url = f"https://rest.ensembl.org/homology/symbol/{source_species_label}/{id_url}?target_species={target_species_label};type=orthologues;sequence=none"
+
+        # Check if the url is cached
+        # previous_response = ConnectionCacher.get_url_response(url)
+        previous_response = Cacher.get_data("url", url)
+        if previous_response is not None:
+            response_json = previous_response
+        else:
+            try:
+                response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=15)
+                # response.raise_for_status()
+                response_json = await response.json()
+                Cacher.store_data("url", url, response_json)
+                await asyncio.sleep(self.async_request_sleep_delay)
+            # except (requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ClientResponseError) as e:
+            except Exception as e:
+                logger.warning(
+                    f"Exception for {id_url} for request:"
+                    f"{url}"
+                    f" Exception: {str(e)}"
+                )
+                self.ortholog_query_exceptions.append({f"{id}": f"{str(e)}"})
+                return None
+
+        if response_json == [] or "error" in response_json:
+            return None
+        elif response_json != [] and "error" not in response_json:
+            try:
+                response_json = response_json["data"][0]["homologies"]
+            except (KeyError, IndexError):
+                logger.warning(f"Key error or list index out of range when parsing ['data'][0]['homologies] for id {id}.")
+                logger.debug(f"response json = {response_json}")
+                return None
+            if response_json == []:  # if there are no homologies, return None
+                return None
+
+            max_perc_id = 0.0
+            ortholog = ""
+
+            for ortholog_dict in response_json:
+                if ortholog_dict["target"]["species"] == target_species_label:
+                    current_perc_id = ortholog_dict["target"]["perc_id"]
+                    if current_perc_id > max_perc_id:
+                        ortholog = ortholog_dict["target"]["id"]
+                        max_perc_id = current_perc_id
+
+            Cacher.store_data("ensembl", ensembl_data_key, ortholog)
+            logger.info(f"Received ortholog for id {id} -> {ortholog}")
+            return ortholog
+
 
     def get_sequence(self, ensembl_id, sequence_type="cdna"):
         """
@@ -253,58 +340,44 @@ class EnsemblApi:
         logger.info(f"Received sequence for id {ensembl_id}.")
         return sequence
 
-    def get_info(self, id: str) -> dict:
+    def get_info(self, id: str, taxon:str) -> dict:
         """Can receive Ensembl id or symbol (human)
 
         Args:
             id (str): Ensembl ID or symbol
+            taxon (str): NCBI taxon for the id
 
         Returns:
             dict: Information about the gene
         """
-        if (
-            "Error" in id
-        ):  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
-            logger.debug(
-                f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene"
-                " does not have a human ortholog and you are safe to ignore it."
-            )
+        if "Error" in id:  # this is a bugfix. Older versions had a string "[RgdError_No-human-ortholog-found:product_id=RGD:1359312" for the genename field, if no ortholog was found (for example for the genename field of "RGD:1359312"). This is to be backwards compatible with any such data.json(s). An error can also be an '[MgiError_No-human-ortholog-found:product_id=MGI:97618'
+            logger.debug(f"ERROR: {id}. This means a particular RGD, Zfin, MGI or Xenbase gene does not have a human ortholog and you are safe to ignore it.")
             return {}
+        
+        if isinstance(id, list):
+            id = id[0]
+        
+        # some ids can have a ".", such as ENSDARG0001245.1 -> remove what is after the .
+        if "." in id:
+            id = id.split(".")[0]
 
-        ensembl_data_key = (
-            f"[{self.__class__.__name__}][{self.get_info.__name__}][id={id}]"
-        )
+        ensembl_data_key = (f"[{self.__class__.__name__}][{self.get_info.__name__}][id={id},taxon={taxon}]")
         previous_result = Cacher.get_data("ensembl", ensembl_data_key)
         if previous_result is not None:
             logger.debug(f"Returning cached info for id {id}: {previous_result}")
             return previous_result
-
-        species_mapping = {
-            "ZFIN": "zebrafish/",
-            "Xenbase": "xenopus_tropicalis/",
-            "MGI": "mouse/MGI:",
-            "RGD": "rat/",
-            "UniProtKB": "human/",
-        }
-
-        # Check if the ID is an Ensembl ID or symbol
+        
+        if ":" in id:
+            # split all ids besides MGI, since MGI ids are expected in the MGI:xxxx format
+            # other ids eg. ZFIN:ZDB-GENE-xxx are expected in ZDB-GENE-xxx format
+            if "MGI" not in id:
+                id = id.split(":")[1]
+        
         if id.startswith("ENS"):
             endpoint = f"id/{id}"
         else:
-            # TODO: Check if this is ever even queried. I am trying to see if any such urls are stored in connection_cache.json, but I see none.
-            #
-            # One of the following links is used:
-            #   rest.ensembl.org/lookup/symbol/zebrafish/{ZFIN_ID}
-            #   rest.ensembl.org/lookup/symbol/xenopus_tropicalis/{XENBASE_ID}
-            #   rest.ensembl.org/lookup/symbol/mouse/{MGI_ID}
-            #   rest.ensembl.org/lookup/symbol/rat/{RGD_ID}
-            #   rest.ensembl.org/lookup/symbol/human/{UNIPROT_ID}
-
-            prefix, id_ = id.split(":") if ":" in id else (None, id)
-            species = species_mapping.get(
-                prefix, "human/"
-            )  # defaults to human if not prefix "xxx:"
-            endpoint = f"symbol/{species}{id_}"
+            species = EnsemblUtil.taxon_to_ensembl_label(taxon_num=taxon)
+            endpoint = f"smybol/{species}/{id}"
 
         url = f"https://rest.ensembl.org/lookup/{endpoint}?mane=1;expand=1"
 
@@ -327,9 +400,7 @@ class EnsemblApi:
         except requests.exceptions.RequestException:
             # If the request fails, try the xrefs URL instead
             try:
-                if (
-                    "ENS" not in id
-                ):  # id is not an ensembl id, attempt to find a cross-reference
+                if "ENS" not in id:  # id is not an ensembl id, attempt to find a cross-reference
                     url = f"https://rest.ensembl.org/xrefs/{endpoint}?"
                     # Check if the url is cached
                     previous_response = Cacher.get_data("url", url)
@@ -449,11 +520,12 @@ class EnsemblApi:
         Cacher.store_data("ensembl", ensembl_data_key, return_value)
         return return_value
 
-    async def get_info_async(self, id: str, session: aiohttp.ClientSession, request_timeout = 15):
+    async def get_info_async(self, id: str, taxon:str, session: aiohttp.ClientSession, request_timeout = 15):
         """Can receive Ensembl id or symbol (human)
 
         Args:
             id (str): Ensembl ID or symbol
+            taxon (str): The taxon for this id (a NCBITaxon or a taxon nummber identifier)
 
         Returns:
             dict: Information about the gene
@@ -467,48 +539,43 @@ class EnsemblApi:
             )
             return {}
         
+        if isinstance(id, list):
+            id = id[0]
+        
         # some ids can have a ".", such as ENSDARG0001245.1 -> remove what is after the .
         if "." in id:
             id = id.split(".")[0]
 
-        ensembl_data_key = (
-            f"[{self.__class__.__name__}][{self.get_info_async.__name__}][id={id}]"
-        )
+        ensembl_data_key = (f"[{self.__class__.__name__}][{self.get_info_async.__name__}][id={id},taxon={taxon}]")
         previous_result = Cacher.get_data("ensembl", ensembl_data_key)
         if previous_result is not None:
             logger.debug(f"Returning cached ortholog for id {id}: {previous_result}")
             return previous_result
-
-        species_mapping = {
-            "ZFIN": "zebrafish/",
-            "Xenbase": "xenopus_tropicalis/",
-            "MGI": "mouse/MGI:",
-            "RGD": "rat/",
-            "UniProtKB": "human/",
-        }
-
-        # Check if the ID is an Ensembl ID or symbol
+        
+        
+        if ":" in id:
+            # split all ids besides MGI, since MGI ids are expected in the MGI:xxxx format
+            # other ids eg. ZFIN:ZDB-GENE-xxx are expected in ZDB-GENE-xxx format
+            if "MGI" not in id:
+                id = id.split(":")[1]
+        
         if id.startswith("ENS"):
             endpoint = f"id/{id}"
         else:
-            prefix, id_ = id.split(":") if ":" in id else (None, id)
-            species = species_mapping.get(
-                prefix, "human/"
-            )  # defaults to human if not prefix "xxx:"
-            endpoint = f"symbol/{species}{id_}"
+            species = EnsemblUtil.taxon_to_ensembl_label(taxon_num=taxon)
+            endpoint = f"smybol/{species}/{id}"
 
         try:
             # TODO: 19.08.2023: the below link doesn't work for any other {species} in endpoint other than human. Ie.
             # zebrafish, xenbase, mgi, rgd don't work !!!
             url = f"https://rest.ensembl.org/lookup/{endpoint}?mane=1;expand=1"
-            # previous_response = ConnectionCacher.get_url_response(url)
             previous_response = Cacher.get_data("url", url)
             if previous_response is not None:
                 response_json = previous_response
             else:
-                headers = {"content-type": "application/json"}
-                full_url = f"{url}?{'&'.join([f'{key}={value}' for key, value in headers.items()])}"
-                logger.debug(f"Attempting url: {full_url}")
+                # headers = {"content-type": "application/json"}
+                # full_url = f"{url}?{'&'.join([f'{key}={value}' for key, value in headers.items()])}"
+                # logger.debug(f"Attempting url: {full_url}")
                 response = await session.get(url, headers={"content-type": "application/json"}, timeout=request_timeout)
                 response.raise_for_status()
                 response_json = await response.json()
@@ -652,10 +719,3 @@ class EnsemblApi:
         }
         Cacher.store_data("ensembl", ensembl_data_key, return_value)
         return return_value
-    
-    async def id_to_ensembl_id(source_id:str):
-        """
-        Converts 'source_id' (eg. a UniProtKB gene id) to an Ensembl id.
-        """
-        pass
-        # TODO: implement!!!

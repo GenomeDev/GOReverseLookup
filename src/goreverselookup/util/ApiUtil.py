@@ -33,6 +33,9 @@ class EnsemblUtil():
         EnsemblUtil.split_ensembl_id("ENSG00132")
         -> return: {'stable_id_prefix': "ENS", 'feature_prefix': "G", 'identifier': "00132"}
         """
+        if isinstance(full_ensembl_id,list):
+            full_ensembl_id=full_ensembl_id[0]
+            
         # construct a list of feature identifiers either via a web query or via list of feature identifiers
         feature_identifiers_final = []
         if feature_id_web_query:
@@ -79,6 +82,41 @@ class EnsemblUtil():
             'feature_prefix': feature,
             'identifier': identifier
         }
+    
+    @classmethod
+    def taxon_to_ensembl_label(cls, taxon_num:str, major_species_only:bool = True):
+        """
+        Returns an Ensembl species label corresponding to input NCBI Taxon number ('taxon_num')
+
+        Parameters:
+          - (str) taxon_num: The number of the NCBITaxon:XXXX format in string notation. Also accepts the full NCBITaxon:XXXX notation.
+          - (bool) major_species_only: For some species, Ensembl notes the label in "extended" format. For example, for NCBITaxon:10090 (House mouse, Mus musculus),
+                                       Ensembl would by itself return the label "mus_musculus_balbcj". If major_species_only is set to True, then only the "major" species
+                                       will be returned, in this case "mus_musculus".
+
+        Example: We want species label for Orange clownfish (NCBITaxon:161767)
+            EnsemblUtil.taxon_to_ensembl_label("161767")
+            -> "amphiprion_percula"
+        
+        """
+        if ":" in taxon_num:
+            taxon_num = taxon_num.split(":")[1]
+        
+        if isinstance(taxon_num, int):
+            taxon_num = str(taxon_num)
+        
+        lookup_table = WebsiteParser.get_ensembl_stable_id_prefixes_table()
+        if taxon_num in lookup_table:
+            label = lookup_table[taxon_num]['label']
+
+            if major_species_only == True: # mus_musculus_balbcj
+                split = label.split("_")
+                if len(split) >= 2:
+                    label = f"{split[0]}_{split[1]}" # mus_musculus
+
+            return label
+        
+        return None
 
 
 

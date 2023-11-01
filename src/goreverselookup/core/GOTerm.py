@@ -238,6 +238,7 @@ class GOTerm:
 
         approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
         approved_dbs_and_taxa['UniProtKB'] = [] # create uniprotkb by default
+        
         # add target organism
         if model_settings.target_organism.database in approved_dbs_and_taxa:
             # existing database key -> add taxon!
@@ -246,7 +247,8 @@ class GOTerm:
         else:
             # new database key
             approved_dbs_and_taxa[model_settings.target_organism.database] = [model_settings.target_organism.ncbi_id_full]
-        # add ortholog organisms
+        
+        # add ortholog organisms to approved_dbs_and_taxa
         for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
             assert isinstance(ortholog_organism_object, OrganismInfo)
             ortholog_organism = ortholog_organism_object

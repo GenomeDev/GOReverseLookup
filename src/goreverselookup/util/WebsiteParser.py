@@ -18,7 +18,7 @@ class WebsiteParser():
         
         if cls.ensembl_species_to_ids_to_taxons is None or cls.ensembl_species_to_ids_to_taxons == {}:
             # compute all taxon ids for species
-            cls.ensembl_species_to_ids_to_taxons = cls.fetch_taxon_numbers_for_species()
+            cls.ensembl_species_to_ids_to_taxons = cls.fetch_ensembl_taxon_numbers_for_species()
     
     @classmethod
     def get_website_content(cls, url:str):
@@ -88,24 +88,24 @@ class WebsiteParser():
     @classmethod
     def get_ensembl_stable_id_prefixes_table(cls):
         """
-        Gets the dictionary between taxon numbers and respective Ensembl species and stable id prefixes. Call this function to prevent constant
-        re-scraping of the ensembl website!
+        Gets the dictionary between taxon numbers and respective Ensembl species, stable id prefixes and the species labels. Call this function to prevent constant
+        re-scraping of the ensembl website! Underlying url: https://rest.ensembl.org/info/species?content-type=application/json
 
         The structure of the returned dictionary is:
         {
-            '8083': {'name': 'platyfish', 'stable_id_prefix': 'ENSXMA'}, 
-            '61622': {'name': 'golden snub-nosed monkey', 'stable_id_prefix': 'ENSRRO'}, 
-            '161767': {'name': 'orange clownfish', 'stable_id_prefix': 'ENSAPE'}, 
-            '31033': {'name': 'fugu', 'stable_id_prefix': 'ENSTRU'}, 
+            '8083': {'name': 'platyfish', 'label': 'xiphophorus_maculatus', 'stable_id_prefix': 'ENSXMA'}, 
+            '61622': {'name': 'golden snub-nosed monkey', 'label': 'rhinopithecus_roxellana', 'stable_id_prefix': 'ENSRRO'}, 
+            '161767': {'name': 'orange clownfish', 'label': 'amphiprion_percula', 'stable_id_prefix': 'ENSAPE'}, 
+            '31033': {'name': 'fugu', 'label': 'takifugu_rubripes', 'stable_id_prefix': 'ENSTRU'}, 
             ...
         }
         """
         if cls.ensembl_species_to_ids_to_taxons is None and cls.ensembl_species_to_ids_to_taxons != {}:
-            cls.fetch_taxon_numbers_for_species()
+            cls.fetch_ensembl_taxon_numbers_for_species()
         return cls.ensembl_species_to_ids_to_taxons
 
     @classmethod
-    def fetch_taxon_numbers_for_species(cls):
+    def fetch_ensembl_taxon_numbers_for_species(cls):
         if cls.ensembl_species_to_ids is None:
             cls.parse_ensembl_stable_id_prefixes_table()
 
@@ -122,7 +122,7 @@ class WebsiteParser():
         species_dict = {}
         for species in species_list:
             assert isinstance(species, dict)
-            if species.get('display_name') is not None and species.get('taxon_id') is not None:
+            if species.get('display_name') is not None and species.get('taxon_id') is not None and species.get('name') is not None:
                 species_dict[species.get('display_name').lower()] = species
 
         result_dict = {} # key = taxon id; value = {'name' = NAME, 'stable_id_prefix' = STABLE_ID_PREFIX}
@@ -136,8 +136,10 @@ class WebsiteParser():
             display_name = display_name.lower()
             if display_name in species_dict:
                 species_taxon = species_dict[display_name].get('taxon_id')
+                species_label = species_dict[display_name].get('name')
                 result_dict[species_taxon] = {
                     'name': display_name,
+                    'label': species_label,
                     'stable_id_prefix': stable_id_prefix
                 }
         

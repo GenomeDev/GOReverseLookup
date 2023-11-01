@@ -7,3 +7,5 @@ class ModelStats:
         cls.goterm_count = 0
         cls.product_count = 0
         cls.product_ortholog_query_results = {}
+        cls.product_idmapping_results = {}
+        cls.product_ortholog_gOrth_query_results = {}

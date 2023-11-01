@@ -25,10 +25,12 @@ class Cacher:
     CACHE_FILEPATH_GENEONTOLOGY = (  # filepath to the file containing gene ontology api queries and their final results (after processing of the url responses)
         ""
     )
+    CACHE_FILEPATH_GPROFILER = ""
     cached_urls = {}
     cached_uniprot = {}
     cached_ensembl = {}
     cached_geneontology = {}
+    cached_gprofiler = {}
 
     @classmethod
     def init(
@@ -54,30 +56,25 @@ class Cacher:
         """
         FileUtil.check_path(cache_dir, is_file=False)
         cls.store_data_atexit = store_data_atexit
-        cls.CACHE_FILEPATH_URLS = os.path.join(
-            cache_dir, "connection_cache.json"
-        ).replace("\\", "/")
-        cls.CACHE_FILEPATH_UNIPROT = os.path.join(
-            cache_dir, "uniprot_cache.json"
-        ).replace("\\", "/")
-        cls.CACHE_FILEPATH_ENSEMBL = os.path.join(
-            cache_dir, "ensembl_cache.json"
-        ).replace("\\", "/")
-        cls.CACHE_FILEPATH_GENEONTOLOGY = os.path.join(
-            cache_dir, "geneontology_cache.json"
-        ).replace("\\", "/")
+        cls.CACHE_FILEPATH_URLS = os.path.join(cache_dir, "connection_cache.json").replace("\\", "/")
+        cls.CACHE_FILEPATH_UNIPROT = os.path.join(cache_dir, "uniprot_cache.json").replace("\\", "/")
+        cls.CACHE_FILEPATH_ENSEMBL = os.path.join(cache_dir, "ensembl_cache.json").replace("\\", "/")
+        cls.CACHE_FILEPATH_GENEONTOLOGY = os.path.join(cache_dir, "geneontology_cache.json").replace("\\", "/")
+        cls.CACHE_FILEPATH_GPROFILER = os.path.join(cache_dir, "gprofiler_cache.json").replace("\\", "/")
         FileUtil.check_paths(
             [
                 cls.CACHE_FILEPATH_URLS,
                 cls.CACHE_FILEPATH_GENEONTOLOGY,
                 cls.CACHE_FILEPATH_UNIPROT,
                 cls.CACHE_FILEPATH_ENSEMBL,
+                cls.CACHE_FILEPATH_GPROFILER
             ]
         )
         cls.cached_urls = JsonUtil.load_json(cls.CACHE_FILEPATH_URLS)
         cls.cached_uniprot = JsonUtil.load_json(cls.CACHE_FILEPATH_UNIPROT)
         cls.cached_ensembl = JsonUtil.load_json(cls.CACHE_FILEPATH_ENSEMBL)
         cls.cached_geneontology = JsonUtil.load_json(cls.CACHE_FILEPATH_GENEONTOLOGY)
+        cls.cached_gprofiler = JsonUtil.load_json(cls.CACHE_FILEPATH_GPROFILER)
 
         logger.info("Cacher load dictionary response counts:")
         logger.info(f"  - urls: {len(cls.cached_urls)}")
@@ -85,9 +82,7 @@ class Cacher:
         logger.info(f"  - ensembl: {len(cls.cached_ensembl)}")
         logger.info(f"  - geneontology: {len(cls.cached_geneontology)}")
 
-        if (
-            store_data_atexit
-        ):  # register the save_data function to be called on program exit
+        if store_data_atexit:  # register the save_data function to be called on program exit
             logger.info("Register at exit save data for Cacher.")
             atexit.register(cls.save_data)
 
@@ -111,6 +106,7 @@ class Cacher:
           - "uniprot" -> filepath = cache/uniprot_cache.json
           - "ensembl" -> filepath = cache/ensembl_cache.json
           - "go" -> filepath = cache/geneontology_cache.json
+          - "gprofiler" -> filepath = cache/gprofiler_cache.json
 
         Params:
           - (str) data_location: either 'url', 'uniprot', 'ensembl' or 'go'
@@ -170,6 +166,8 @@ class Cacher:
                 cached_data = cls.cached_ensembl
             case "go":
                 cached_data = cls.cached_geneontology
+            case "gprofiler":
+                cached_data = cls.cached_gprofiler
 
         # calculate current time
         if timestamp == "":
@@ -214,6 +212,9 @@ class Cacher:
                     JsonUtil.save_json(
                         cls.cached_geneontology, cls.CACHE_FILEPATH_GENEONTOLOGY
                     )
+                case "gprofiler":
+                    cls.cached_gprofiler = cached_data
+                    JsonUtil.save_json(cls.cached_gprofiler, cls.CACHE_FILEPATH_GPROFILER)
 
     @classmethod
     def get_data(cls, data_location: str, data_key: str, debug_log:bool=False):
@@ -231,6 +232,8 @@ class Cacher:
                 cached_data = cls.cached_ensembl
             case "go":
                 cached_data = cls.cached_geneontology
+            case "gprofiler":
+                cached_data = cls.cached_gprofiler
 
         if cached_data != {}:
             if data_key in cached_data:
@@ -260,6 +263,7 @@ class Cacher:
         JsonUtil.save_json(cls.cached_uniprot, cls.CACHE_FILEPATH_UNIPROT)
         JsonUtil.save_json(cls.cached_ensembl, cls.CACHE_FILEPATH_ENSEMBL)
         JsonUtil.save_json(cls.cached_geneontology, cls.CACHE_FILEPATH_GENEONTOLOGY)
+        JsonUtil.save_json(cls.cached_gprofiler, cls.CACHE_FILEPATH_GPROFILER)
         logger.info("Successfully saved url, uniprot, ensembl and geneontology cache.")
 
     @classmethod
@@ -278,10 +282,12 @@ class Cacher:
             FileUtil.clear_file(cls.CACHE_FILEPATH_UNIPROT, replacement_text="{}")
             FileUtil.clear_file(cls.CACHE_FILEPATH_ENSEMBL, replacement_text="{}")
             FileUtil.clear_file(cls.CACHE_FILEPATH_GENEONTOLOGY, replacement_text="{}")
+            FileUtil.clear_file(cls.CACHE_FILEPATH_GPROFILER, replacement_text="{}")
             cls.cached_urls = {}
             cls.cached_uniprot = {}
             cls.cached_ensembl = {}
             cls.cached_geneontology = {}
+            cls.cached_gprofiler = {}
             logger.info("Cleared entire cache.")
             return
 
@@ -299,6 +305,9 @@ class Cacher:
             case "go":
                 filepath_to_clear = cls.CACHE_FILEPATH_GENEONTOLOGY
                 cls.cached_geneontology = {}
+            case "gprofiler":
+                filepath_to_clear = cls.CACHE_FILEPATH_GPROFILER
+                cls.cached_gprofiler = {}
         FileUtil.clear_file(
             filepath=filepath_to_clear, replacement_text="{}"
         )  # set empty json to cache file
