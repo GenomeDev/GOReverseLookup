@@ -485,9 +485,9 @@ class ReverseLookup:
                 if product not in products_set:
                     products_set.update(product)
                     if ":" in product:
-                        product_object = Product.from_dict({"id_synonyms": [product], "taxon": term.products_taxa_dict[product], "target_taxon": {target_taxon}})
+                        product_object = Product.from_dict({"id_synonyms": [product], "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
                     else:
-                        product_object = Product.from_dict({"id_synonyms": [product], "genename": product, "taxon": term.products_taxa_dict[product], "target_taxon": {target_taxon}})
+                        product_object = Product.from_dict({"id_synonyms": [product], "genename": product, "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
                     self.products.append(product_object)
         
         logger.info(f"Created {len(self.products)} Product objects from GOTerm object definitions")
@@ -725,7 +725,8 @@ class ReverseLookup:
 
             # process results for this taxon
             for id, ortholog_results in ortholog_query_results.items():
-                p = self.get_product(id)
+                p = self.get_product(id)           
+
                 if ortholog_results == [] and p.gorth_ortholog_exists != True: # p.gorth_ortholog_exists != True is set if this product had already been determined to have an existing ortholog. For example, ENSRNOGxxxx determines a valid gOrth ortholog, sets it, but then RGD:xxxx (pointing to the same gene) finds no gOrth ortholog -> RGD results in this case shouldn't disturb the successful ensembl gOrth ortholog query.
                     p.gorth_ortholog_exists = False
                     p.gorth_ortholog_status = "none"

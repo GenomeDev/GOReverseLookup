@@ -418,8 +418,9 @@ class Product:
             
             # get the stable id prefix of the target organism. If target organism is zebrafish, then stable id prefix is "ENSDAR".
             # If the Ensembl id of this product is already the same as stable id prefix (in our case, ENSDAR), then don't query ortholog.
+
+            target_organism_stable_id_prefix = WebsiteParser.get_ensembl_stable_id_prefixes_table()[f"{target_organism_id_num}"]['stable_id_prefix'] # ex. "ENSDAR" for danio rerio, "ENS" for human
             if self.ensg_id is not None:
-                target_organism_stable_id_prefix = WebsiteParser.get_ensembl_stable_id_prefixes_table()[f"{target_organism_id_num}"]['stable_id_prefix'] # ex. "ENSDAR" for danio rerio, "ENS" for human
                 current_organism_stable_id_prefix = EnsemblUtil.split_ensembl_id(self.ensg_id)['stable_id_prefix']
                 stable_id_prefix_match = (target_organism_stable_id_prefix == current_organism_stable_id_prefix)
                 if stable_id_prefix_match:
@@ -731,6 +732,7 @@ class Product:
         return cls(
             d.get("id_synonyms"),
             d.get("taxon") if "taxon" in d else None,
+            d.get("target_taxon") if "target_taxon" in d else None,
             d.get("genename"),
             d.get("uniprot_id"),
             d.get("description"),

@@ -646,11 +646,7 @@ class fisher_exact_test(Metrics):
         D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_PROCESS_ALL = False # TODO: remove/integrate this
 
         if self._num_all_goterms == 0:
-            if use_goaf == True:
-                self._num_all_goterms = len(self.goaf.get_all_terms())
-            else:
-                # use .obo to compute all goterms
-                self._num_all_goterms = len(self.reverse_lookup.obo_parser.get_goterms(validity="valid", go_categories=self.reverse_lookup.go_categories))
+            self._num_all_goterms = len(self.reverse_lookup.obo_parser.get_goterms(validity="valid", go_categories=self.reverse_lookup.go_categories))
 
         results_dict = {}
 

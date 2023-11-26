@@ -7,6 +7,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,9 +44,9 @@ class gProfiler:
             dict[str, list[str]]: _description_
         """
         USE_UNIPROT_IDMAP_NOTATION = True
-        # example notation: 
+        # example notation:
         # {
-        #   'results': [{'from': 'P15692', 'to': 'ENSG00000112715.26'}, {'from': 'P16612', 'to': 'ENSRNOG00000019598'}, {'from': 'P40763', 'to': 'ENSG00000168610.16'}, {'from': 'P42227', 'to': 'ENSMUSG00000004040'}, {'from': 'P52631', 'to': 'ENSRNOG00000019742'}], 
+        #   'results': [{'from': 'P15692', 'to': 'ENSG00000112715.26'}, {'from': 'P16612', 'to': 'ENSRNOG00000019598'}, {'from': 'P40763', 'to': 'ENSG00000168610.16'}, {'from': 'P42227', 'to': 'ENSMUSG00000004040'}, {'from': 'P52631', 'to': 'ENSRNOG00000019742'}],
         #   'failedIds': ['O73682']
         # }
 
@@ -85,22 +86,19 @@ class gProfiler:
                 converted_ids[entry_source_id].append(entry["converted"])
             else:
                 failedIds.append(entry_source_id)
-        
+
         if USE_UNIPROT_IDMAP_NOTATION == False:
             return converted_ids
-        
-         # return idmap as uniprot notation
+
+        # return idmap as uniprot notation
         idmap_uniprot_notation_results = []
         for from_id, to_id in converted_ids.items():
-            res = {
-                'from': from_id,
-                'to': to_id
-            }
+            res = {"from": from_id, "to": to_id}
             idmap_uniprot_notation_results.append(res)
-        
+
         idmap_uniprot_notation = {
-            'results': idmap_uniprot_notation_results,
-            'failedIds': failedIds
+            "results": idmap_uniprot_notation_results,
+            "failedIds": failedIds,
         }
         return idmap_uniprot_notation
 
@@ -110,32 +108,41 @@ class gProfiler:
         source_taxon: str,
         target_taxon: str = "9606",
     ) -> dict[str, list[str]]:
-        """_summary_
+        """
+        Maps the entire source_ids to respective 'target_taxon' Ensembl (ENS) gene ids.
 
         Args:
-            source_ids (Union[str, list[str], set[str]]): _description_
-            source_taxon (str): _description_
-            target_taxon (str, optional): _description_. Defaults to "9606".
+            source_ids (Union[str, list[str], set[str]]): Source ids which should be mapped to ENS ids. Example list is: ["ZDB-GENE-100922-278", "ZDB-GENE-131121-482", ...]
+            source_taxon (str): The NCBITaxon number of the taxon corresponding to source ids. For example, if source ids are for Danio Rerio (Zebrafish), then source taxon should be "7955".
+            target_taxon (str, optional): Defaults to "9606". Determines the final ENS id mapping (for example, if target taxon is 9606 (Homo Sapiens),
+                                          then the mappings will be in the ENSG format. If the target taxon is Danio Rario, then the id mappings will be in the ENSDARG format)
 
         Returns:
-            dict[str, list[str]]: _description_
+            A dictionary mapping source_ids to respective ENS ids for target taxon.
+
+            Example:
+            {
+                'ZDB-GENE-100922-278': ['ENSG00000160951'],
+                'ZDB-GENE-131121-482': [],
+                ...
+            }
         """
         if source_ids == [] or source_ids == "":
             return None
-        
+
         if ":" in source_taxon:
             source_taxon = source_taxon.split(":")[1]
-        
+
         if not isinstance(source_taxon, str) and not isinstance(target_taxon, str):
             raise TypeError("taxons must be str")
-        
+
         if isinstance(source_ids, str):
             source_ids_list = [source_ids]
         if isinstance(source_ids, set):
             source_ids_list = list(source_ids)
         if isinstance(source_ids, list):
             source_ids_list = source_ids
-        
+
         target_ids = defaultdict(
             list, {k: [] for k in source_ids_list}
         )  # initialise with keys
@@ -144,9 +151,9 @@ class gProfiler:
         target_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(target_taxon)
         if not source_taxon or not target_taxon:
             return {}
-        
+
         # cache previous data -> query only NEW ids
-        new_input_ids = [] # input ids that were not yet queried
+        new_input_ids = []  # input ids that were not yet queried
         cached_results = {}
         for source_id in source_ids:
             gOrth_data_key = f"[{self.__class__.__name__}][{self.find_orthologs.__name__}][id={source_id},source_taxon={source_taxon},target_taxon={target_taxon}]"
@@ -155,7 +162,7 @@ class gProfiler:
                 cached_results[source_id] = previous_result
             else:
                 new_input_ids.append(source_id)
-        
+
         if new_input_ids != []:
             r = self.s.post(
                 url="https://biit.cs.ut.ee/gprofiler_archive3/e108_eg55_p17/api/orth/orth/",
@@ -167,39 +174,63 @@ class gProfiler:
             )
             r.raise_for_status()
             result: list[dict] = r.json()["result"]
-        
+
             # parse web-queried ids
+            num_no_orthologs = 0
+            num_orthologs = 0
             for entry in result:
                 entry_source_id = entry["incoming"]
                 gOrth_data_key = f"[{self.__class__.__name__}][{self.find_orthologs.__name__}][id={entry_source_id},source_taxon={source_taxon},target_taxon={target_taxon}]"
                 if entry["ortholog_ensg"] not in ["N/A", "None", None]:
                     target_ids[entry_source_id].append(entry["ortholog_ensg"])
+                    num_orthologs += 1
                     # don't cache here, since multiple ensgs can be appended!
                 else:
                     # store no orthologs here!
+                    num_no_orthologs += 1
                     Cacher.store_data("gprofiler", gOrth_data_key, "none")
+
+            # eliminate double ids
+            for entry_source_id, orthologs in target_ids.items():
+                orthologs = set(orthologs)
+                orthologs = list(orthologs)
+                target_ids[entry_source_id] = orthologs
 
             # store web-queried ids in cache
             for entry_source_id, orthologs in target_ids.items():
+                if orthologs == []:
+                    continue
                 gOrth_data_key = f"[{self.__class__.__name__}][{self.find_orthologs.__name__}][id={entry_source_id},source_taxon={source_taxon},target_taxon={target_taxon}]"
                 Cacher.store_data("gprofiler", gOrth_data_key, orthologs)
 
+            logger.debug(
+                f"gProfiler orth query ({source_taxon} -> {target_taxon}): {len(new_input_ids)} input ids -> {num_orthologs} found, {num_no_orthologs} not found."
+            )
+
         # parse cached ids
-        for source_id,cached_value in cached_results.items():
+        for source_id, cached_value in cached_results.items():
             if cached_value != "none":
                 if isinstance(cached_value, list):
-                    target_ids[source_id].append(*cached_value)
+                    # target_ids[source_id].append(*cached_value)
+                    if len(cached_value) > 1:  # delete duplicates
+                        cached_value = set(cached_value)
+                        cached_value = list(cached_value)
+                    target_ids[source_id] = [
+                        *target_ids[source_id],
+                        *cached_value,
+                    ]  # join both lists
                 else:
                     target_ids[source_id].append(cached_value)
-        
+
         return target_ids
+
 
 class gProfilerUtil:
     def __init__():
         pass
 
     @classmethod
-    def NCBITaxon_to_gProfiler(cls, taxon:Union[str,int]):
+    def NCBITaxon_to_gProfiler(cls, taxon: Union[str, int]):
         """
         Converts an NCBI-type taxon to a respective GProfiler taxon.
         Note: gprofiler - https://biit.cs.ut.ee/gprofiler/
@@ -214,9 +245,16 @@ class gProfilerUtil:
             if ":" in taxon:
                 taxon = taxon.split(":")[1]
 
-        r = requests.get("https://biit.cs.ut.ee/gprofiler/api/util/organisms_list")
+        url = "https://biit.cs.ut.ee/gprofiler/api/util/organisms_list"
+        prev_response = Cacher.get_data("gprofiler", url)
+        if prev_response is None:
+            r = requests.get(url)
+            results = r.json()
+            Cacher.store_data("gprofiler", data_key=url, data_value=results)
+        else:
+            results = prev_response
+            
         taxon_equivalents = {}
-        results = r.json()
         for r in results:
             taxon_equivalents[r["taxonomy_id"]] = r["id"]
         return taxon_equivalents.get(str(taxon), None)
