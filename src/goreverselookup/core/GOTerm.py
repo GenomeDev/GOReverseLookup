@@ -209,6 +209,8 @@ class GOTerm:
         #            response = await session.get(url)
         #            # Process the response
         """
+        D_PRINT_ANNOTATION_INFO = False # if True, will print annotation information for every processed annotation to console when in debug mode
+
         if request_params is not None:
             if 'rows' in request_params:
                 if request_params['rows'] < 10000000:
@@ -266,11 +268,18 @@ class GOTerm:
             
         products_set = set()
         _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
+        if D_PRINT_ANNOTATION_INFO:
+            logger.debug(f"Checking associations for {self.id}")
+        i = 0
         for assoc in data['associations']:
-            _d_unique_dbs.add(assoc['subject']['id'].split(":")[0]) # assoc['subject']['id'] is eg. "UniProtKB:Q9UQF2" -> split and store "UniProtKB"
+            assoc_db = assoc['subject']['id'].split(":")[0] # association database; assoc['subject']['id'] is eg. "UniProtKB:Q9UQF2" -> split and store "UniProtKB"
+            _d_unique_dbs.add(assoc_db)
+            if D_PRINT_ANNOTATION_INFO: 
+                logger.debug(f"   [{i}]: db = {assoc_db}, taxon = {assoc['subject']['taxon']['id']}, gene_id = {assoc['subject']['id']}")
             if assoc['object']['id'] == self.id and any((database[0] in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in database[1])) for database in APPROVED_DATABASES):
                 product_id = assoc['subject']['id']
                 products_set.add(product_id)
+            i+=1
         
         products = list(products_set)
         if products == []:

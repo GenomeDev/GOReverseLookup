@@ -26,9 +26,7 @@ model = ReverseLookup.from_input_file("input_files/input.txt")
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20)
 model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=30)
 model.create_products_from_goterms()
-model.fetch_ortholog_products(
-    run_async=True, max_connections=30, semaphore_connections=10, req_delay=0.1
-)
+model.fetch_ortholog_products(run_async=True, max_connections=30, semaphore_connections=10, req_delay=0.1)
 model.prune_products()
 model.fetch_product_infos(
     refetch=False,

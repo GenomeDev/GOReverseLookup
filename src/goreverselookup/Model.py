@@ -195,7 +195,7 @@ class ReverseLookup:
         delay: float = 0.2,
         run_async_options: str = "v3",
         request_params={"rows": 10000000},
-        max_connections=60,
+        max_connections=60
     ):
         """
         Iterates over all GOTerm objects in the go_term set and calls the fetch_products method for each object.
