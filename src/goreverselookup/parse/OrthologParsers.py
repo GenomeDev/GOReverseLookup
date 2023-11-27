@@ -1,14 +1,79 @@
-import os
-import requests
-
 from ..parse.GOAFParser import GOAnnotationsFile
 from ..util.FileUtil import FileUtil
+from ..web_apis.gProfilerApi import gProfilerUtil
+from typing import Union
+import requests
+import os
+from collections import defaultdict
 
 import logging
 
 # from logging import config
 # config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+
+class GOrthParser:
+    def __init__(
+            self
+    ):
+        pass
+
+    def find_orthologs(
+        source_ids: Union[str, list[str], set[str]],
+        source_taxon:str,
+        target_taxon:str = "9606",
+        database: str = "gOrth"
+    ) -> dict[str, list[str]]:
+        """
+        TODO summary
+        """
+        def fetch_orthologs_with_gOrth(
+            source_ids: list[str], 
+            source_taxon: str, 
+            target_taxon: str
+        ) -> dict[str, list[str]]:
+            """
+            TODO summary
+            """
+            r = requests.post(
+                url="https://biit.cs.ut.ee/gprofiler_archive3/e108_eg55_p17/api/orth/orth/",
+                json={
+                    "organism": source_taxon,
+                    "target": target_taxon,
+                    "query": source_ids,
+                },
+            )
+
+            target_ids = defaultdict(list, {k: [] for k in source_ids})  # initialise with keys
+            result: list[dict] = r.json()["result"]
+            for entry in result:
+                entry_source_id = entry["incoming"]
+                if entry["ortholog_ensg"] not in ["N/A", "None", None]:
+                    target_ids[entry_source_id].append(entry["ortholog_ensg"])
+            return target_ids
+
+        if not isinstance(source_taxon, str) and not isinstance(target_taxon, str):
+            raise TypeError("taxons must be str")
+        
+        if isinstance(source_ids, str):
+            source_ids_list = [source_ids]
+        if isinstance(source_ids, set):
+            source_ids_list = list(source_ids)
+        if isinstance(source_ids, list):
+            source_ids_list = source_ids
+        
+        if database == "gOrth":
+            source_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(source_taxon)
+            target_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(target_taxon)
+            if not source_taxon or not target_taxon:
+                return {}
+            target_ids_dict = fetch_orthologs_with_gOrth(source_ids_list, source_taxon, target_taxon)
+        elif database == "local_files":
+            raise NotImplementedError
+        else:
+            ValueError(f"database {database} is not available as a source of ortholog information")
+
+        return target_ids_dict
 
 
 class HumanOrthologFinder:
@@ -43,6 +108,15 @@ class HumanOrthologFinder:
         self.mgi = MGIHumanOrthologFinder(filepath=mgi_filepath, download_url=mgi_download_url)
         self.rgd = RGDHumanOrthologFinder(filepath=rgd_filepath, download_url=rgd_download_url)
         self.goaf = goaf
+    
+    @classmethod
+    def get_supported_organism_dbs(cls):
+        return [
+            "ZFIN",
+            "MGI",
+            "RGD",
+            "Xenbase"
+        ]
 
     def find_human_ortholog(self, product):
         """
@@ -72,6 +146,15 @@ class HumanOrthologFinder:
         return human_gene_symbol
 
     async def find_human_ortholog_async(self, product):
+        """
+        Finds the human ortholog for the given product.
+
+        Args:
+            product (str): The product (id) for which to find the human ortholog.
+
+        Returns:
+            The human gene symbol or None if no human ortholog was found.
+        """
         if "ZFIN" in product:
             result = await self.zfin.find_human_ortholog_async(product)  # returns [0]: gene symbol, [1]: long name of the gene
             return result[0] if result is not None else None

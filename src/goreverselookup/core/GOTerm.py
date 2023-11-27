@@ -4,6 +4,8 @@ from typing import Set, List, Dict, Optional
 from ..web_apis.GOApi import GOApi
 from ..parse.GOAFParser import GOAnnotationsFile
 from ..util.CacheUtil import Cacher
+from .ModelSettings import ModelSettings,OrganismInfo
+from .ModelStats import ModelStats
 
 import logging
 #from logging import config
@@ -34,6 +36,7 @@ class GOTerm:
             weight = 1.0
         self.weight = float(weight)
         self.products = products
+        self.products_taxa_dict = {} # a link between a gene id and a belonging taxon
         self.http_error_codes = {} # used for errors happening during server querying; for example, a dict pair 'products': "HTTP Error ..." signifies an http error when querying for GO Term's products
         self.category = category
         self.parent_term_ids = parent_term_ids
@@ -145,7 +148,7 @@ class GOTerm:
         else:
             logger.info(f"Query for url {url} failed with response code {response.status}")
     
-    def fetch_products(self, source):
+    def fetch_products(self, source, model_settings:ModelSettings):
         """
         Fetches UniProtKB products associated with a GO Term and sets the "products" member field of the GO Term to a list of all associated products.
         The link used to query for the response is http://api.geneontology.org/api/bioentity/function/{term_id}/genes.
@@ -155,6 +158,7 @@ class GOTerm:
 
         Parameters:
           - source: can either be a GOApi instance (web-based download) or a GOAnnotationFile isntance (file-based download)
+          - (ModelSettings) model_settings: the model settings of this model, used for parsing of target_organism and ortholog organisms
         
         Usage and calling:
             source = GOApi() OR source = GOAnnotationFile()
@@ -163,10 +167,11 @@ class GOTerm:
                 goterm.fetch_products(source)
         """
         if isinstance(source, GOApi):
-            products = source.get_products(self.id)
+            products = source.get_products(self.id, model_settings=model_settings)
             if products:
                 self.products = products
         elif isinstance(source, GOAnnotationsFile):
+            # TODO: implement taxon here !!!
             products = source.get_products(self.id)
             if products:
                 self.products = products
@@ -189,7 +194,7 @@ class GOTerm:
                 error_report = products
                 self.http_error_codes["products"] = error_report
     
-    async def fetch_products_async_v3(self, session:aiohttp.ClientSession, request_params={"rows": 10000000}, req_delay=0.5, max_retries = 3):
+    async def fetch_products_async_v3(self, session:aiohttp.ClientSession, model_settings:ModelSettings, request_params={"rows": 10000000}, req_delay=0.5, max_retries = 3):
         """
         A better variant of get_products_async. Doesn't include timeout in the url request, no retries.
         Doesn't create own ClientSession, but relies on external ClientSession, hence doesn't overload the server as does the get_products_async_notimeout function.
@@ -209,8 +214,8 @@ class GOTerm:
         #            response = await session.get(url)
         #            # Process the response
         """
-        D_PRINT_ANNOTATION_INFO = False # if True, will print annotation information for every processed annotation to console when in debug mode
-
+        if model_settings.target_organism is None:
+            raise Exception("Target organism was not specified in input.txt. Make sure to specify a target organism in the 'settings' section of input.txt!")
         if request_params is not None:
             if 'rows' in request_params:
                 if request_params['rows'] < 10000000:
@@ -219,19 +224,45 @@ class GOTerm:
                 logger.warning(f"MAJOR WARNING! You did not specify 'rows' in request params. You risk missing out important annotations!")
         
         # data key is in the format [class_name][function_name][function_params]
-        data_key = f"[{self.__class__.__name__}][{self.fetch_products_async_v3.__name__}][go_id={self.id}]"
+        data_key = f"[{self.__class__.__name__}][{self.fetch_products_async_v3.__name__}][go_id={self.id}][target_organism={model_settings.target_organism.ncbi_id_full}][orthologs={model_settings.ortholog_organisms_ncbi_full_ids}]"
+        
+        previous_data_taxa_dict = Cacher.get_data("go", f"{data_key}_products-taxa-dict")
+        self.products_taxa_dict = previous_data_taxa_dict
+        
         previous_data = Cacher.get_data("go", data_key)
         if previous_data != None:
             logger.debug(f"Cached previous product fetch data for {self.id}")
+            ModelStats.goterm_product_query_results[self.id] = previous_data
             self.products = previous_data
             return previous_data
 
-        APPROVED_DATABASES = [["UniProtKB", ["NCBITaxon:9606"]],
-                      ["ZFIN", ["NCBITaxon:7955"]],
-                      #["RNAcentral", ["NCBITaxon:9606"]],
-                      ["Xenbase", ["NCBITaxon:8364"]],
-                      ["MGI", ["NCBITaxon:10090"]],
-                      ["RGD", ["NCBITaxon:10116"]]]
+        approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
+        approved_dbs_and_taxa['UniProtKB'] = [] # create uniprotkb by default
+        
+        # add target organism
+        if model_settings.target_organism.database in approved_dbs_and_taxa:
+            # existing database key -> add taxon!
+            if model_settings.target_organism.ncbi_id_full not in approved_dbs_and_taxa[model_settings.target_organism.database]:
+                approved_dbs_and_taxa[model_settings.target_organism.database] += [model_settings.target_organism.ncbi_id_full]
+        else:
+            # new database key
+            approved_dbs_and_taxa[model_settings.target_organism.database] = [model_settings.target_organism.ncbi_id_full]
+        
+        # add ortholog organisms to approved_dbs_and_taxa
+        for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
+            assert isinstance(ortholog_organism_object, OrganismInfo)
+            ortholog_organism = ortholog_organism_object
+            if ortholog_organism.database in approved_dbs_and_taxa:
+                # existing database key -> add taxon
+                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa[ortholog_organism.database]:
+                    approved_dbs_and_taxa[ortholog_organism.database] += [ortholog_organism.ncbi_id_full]
+                
+                # automatically add ortholog organism taxon to the UniProtKB database query
+                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa['UniProtKB']:
+                    approved_dbs_and_taxa['UniProtKB'] += [ortholog_organism.ncbi_id_full]
+            else:
+                approved_dbs_and_taxa[ortholog_organism.database] = [ortholog_organism.ncbi_id_full]
+        
         url = f"http://api.geneontology.org/api/bioentity/function/{self.id}/genes"
         params = request_params # 10k rows resulted in 56 mismatches for querying products for 200 goterms (compared to reference model, loaded from synchronous query data)
         
@@ -241,7 +272,8 @@ class GOTerm:
             possible_http_error_text = ""
             if retries == (max_retries-1):
                 logger.warning(f"Exceeded max retries when parsing {self.id}")
-                # raise Exception(f"Exceeded max retries when parsing {self.id}. HTTP error text = {possible_http_error_text}")
+                ModelStats.goterm_product_query_results[self.id] = f"Error: Exceeded max retries. Error info: {possible_http_error_text}"
+                return []
             retries +=1
 
             previous_response = Cacher.get_data("url", url)
@@ -255,7 +287,6 @@ class GOTerm:
                     if response.status != 200: # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
                         possible_http_error_text = f"HTTP Error when parsing {self.id}. Response status = {response.status}"
                         logger.warning(possible_http_error_text)
-                        # return f"HTTP Error: status = {response.status}, reason = {response.reason}"
                         continue
                     data = await response.json()
                     if data != None:
@@ -263,23 +294,27 @@ class GOTerm:
                         logger.debug(f"Cached async product fetch data for {self.id}")
                         break # reponse json was obtained, break the loop
                 except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError) as e:
-                    logger.warning(f"Error when fetching products for {self.id}")
+                    logger.warning(f"Error when fetching products for {self.id}.")
                     logger.warning(f"  - attempted url: {url}")
+                    possible_http_error_text = f"{e}"
             
         products_set = set()
+        products_taxa_dict = {}
         _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
-        if D_PRINT_ANNOTATION_INFO:
-            logger.debug(f"Checking associations for {self.id}")
-        i = 0
+        
         for assoc in data['associations']:
-            assoc_db = assoc['subject']['id'].split(":")[0] # association database; assoc['subject']['id'] is eg. "UniProtKB:Q9UQF2" -> split and store "UniProtKB"
-            _d_unique_dbs.add(assoc_db)
-            if D_PRINT_ANNOTATION_INFO: 
-                logger.debug(f"   [{i}]: db = {assoc_db}, taxon = {assoc['subject']['taxon']['id']}, gene_id = {assoc['subject']['id']}")
-            if assoc['object']['id'] == self.id and any((database[0] in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in database[1])) for database in APPROVED_DATABASES):
-                product_id = assoc['subject']['id']
-                products_set.add(product_id)
-            i+=1
+            _d_unique_dbs.add(assoc['subject']['id'].split(":")[0])
+            _d_db = assoc['subject']['id'].split(":")[0]
+            _d_taxon = assoc['subject']['taxon']['id']
+            if "UniProtKB" in _d_db and "9606" not in _d_taxon: # for debug purposes
+                # logger.info(f"UniProtKB - {_d_taxon}")
+                pass
+            if assoc['object']['id'] == self.id:
+                for database,taxa in approved_dbs_and_taxa.items():
+                    if database in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in taxa):
+                        product_id = assoc['subject']['id']
+                        products_set.add(product_id)
+                        products_taxa_dict[product_id] = assoc['subject']['taxon']['id']
         
         products = list(products_set)
         if products == []:
@@ -288,8 +323,11 @@ class GOTerm:
             #    logger.debug(f"Response json: {data}")
 
         self.products = products
+        self.products_taxa_dict = products_taxa_dict
         logger.info(f"Fetched {len(self.products)} products for GO term {self.id} from {len(_d_unique_dbs)} unique databases ({_d_unique_dbs})")
         Cacher.store_data("go", data_key, products)
+        Cacher.store_data("go", f"{data_key}_products-taxa-dict", self.products_taxa_dict)
+        ModelStats.goterm_product_query_results[self.id] = self.products
         return products
 
     def compare_products_to_list(self, products_comparison_list:list):

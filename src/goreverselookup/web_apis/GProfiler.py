@@ -1,1 +1,0 @@
-# Ladi kopira

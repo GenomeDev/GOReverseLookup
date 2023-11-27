@@ -1,7 +1,8 @@
 from .Model import ReverseLookup
 from .Workflows import WorkflowOne, PrimaryWorkflow
 
-from .core.ModelSettings import ModelSettings
+from .core.ModelSettings import ModelSettings,OrganismInfo
+from .core.ModelStats import ModelStats
 from .core.GOTerm import GOTerm
 from .core.Metrics import (
     nterms,
@@ -32,10 +33,13 @@ from .util.FileUtil import FileUtil
 from .util.JsonUtil import JsonUtil
 from .util.Timer import Timer
 from .util.LogConfigLoader import LogConfigLoader
+from .util.WebsiteParser import WebsiteParser
+from .util.ApiUtil import EnsemblUtil
 
 from .web_apis.EnsemblApi import EnsemblApi
 from .web_apis.UniprotApi import UniProtApi
 from .web_apis.GOApi import GOApi
+from .web_apis.gProfilerApi import gProfiler, gProfilerUtil
 
 # Optionally, you can define __all__ to specify what gets imported when using 'from package import *'
 __all__ = [
@@ -43,6 +47,8 @@ __all__ = [
     "WorkflowOne",
     "PrimaryWorkflow",
     "ModelSettings",
+	"OrganismInfo",
+	"ModelStats",
     "GOTerm",
     "nterms",
     "adv_product_score",

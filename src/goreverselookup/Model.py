@@ -6,7 +6,8 @@ from typing import List, Dict
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from .core.ModelSettings import ModelSettings
+from .core.ModelSettings import ModelSettings, OrganismInfo
+from .core.ModelStats import ModelStats
 from .core.GOTerm import GOTerm
 from .core.Product import Product
 from .core.Metrics import Metrics, basic_mirna_score, miRDB60predictor
@@ -14,11 +15,13 @@ from .core.miRNA import miRNA
 from .web_apis.GOApi import GOApi
 from .web_apis.EnsemblApi import EnsemblApi
 from .web_apis.UniprotApi import UniProtApi
+from .web_apis.gProfilerApi import gProfiler
 from .parse.GOAFParser import GOAnnotationsFile
 from .parse.OrthologParsers import HumanOrthologFinder
 from .parse.OBOParser import OboParser
 from .util.JsonUtil import JsonUtil, JsonToClass
 from .util.Timer import Timer
+from .util.WebsiteParser import WebsiteParser
 
 import logging
 
@@ -104,13 +107,20 @@ class ReverseLookup:
         else:
             # obo parser is none
             if (
-                self.model_settings.datafile_paths["go_obo"] is not None
+                self.model_settings.datafile_paths.get("go_obo") is not None
                 and self.model_settings.datafile_paths["go_obo"]["local_filepath"] != ""
             ):
                 self.obo_parser = OboParser(obo_filepath=self.model_settings.get_datafile_path('go_obo'), obo_download_url=self.model_settings.get_datafile_url('go_obo'))
             else:
                 self.obo_parser = OboParser()
+        
+        ModelStats.goterm_count = len(self.goterms)
+        ModelStats.product_count = len(self.products)
 
+        WebsiteParser.init()
+
+
+        
     def set_model_settings(self, model_settings: ModelSettings):
         """
         Sets self.model_settings to the model settings supplied in the parameter.
@@ -309,6 +319,7 @@ class ReverseLookup:
                 asyncio.run(
                     self._fetch_all_goterm_products_async_v3(
                         max_connections=max_connections,
+                        model_settings=self.model_settings,
                         request_params=request_params,
                         req_delay=delay,
                     )
@@ -319,12 +330,7 @@ class ReverseLookup:
                     if (
                         goterm.products == [] or recalculate is True
                     ):  # to prevent recalculation of products if they are already computed
-                        goterm.fetch_products(source)
-
-        # api = GOApi()
-        # with logging_redirect_tqdm():
-        #     for goterm in tqdm(self.goterms):
-        #         goterm.fetch_products(api)
+                        goterm.fetch_products(source, model_settings=self.model_settings)
 
         if "fetch_all_go_term_products" not in self.execution_times:
             self.execution_times[
@@ -418,6 +424,7 @@ class ReverseLookup:
     # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     async def _fetch_all_goterm_products_async_v3(
         self,
+        model_settings:ModelSettings,
         max_connections=100,
         request_params={"rows": 10000000},
         req_delay=0.5,
@@ -435,7 +442,7 @@ class ReverseLookup:
             for goterm in self.goterms:
                 if goterm.products == [] or recalculate is True:
                     task = goterm.fetch_products_async_v3(
-                        session, request_params=request_params, req_delay=req_delay
+                        session, model_settings=model_settings, request_params=request_params, req_delay=req_delay
                     )
                     tasks.append(task)
             # perform multiple tasks at once asynchronously
@@ -460,34 +467,34 @@ class ReverseLookup:
         Returns:
             None
         """
-        logger.info(
-            f"Creating products from GO Terms. Num goterms = {len(self.goterms)}"
-        )
+        logger.info(f"Creating products from GO Terms. Num goterms = {len(self.goterms)}")
         self.timer.set_start_time()
 
         # Create an empty set to store unique products
         products_set = set()
 
+        # determine target taxon
+        target_taxon = None
+        if self.model_settings is not None:
+            target_taxon = self.model_settings.target_organism.ncbi_id_full
+
         # Iterate over each GOTerm object in the go_term set and retrieve the set of products associated with that GOTerm
         # object. Add these products to the products_set.
         for term in self.goterms:
-            products_set.update(term.products)
-
-        # Iterate over each product in the products_set and create a new Product object from the product ID using the
-        # Product.from_dict() classmethod. Add the resulting Product objects to the ReverseLookup object's products list.
-        for product in products_set:
-            if ":" in product:
-                self.products.append(Product.from_dict({"id_synonyms": [product]}))
-            else:
-                self.products.append(
-                    Product.from_dict({"id_synonyms": [product], "genename": product})
-                )
+            for product in term.products:
+                if product not in products_set:
+                    products_set.update(product)
+                    if ":" in product:
+                        product_object = Product.from_dict({"id_synonyms": [product], "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
+                    else:
+                        product_object = Product.from_dict({"id_synonyms": [product], "genename": product, "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
+                    self.products.append(product_object)
+        
         logger.info(f"Created {len(self.products)} Product objects from GOTerm object definitions")
+        ModelStats.product_count = len(self.products)
 
         if "create_products_from_goterms" not in self.execution_times:
-            self.execution_times[
-                "create_products_from_goterms"
-            ] = self.timer.get_elapsed_formatted()
+            self.execution_times["create_products_from_goterms"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
         def check_exists(product_id: str) -> bool:
@@ -524,9 +531,7 @@ class ReverseLookup:
             if ":" in product:
                 self.products.append(Product.from_dict({"id_synonyms": [product]}))
             else:
-                self.products.append(
-                    Product.from_dict({"id_synonyms": [product], "genename": product})
-                )
+                self.products.append(Product.from_dict({"id_synonyms": [product], "genename": product}))
             i += 1
 
         logger.info(f"Created {i} Product objects from GOTerm object definitions")
@@ -537,8 +542,243 @@ class ReverseLookup:
             ] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
+    def fetch_uniprot_product_ensg_ids(self):
+        """
+        Fetches the ENSG identifiers for the gene products, which have a UniProtKB identifier.
+        This operation relies on a bulk request to the UniProtKB servers to perform the id mapping between UniProtKB
+        and Ensembl. It is advisable to perform it before attempting the ortholog search.
+        """
+        uniprot_api = UniProtApi()
+
+        if self.products == [] or self.products is None:
+            if len(self.goterms) > 0:
+                self.create_products_from_goterms()
+            if self.products == [] or self.products is None:
+                raise Exception("Model has no defined gene products!")
+        
+        uniprot_product_ids = []
+        for product in self.products:
+            assert isinstance(product, Product)
+            if product.uniprot_id == None:
+                continue
+            if "UniProtKB" in product.uniprot_id:
+                uniprot_product_ids.append(product.uniprot_id)
+        
+        logger.info(f"Performing batch UniProtKB id to Ensembl gene id mapping for {len(uniprot_product_ids)} genes.")
+        uniprot_to_ensembl_idmap = uniprot_api.idmapping_ensembl_batch(uniprot_ids=uniprot_product_ids)
+        successful_conversions = uniprot_to_ensembl_idmap['results']
+        failed_conversions = uniprot_to_ensembl_idmap['failedIds']
+        logger.info(f"UniProtKB->Ensembl id mapping results: successful = {len(successful_conversions)}, failed = {len(failed_conversions)}")
+        
+        # update self.produts
+        for idmap in successful_conversions:
+            uniprot_id = idmap['from']
+            ensembl_id = idmap['to']
+            if "." in ensembl_id: # ENSGxxxx.1 -> ENSGxxxx
+                ensembl_id = ensembl_id.split(".")[0]
+            for product in self.products:
+                if product.uniprot_id == None:
+                    continue
+                if uniprot_id in product.uniprot_id:
+                    product.ensg_id = ensembl_id
+    
+    def products_perform_idmapping(
+        self,
+        from_databases:list = ["UniProtKB", "ZFIN", "MGI", "RGD", "Xenbase"],
+        to_db = "UniProtKB"
+    ):
+        """
+        First, attempts to map all non-UniProtKB gene product ids (from self.products) to respective UniProtKB gene ids (by default, since 'to_db' is set to UniProtKB).
+        In the second run, attempts to map all UniProtKB gene ids to Ensembl gene ids via a call to (ReverseLookup).fetch_uniprot_product_ensg_ids()
+
+        The allowed from_databases and to_db values can be found using the link: https://rest.uniprot.org/configure/idmapping/fields?content-type=application/json
+        """
+        uniprot_api = UniProtApi()
+
+        if self.products == [] or self.products is None:
+            if len(self.goterms) > 0:
+                self.create_products_from_goterms()
+            if self.products == [] or self.products is None:
+                raise Exception("Model has no defined gene products!")
+
+        ### Run 1: map all non-uniprotkb ids to uniprotkb ids
+        non_uniprot_dbs = [db for db in from_databases if "UniProtKB" not in db] # select all dbs besides uniprot
+        non_uniprot_dbs_product_dict = {} # mapping {'ZFIN': [list_of_zfin_product_ids], ...}
+        
+        for db in non_uniprot_dbs: # initialise with empty values
+            non_uniprot_dbs_product_dict[db] = set()
+        
+        for product in self.products: # populate non_uniprot_dbs_product_dict
+            if "UniProtKB" in product.id_synonyms[0]:
+                continue # don't perform uniprotkb-uniprotkb mappings
+            p_id = product.id_synonyms[0] # ZFIN:XXXX
+            p_id_db = p_id.split(":")[0] # ZFIN
+            non_uniprot_dbs_product_dict[p_id_db].update([p_id])
+        
+        # convert sets to lists
+        for db, db_set in non_uniprot_dbs_product_dict.items():
+            non_uniprot_dbs_product_dict[db] = list(db_set)
+        
+        # perform batch id mapping
+        for db, db_ids_list in non_uniprot_dbs_product_dict.items():
+            if db_ids_list == []:
+                logger.info(f"Skipping {db}, as there are no associated genes.")
+                continue
+            idmappings = uniprot_api.idmapping_batch(
+                ids = db_ids_list,
+                from_db=db,
+                to_db=to_db
+            )
+            successful_mappings = idmappings['results']
+            failed_mappings = idmappings['failedIds']
+            logger.info(f"{db} id mapping conversion to UniProtKB: {len(successful_mappings)} successful mappings, {len(failed_mappings)} failed mappings.")
+            for idmap in successful_mappings:
+                initial_id = idmap['from']
+                uniprot_id = idmap['to']['primaryAccession']
+                uniprot_id_full = f"UniProtKB:{uniprot_id}"
+                for product in self.products:
+                    if len(product.id_synonyms) == 0:
+                        continue
+                    if initial_id in product.id_synonyms[0] and db in product.id_synonyms[0]:
+                        product.uniprot_id = uniprot_id_full
+        
+        ### Run 2: attempt Ensembl gene mappings
+        self.fetch_uniprot_product_ensg_ids()
+
+    def fetch_orthologs_products_batch_gOrth(self, target_taxon_number="9606"):
+        """
+        Fetches a whole batch of gene product orthologs using gOrth (https://biit.cs.ut.ee/gprofiler/orth).
+
+        If target organism was defined in the input.txt file to the program, then 'target_taxon_number' will be overriden
+        by the taxon number specified for the target organism.
+
+        Note: This function automatically uses the ENTREZGENE-ACC gOrth namespace (list of all namespaces: https://biit.cs.ut.ee/gprofiler/page/namespaces-list).
+        In general, the ENTREZGENE_ACC gOrth namespace works correctly with the following tested identifier types:
+          - UniProtKB
+          - MGI
+
+        WARNING: The following identifiers are known NOT to work with the ENTREZGENE-ACC namespace:
+          - RGD
+        For these identifiers, it is highly advisable to call (ReverseLookup).products_perform_idmapping() prior to calling
+        fetch_orthologs_products_batch_gOrth, so that RGD ids will be mapped to their respective UniProt and Ensembl ids, which work
+        with the ENTREZGENE-ACC namespace.
+        """
+        # determine target_taxon_number if target organism is defined in ModelSettings
+        if self.model_settings is not None:
+            target_taxon_number = f"{self.model_settings.target_organism.ncbi_id}"
+
+        # divide products into distinct groups
+        taxa_ids = set()
+        taxa_ids.add(f"{self.model_settings.target_organism.ncbi_id}")
+        for label,ortholog_organism in self.model_settings.ortholog_organisms.items():
+            taxa_ids.add(f"{ortholog_organism.ncbi_id}")
+        taxa_ids = list(taxa_ids)
+        
+        # initialise empty dict; format: {'taxon_id_number': [LIST OF ASSOCIATED TAXON IDs]}
+        ortholog_query_dict = {}
+        for taxon_number in taxa_ids:
+            ortholog_query_dict[taxon_number] = []
+        
+        # iterate over products, construct ortholog_query_dict with id synonyms, uniprot ids and ensembl ids
+        for product in self.products:
+            product_taxon_number = product.taxon.split(":")[1] if ":" in product.taxon else product.taxon
+
+            if int(product_taxon_number) == self.model_settings.target_organism.ncbi_id: # don't query orthologs if product taxon is the same as target organism taxon
+                continue
+
+            product_ids_short = [] # mustn't be UniProtKB:xxxx but just 'xxxx'
+            if len(product.id_synonyms) > 0: # search id synonyms
+                id_syn = product.id_synonyms[0]
+                if ":" in id_syn:
+                    p_id_short = id_syn.split(":")[1]
+                    product_ids_short.append(p_id_short)
+            if product.uniprot_id is not None: # add uniprot query if uniprot for id synonym has been precomputed
+                product_ids_short.append(product.uniprot_id.split(":")[1]) if ":" in product.uniprot_id else product_ids_short.append(f"{product.uniprot_id}")     
+            if product.ensg_id is not None: # add ensembl query if ensembl id for id synonym has been precomputed
+                # ENSRNOG0000145.2 -> ENSRNOG0000145
+                product_ids_short.append(product.ensg_id.split(".")[0]) if "." in product.ensg_id else product_ids_short.append(f"{product.ensg_id}")
+            if product_ids_short == []: 
+                # continue if no id has been found
+                continue
+            
+            for p_id in product_ids_short:
+                ortholog_query_dict[product_taxon_number].append(p_id)
+
+        num_queried_orthologs_definitive = 0
+        num_queried_orthologs_indefinitive = 0
+        num_no_orthologs = 0
+
+        total_ortholog_query_count = 0
+        max_single_ortholog_query_count = 0
+        for taxon_id, input_ids_to_query in ortholog_query_dict.items():
+            total_ortholog_query_count += len(input_ids_to_query)
+            max_single_ortholog_query_count = max(max_single_ortholog_query_count, len(input_ids_to_query))
+
+        logger.info(f"gOrth query begin: querying a total of {total_ortholog_query_count} ids, maximum query count per request: {max_single_ortholog_query_count}.")
+        # perform search and modify self.products with the search results
+        gprofiler = gProfiler()
+        for taxon, ids in ortholog_query_dict.items():
+            ortholog_query_results = gprofiler.find_orthologs(source_ids=ids, source_taxon=taxon, target_taxon=target_taxon_number) #all ortholog query results for this taxon
+            if ortholog_query_results is None:
+                # None can be returned from gprofiler.find_orthologs if source_ids is []
+                continue
+
+            # process results for this taxon
+            for id, ortholog_results in ortholog_query_results.items():
+                p = self.get_product(id)           
+
+                if ortholog_results == [] and p.gorth_ortholog_exists != True: # p.gorth_ortholog_exists != True is set if this product had already been determined to have an existing ortholog. For example, ENSRNOGxxxx determines a valid gOrth ortholog, sets it, but then RGD:xxxx (pointing to the same gene) finds no gOrth ortholog -> RGD results in this case shouldn't disturb the successful ensembl gOrth ortholog query.
+                    p.gorth_ortholog_exists = False
+                    p.gorth_ortholog_status = "none"
+
+                if len(ortholog_results) > 1 and p.gorth_ortholog_status != "definitive": # if a valid gOrth ortholog has been found, overwrite any prior queries that didn't find an ortholog for this product. Don't overwrite and prior "definitive"-ly queried gOrth orthologs!
+                    # more than 1 ortholog ids found = "indefinitive ortholog"
+                    p.gorth_ortholog_exists = True
+                    p.gorth_ortholog_status = "indefinitive"
+
+                    # determine autoselect first indefinitive ortholog (based on model settings)
+                    autoselect_first_among_multiple_ensg_orthologs = False
+                    if self.model_settings is not None:
+                        if self.model_settings.gorth_ortholog_fetch_for_indefinitive_orthologs == False:
+                            # if ortholog fetch for indefinitive orthologs is False -> we don't want to query orthologs in the
+                            # regular ortho query pipeline -> set autoselect to true -> select 1st returned ENSG by gOrth -> no regular ortho pipeline, as
+                            # ENSG is already found!
+                            autoselect_first_among_multiple_ensg_orthologs = True
+
+                    if autoselect_first_among_multiple_ensg_orthologs:
+                        if p.ensg_id is not None: # move existing ensembl id among id synonyms
+                            p.id_synonyms.append(p.ensg_id)
+                        p.ensg_id = ortholog_results[0]
+                        logger.warning(f"Autoselected ortholog {p.ensg_id} among {len(ortholog_results)}, but it MAY NOT have the highest percentage identity!")
+                        # TODO: this only takes the first ENS id. Implement perc_id (percentage identity) checks!!
+                
+                if len(ortholog_results) == 1 and p.gorth_ortholog_status != "definitive": # p.gorth_ortholog_status != "definitive" to prevent duplicates
+                    # this is the ideal case -> gOrth returns only one ortholog id = "definitive ortholog"
+                    p.gorth_ortholog_exists = True
+                    p.gorth_ortholog_status = "definitive"
+                    if p.ensg_id is not None: # move existing ensembl id among id synonyms
+                        p.id_synonyms.append(p.ensg_id)
+                    p.ensg_id = ortholog_results[0]
+        
+        for p in self.products:
+            match p.gorth_ortholog_status:
+                case "none":
+                    num_no_orthologs +=1
+                case "indefinitive":
+                    num_queried_orthologs_indefinitive += 1
+                case "definitive":
+                    num_queried_orthologs_definitive +=1
+        
+        # print some statistics for the user:
+        logger.info(f"Finished gOrth batch ortholog query. Results:")
+        logger.info(f"  - num definitive orthologs (only 1x ENSG id): {num_queried_orthologs_definitive}")
+        logger.info(f"  - num indefinitive orthologs (more than 1 ENSG ids): {num_queried_orthologs_indefinitive}")
+        logger.info(f"  - num no orthologs found: {num_no_orthologs}")
+
+    
     def fetch_ortholog_products(
         self,
+        target_organism_taxon_number:int = None,
         refetch: bool = False,
         run_async=True,
         use_goaf=False,
@@ -589,6 +829,15 @@ class ReverseLookup:
         logger.info("Started fetching ortholog products.")
         self.timer.set_start_time()
 
+        # find target_organism_taxon_number
+        if target_organism_taxon_number is None:
+            # attempt search in model settings
+            if self.model_settings.target_organism.ncbi_id != -1:
+                target_organism_taxon_number = self.model_settings.target_organism.ncbi_id
+            else:
+                # not target organism taxon number specified
+                raise Exception(f"No target organism taxon number (id) was specified for the ortholog search!")
+
         try:
             if use_goaf is True:
                 """
@@ -601,6 +850,8 @@ class ReverseLookup:
             elif run_async is True:
                 asyncio.run(
                     self._fetch_ortholog_products_async(
+                        target_organism_taxon_number = target_organism_taxon_number,
+                        model_settings=self.model_settings,
                         refetch=refetch,
                         max_connections=max_connections,
                         req_delay=req_delay,
@@ -653,6 +904,8 @@ class ReverseLookup:
 
     async def _fetch_ortholog_products_async(
         self,
+        target_organism_taxon_number:int = None,
+        model_settings:ModelSettings = None,
         refetch: bool = True,
         max_connections=100,
         req_delay=0.5,
@@ -675,18 +928,6 @@ class ReverseLookup:
             # perform multiple tasks at once asynchronously
             await asyncio.gather(*tasks)
         """
-
-        @asynccontextmanager
-        async def create_session():
-            connector = aiohttp.TCPConnector(
-                limit=max_connections, limit_per_host=max_connections
-            )
-            session = aiohttp.ClientSession(connector=connector)
-            try:
-                yield session
-            finally:
-                await session.close()
-
         third_party_db_files = self.model_settings.get_datafile_paths("ALL")
         third_party_db_urls = self.model_settings.get_datafile_urls("ALL")
         human_ortholog_finder = HumanOrthologFinder(
@@ -708,12 +949,9 @@ class ReverseLookup:
 
         # TODO: implement gOrth call -> read orthologs into self.products
 
-        connector = aiohttp.TCPConnector(
-            limit=max_connections, limit_per_host=max_connections
-        )
+        connector = aiohttp.TCPConnector(limit=max_connections, limit_per_host=max_connections)
         semaphore = asyncio.Semaphore(semaphore_connections)
         async with aiohttp.ClientSession(connector=connector) as session:
-        # async with create_session() as session:
             tasks = []
             for product in self.products:
                 if product.had_orthologs_computed is False or refetch is True:
@@ -722,9 +960,11 @@ class ReverseLookup:
                         session,
                         semaphore,
                         self.goaf,
-                        human_ortholog_finder,
-                        uniprot_api,
-                        ensembl_api,
+                        target_organism_taxon_number=target_organism_taxon_number,
+                        model_settings=model_settings,
+                        human_ortholog_finder=human_ortholog_finder,
+                        uniprot_api=uniprot_api,
+                        ensembl_api=ensembl_api,
                     )
                     tasks.append(task)
                     product.had_orthologs_computed = True
@@ -745,16 +985,26 @@ class ReverseLookup:
         #    i += 1
 
     def prune_products(self) -> None:
+        """
+        Method algorithm:
+          - (1) create a dictionary 'reverse_genename_products', where:
+                    key = gene name
+                    value = list of associated Product objects (with the gene name)
+          - (2) iterate 'reverse_genename_products'
+                    if more than 1 Product is found in a list of Products mapped to genename,
+                    remove all Products from (ReverseLookup).products, create a new Product instance
+                    based on the first Product found in the list of 'reverse_genename_products' associated to the current genename.
+        """
         logger.info("Started pruning products.")
+        start_prod_count = len(self.products)
         self.timer.set_start_time()
 
         # Create a dictionary that maps genename to a list of products
         reverse_genename_products = {}
         for product in self.products:
             if product.genename is not None:
-                reverse_genename_products.setdefault(product.genename, []).append(
-                    product
-                )
+                # create a mapping to gene name 
+                reverse_genename_products.setdefault(product.genename, []).append(product)
 
         # For each ENSG that has more than one product associated with it, create a new product with all the synonyms
         # and remove the individual products from the list
@@ -764,22 +1014,32 @@ class ReverseLookup:
                 for product in product_list:
                     self.products.remove(product)
                     id_synonyms.extend(product.id_synonyms)
+                
+                # prevent duplicates
+                id_synonyms = set(id_synonyms)
+                id_synonyms = list(id_synonyms)
+
                 # Create a new product with the collected information and add it to the product list
                 self.products.append(
                     Product(
-                        id_synonyms,
-                        product_list[0].genename,
-                        product_list[0].uniprot_id,
-                        product_list[0].description,
-                        product_list[0].ensg_id,
-                        product_list[0].enst_id,
-                        product_list[0].refseq_nt_id,
-                        product_list[0].mRNA,
-                        {},
-                        product_list[0].had_orthologs_computed,
-                        product_list[0].had_fetch_info_computed,
+                        id_synonyms=id_synonyms,
+                        taxon=product_list[0].taxon,
+                        genename=product_list[0].genename,
+                        uniprot_id=product_list[0].uniprot_id,
+                        description=product_list[0].description,
+                        ensg_id=product_list[0].ensg_id,
+                        enst_id=product_list[0].enst_id,
+                        refseq_nt_id=product_list[0].refseq_nt_id,
+                        mRNA=product_list[0].mRNA,
+                        scores=product_list[0].scores,
+                        had_orthologs_computed=product_list[0].had_orthologs_computed,
+                        had_fetch_info_computed=product_list[0].had_fetch_info_computed,
+                        gorth_ortholog_exists=product_list[0].gorth_ortholog_exists
                     )
                 )
+        
+        end_prod_count = len(self.products)
+        logger.info(f"Completed product prune operation. Pruned {end_prod_count - start_prod_count} products. Start product count: {start_prod_count} -> End product count: {end_prod_count}")
 
         if "prune_products" not in self.execution_times:
             self.execution_times["prune_products"] = self.timer.get_elapsed_formatted()
@@ -951,12 +1211,7 @@ class ReverseLookup:
                 for product in self.products:
                     for process in self.target_processes:
                         for direction in ["+", "-"]:
-                            if (
-                                "error"
-                                in product.scores[_score_class.name][
-                                    f"{process['process']}{direction}"
-                                ]
-                            ):  # check if there is "error" key
+                            if "error" in product.scores[_score_class.name][f"{process['process']}{direction}"]:  # check if there is "error" key
                                 continue
                             p_values.append(
                                 product.scores[_score_class.name][
@@ -1215,13 +1470,32 @@ class ReverseLookup:
 
     def get_product(self, identifier) -> Product:
         """
-        Return GOTerm based on any id
+        Return product based on any id
+        """
+        for product in self.products:
+            if any(identifier in id for id in product.id_synonyms):
+                return product
+            if any(
+                identifier in getattr(product, attr) for attr in [
+                    "genename",
+                    "description",
+                    "uniprot_id",
+                    "ensg_id",
+                    "enst_id",
+                    "refseq_nt_id",
+                    "mRNA"
+                ] if getattr(product,attr) is not None
+            ):
+                return product
+        logger.debug(f"Couldn't find product for {identifier}")
+        return None
+
         """
         product = next(
             obj
             for obj in self.products
             if any(
-                getattr(obj, attr) == identifier
+                identifier in getattr(obj, attr)
                 for attr in [
                     "genename",
                     "description",
@@ -1230,11 +1504,12 @@ class ReverseLookup:
                     "enst_id",
                     "refseq_nt_id",
                     "mRNA",
-                ]
+                ] if getattr(obj,attr) is not None
             )
-            or any(id == identifier for id in obj.id_synonyms)
+            or any(identifier in id for id in obj.id_synonyms)
         )
         return product
+        """
 
     def save_model(self, filepath: str) -> None:
         data = {}
@@ -1937,7 +2212,19 @@ class ReverseLookup:
                                 else:
                                     # 'human' -> ["human"]
                                     setting_value = [setting_value]
-
+                        if setting_name == "target_organism":
+                            organism_info = OrganismInfo.parse_organism_info_str(metadata=setting_value)
+                            setting_value = organism_info
+                        if setting_name == "ortholog_organisms":
+                            organism_info_dict = {}
+                            for organism_info_str in setting_value.split(","): # split at commas
+                                organism_info = OrganismInfo.parse_organism_info_str(metadata=organism_info_str)
+                                # create multiple annotations in dict both for the label and for the ncbitaxon full id
+                                if organism_info.label != "":
+                                    organism_info_dict[organism_info.label] = organism_info
+                                if organism_info.ncbi_id_full != "":
+                                    organism_info_dict[organism_info.ncbi_id_full] = organism_info
+                            setting_value = organism_info_dict
                         settings.set_setting(setting_name=setting_name, setting_value=setting_value)
                     elif section == "filepaths":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
