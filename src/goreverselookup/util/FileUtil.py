@@ -95,7 +95,7 @@ class FileUtil:
                     base_path = self.project_root_path
                     for j in range(i):  # append i number of backtraces
                         base_path = os.path.join(base_path, "..")
-                    return os.path.join(base_path, file)  # return the correct path
+                    return os.path.join(base_path, file).replace("\\", "/")  # return the correct path
 
         current_path = self.project_root_path  # reset
         if len(folders) != 0:  # filepath contains folders, primary search is for folder
@@ -120,7 +120,7 @@ class FileUtil:
                                 f" {base_path} doesn't contain folder {folder}"
                             )
                     # finally, append the file
-                    return os.path.join(base_path, file)
+                    return os.path.join(base_path, file).replace("\\", "/")
 
     @classmethod
     def find_win_abs_filepath(cls, relative_filepath: str):
@@ -142,7 +142,7 @@ class FileUtil:
         if "/" in relative_filepath:
             relative_filepath = relative_filepath.replace("/", os.sep)
 
-        return os.path.join(os.getcwd(), relative_filepath)
+        return os.path.join(os.getcwd(), relative_filepath).replace("\\", "/")
 
     @classmethod
     def get_workspace_dir(cls):

@@ -530,12 +530,8 @@ class ReportGenerator:
             )
 
         if not os.path.isabs(filepath):
-            current_dir = os.path.dirname(
-                os.path.abspath(traceback.extract_stack()[0].filename)
-            )
-            mac_filepath = os.path.join(
-                current_dir, filepath
-            )  # mac_filepath, since this approach works on a mac computer
+            current_dir = os.path.dirname(os.path.abspath(traceback.extract_stack()[0].filename))
+            mac_filepath = os.path.join(current_dir, filepath)  # mac_filepath, since this approach works on a mac computer
 
         # Create directory for the report file, if it does not exist
         try:
