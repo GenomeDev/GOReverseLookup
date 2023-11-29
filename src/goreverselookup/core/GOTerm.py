@@ -1,5 +1,6 @@
 import aiohttp, asyncio
 from typing import Set, List, Dict, Optional
+import json
 
 from ..web_apis.GOApi import GOApi
 from ..parse.GOAFParser import GOAnnotationsFile
@@ -136,7 +137,9 @@ class GOTerm:
         url = api.get_data(self.id, get_url_only=True)
         response = await session.get(url)
         if response.status == 200:
-            data = await response.json()
+            response_content = await response.read() # response.read() this ensures that response content is fully read before attempting to parse it as JSON
+            data = json.loads(response_content)
+            # data = await response_content.json()
             await asyncio.sleep(req_delay)
             if "label" in data:
                 self.name = data['label']
@@ -144,7 +147,7 @@ class GOTerm:
                 self.description = data['definition']
             # logger.info(f"Fetched name and description for GO term {self.id}")
             # print out only 15 desc chars not to clutter console
-            logger.info(f"GOid {self.id}: name = {self.name}, description = {self.description[:15]}...")
+            logger.info(f"{self.id}: name = {self.name}, description = {self.description[:15]}...")
         else:
             logger.info(f"Query for url {url} failed with response code {response.status}")
     
@@ -288,7 +291,9 @@ class GOTerm:
                         possible_http_error_text = f"HTTP Error when parsing {self.id}. Response status = {response.status}"
                         logger.warning(possible_http_error_text)
                         continue
-                    data = await response.json()
+                    # data = await response.json()
+                    response_content = await response.read()
+                    data = json.loads(response_content)
                     if data != None:
                         Cacher.store_data("url", url, data)
                         logger.debug(f"Cached async product fetch data for {self.id}")
@@ -303,6 +308,11 @@ class GOTerm:
         _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
         
         for assoc in data['associations']:
+            # if evidence is not confirmed, continue to next iteration
+            evidence_confirmed, evidence_code_eco_id = GOApi.check_GO_association_evidence_code_validity(assoc, model_settings.valid_evidence_codes)
+            if not evidence_confirmed:
+                continue
+   
             _d_unique_dbs.add(assoc['subject']['id'].split(":")[0])
             _d_db = assoc['subject']['id'].split(":")[0]
             _d_taxon = assoc['subject']['taxon']['id']

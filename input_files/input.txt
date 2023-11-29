@@ -8,16 +8,54 @@
 # Each section in this file is denoted by ### preceding the section name.
 # The values in each section are TAB-delimited.
 #
+# *** Evidence code groups section ****
+# Contains the whole "tree" of possible evidence codes, attributed to their groups. This section only determines the possible evidence codes groups and specific evidence codes.
+# The evidence code groups and specific evidence codes are not set in this section, but rather in the Settings section via the evidence_codes setting.
+# This section exists to give user the option to add or exclude any evidence codes, should the GO evidence codes change in the future.
+# Each line contains two tab-separated elements:
+#	(1) evidence code group name (e.g. author_statement)
+#   (2) evidence codes (e.g. TAS,NAS) belonging to the group, along with their ECO identifiers (evidence code and identifier separated by underscore) as comma-separated values (e.g. TAS_ECO:0000304,NAS_ECO:0000303)
+#		ECO evidence code identifiers can be found on https://wiki.geneontology.org/index.php/Guide_to_GO_Evidence_Codes and https://www.ebi.ac.uk/QuickGO/term/ECO:0000245
+# WARNING: the Evidence codes section MUST be specified before the Settings section.
+#
 # *** Settings section ***
 # It contains several settings, which are used to change the flow of the algorithm.
 # The possible settings are:
-# 	- homosapiens_only: 
-#			if only homosapiens products should be queried from uniprot and ensembl # TODO: currently, this is hardcoded into requests so this setting does nothing at the moment
-#	- require_product_evidence_codes: 
-#			not implemented at the moment
+#	- evidence_codes: 
+#			Determines which annotations between GO terms and respective genes (vice versa) to accept, based on evidence codes.
+#			Based on https://geneontology.org/docs/guide-go-evidence-codes/, there are the following 6 evidence groups (noted with belonging evidence codes):
+#			  a. experimental evidence (EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, HEP) [experimental]
+#			  b. phylogenetically inferred evidence (IBA, IBD, IKR, IRD) [phylogenetic]
+#			  c. computational analysis evidence (ISS, ISO, ISA, ISM, IGC, RCA) [computational_analysis]
+#			  d. author statement evidence (TAS, NAS) [author_statement]
+#			  e. curator statement evidence (IC, ND) [curator_statement]
+#			  f. electronic annotation (IEA) [electronic]
+#			In the settings, user can choose which evidence codes are valid for the program by specifying evidence groups, and, with the usage of (...) also which exact evidence codes to (or not to) take into account.
+#			
+#			For example, to take into account all evidence codes belonging to experimental evidence, use a tilde (~)
+#				evidence_codes experimental(~)
+#			
+#			To take into account only specific evidence codes from a group, specify them between the parantheses. If evidence codes
+#			are specified among parantheses, all non-specified evidence codes will be excluded. 
+#			For example, to take into account only IC, but not ND, from curator_statement, use the following:
+#				evidence_codes curator_statement(IC)
+#
+#			Similarly, you can use an exclamation mark '!' to exclude evidence codes, while retaining the non-specified evidence codes.
+#			To exclude only HEP and retain the rest of experimental evidence codes, use:
+#				evidence_codes !experimental(HEP)
+#
+#			By default, if an evidence group is not specified, all belonging evidence codes will still be valid.
+#			To exclude evidence codes belonging to a group, do so with an exclamation mark '!'.
+#			For example, to exclude entire group of computational analysis evidence codes, use:
+#				evidence_codes !computational_analysis(~)
+#
+#			To merge multiple groups, supply them to the evidence_codes setting as comma-separated-values:
+#				evidence_codes experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),curator_statement(IC),!electronic(~)
+#
 # 	- fisher_test_use_online_query:
 #			If True, will query the products of GO Terms (for the num_goterms_products_general inside fisher test) via an online pathway (GOApi.get_goterms).
 #			If False, fisher test will compute num_goterms_products_general (= the number of goterms associated with a product) via an offline pathway using GOAF parsing.
+#
 #	- include_indirect_annotations:
 #			When querying GO terms associated with genes, only specific directly annotated GO Terms are returned (this is a direct annotation).
 #			However, all of the children of a directly annotated GO Term are also indirectly connected to the gene in question (these are indirect annotations).
@@ -28,6 +66,7 @@
 #			If this setting is set to True, each each GO Term relevant to the analysis will have a list of it's child term ids computed (using go.obo). These ids will be taken
 #			into account when performing the fisher exact test. 
 #			If this setting is set to False, only directly annotated GO Terms will be accounted for during the scoring process.
+#
 #	- uniprotkb_genename_online_query:
 #			When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD).
 #			During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function.
@@ -39,10 +78,12 @@
 #			this setting to False. If using an older GOAF, then have this setting set to True.
 #			If True, will query genename from a UniProtKB id via an online server request.
 #			If False, will query genename from a UniProtKB id via the GO Annotations File.
+#
 #	- pvalue:
 #			Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than
 #			the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes
 #			(eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
+#
 #	- gorth_ortholog_refetch:
 #			We implemented a gOrth batch ortholog query (https://biit.cs.ut.ee/gprofiler/orth), which is called using (ReverseLookup).fetch_orthologs_products_batch_gOrth(target_taxon_number=...) function.
 #			The function attempts to find orthologs to genes in a single batch request. If 'gorth_ortholog_refetch' is True, then the genes for which orthologs were not found,
@@ -137,16 +178,24 @@
 #		# in future runs, you can load up the model using:
 #		model_data_file = "model/data.json"
 #		model = ReverseLookup.load_model(model_data_file)
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
 ###settings
+pvalue	0.05
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
 include_indirect_annotations	False
 uniprotkb_genename_online_query	False
-#require_product_evidence_codes	False
-pvalue	0.05
-gorth_ortholog_refetch	False
-gorth_ortholog_fetch_for_indefinitive_orthologs	True
 ###filepaths
 go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
 goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens

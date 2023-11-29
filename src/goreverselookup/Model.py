@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import List, Dict
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
+import json
 
 from .core.ModelSettings import ModelSettings, OrganismInfo
 from .core.ModelStats import ModelStats
@@ -22,6 +23,7 @@ from .parse.OBOParser import OboParser
 from .util.JsonUtil import JsonUtil, JsonToClass
 from .util.Timer import Timer
 from .util.WebsiteParser import WebsiteParser
+from .util.DictUtil import DictUtil
 
 import logging
 
@@ -94,7 +96,12 @@ class ReverseLookup:
         # GO categories - determines which categories of GO terms are chosen during the Fisher score computation (either from the GO Annotations File or from a gene id to GO Terms API query)
         self.go_categories = go_categories
 
-        self.goaf = GOAnnotationsFile(filepath=self.model_settings.get_datafile_path("goa_human"), go_categories=go_categories)
+        self.goaf = GOAnnotationsFile(
+            filepath=self.model_settings.get_datafile_path("goa_human"), 
+            go_categories=go_categories, 
+            valid_evidence_codes=model_settings.valid_evidence_codes, 
+            evidence_codes_to_ecoids=model_settings.evidence_codes_to_ecoids
+        )
         
         if self.goaf is None:
             logger.warning("MODEL COULD NOT CREATE A GO ANNOTATIONS FILE!")
@@ -169,23 +176,20 @@ class ReverseLookup:
                     ):  # if goterm.name or description don't exist, then attempt fetch
                         goterm.fetch_name_description(api)
 
-        if (
-            "fetch_all_go_term_names_descriptions" not in self.execution_times
-        ):  # to prevent overwriting on additional runs of the same model name
-            self.execution_times[
-                "fetch_all_go_term_names_descriptions"
-            ] = self.timer.get_elapsed_formatted()
+        if "fetch_all_go_term_names_descriptions" not in self.execution_times:  # to prevent overwriting on additional runs of the same model name
+            self.execution_times["fetch_all_go_term_names_descriptions"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     async def _fetch_all_go_term_names_descriptions_async(
-        self, api: GOApi, req_delay=0.1, max_connections=50
+        self, 
+        api: GOApi, 
+        req_delay=0.1, 
+        max_connections=50
     ):
         """
         Call fetch_all_go_term_names_descriptions with run_async == True to run this code.
         """
-        connector = aiohttp.TCPConnector(
-            limit=max_connections, limit_per_host=max_connections
-        ) 
+        connector = aiohttp.TCPConnector(limit=max_connections, limit_per_host=max_connections) 
         async with aiohttp.ClientSession(connector=connector) as session:
             tasks = []
             for goterm in self.goterms:
@@ -196,7 +200,6 @@ class ReverseLookup:
                     tasks.append(task)
             await asyncio.gather(*tasks)
 
-    # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     def fetch_all_go_term_products(
         self,
         web_download: bool = True,
@@ -298,7 +301,7 @@ class ReverseLookup:
         if web_download is True:
             source = GOApi()
         else:
-            source = GOAnnotationsFile()
+            source = self.goaf
 
         if run_async is True:
             if run_async_options == "v1":
@@ -333,13 +336,13 @@ class ReverseLookup:
                         goterm.fetch_products(source, model_settings=self.model_settings)
 
         if "fetch_all_go_term_products" not in self.execution_times:
-            self.execution_times[
-                "fetch_all_go_term_products"
-            ] = self.timer.get_elapsed_formatted()
+            self.execution_times["fetch_all_go_term_products"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
 
     async def _fetch_all_go_term_products_async_v1(
-        self, recalculate: bool = False, delay: float = 0.0
+        self, 
+        recalculate: bool = False, 
+        delay: float = 0.0
     ):
         """
         Asynchronously queries the products for all GOTerm objects. Must be a web download.
@@ -387,19 +390,14 @@ class ReverseLookup:
                 await asyncio.sleep(req_delay)  # request delay
                 response = await session.get(url)
 
-                if (
-                    response.status != 200
-                ):  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
-                    logger.warning(
-                        f"HTTP Error when parsing {goterm.id}. Response status ="
-                        f" {response.status}"
-                    )
-                    goterm.http_error_codes["products"] = (
-                        f"HTTP Error: status = {response.status}, reason ="
-                        f" {response.reason}"
-                    )
+                if response.status != 200:  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
+                    logger.warning(f"HTTP Error when parsing {goterm.id}. Response status = {response.status}")
+                    goterm.http_error_codes["products"] = (f"HTTP Error: status = {response.status}, reason = {response.reason}")
 
-                data = await response.json()
+                # data = await response.json()
+                response_content = await response.read()
+                data = json.loads(response_content)
+
                 products_set = set()
                 for assoc in data["associations"]:
                     if assoc["object"]["id"] == goterm.id and any(
@@ -419,8 +417,6 @@ class ReverseLookup:
                 logger.info(f"Fetched products for GO term {goterm.id}")
                 goterm.products = products
 
-    # IMPROVE SPEED UP USING ASYNCIO.GATHER: Instead of awaiting each request individually in a loop, you can use asyncio.gather()
-    # to concurrently execute multiple requests. This allows the requests to be made in parallel, which can significantly improve performance.
     # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     async def _fetch_all_goterm_products_async_v3(
         self,
@@ -434,9 +430,7 @@ class ReverseLookup:
         In comparison to (GOApi)._fetch_all_go_term_products_async, this function doesn't overload the server and cause the server to block our requests.
         In comparison to the v2 version of this function (inside GOApi), v3 uses asyncio.gather, which speeds up the async requests.
         """
-        connector = aiohttp.TCPConnector(
-            limit=max_connections, limit_per_host=max_connections
-        )  # default is 100
+        connector = aiohttp.TCPConnector(limit=max_connections, limit_per_host=max_connections)  # default is 100
         async with aiohttp.ClientSession(connector=connector) as session:
             tasks = []
             for goterm in self.goterms:
@@ -2165,12 +2159,76 @@ class ReverseLookup:
                 return line.split(COMMENT_DELIMITER)[0]
             else:
                 return line
+        
+        def process_evidence_codes(evidence_code_instructions:str, all_evidence_codes:dict):
+            """
+            Processes an evidence code instruction, compares the evidence codes to 'all_evidence_codes' and determines which evidence codes should be deemed as valid for the research.
+            Note that all_evidence_codes MUST be already computed at the point of calling this function. The result of this function is the creation of
+            a list of valid evidence codes.
+
+            Example evidence_code_instructions: "author_statement(~),curator_statement(IC)"
+
+            For more information, refer to the explanation in the demo input.txt file
+            """
+            if all_evidence_codes is None or all_evidence_codes == {}:
+                raise Exception("all_evidence_codes in process_evidence_codes function is None or {}. Make sure to supply evidence_code section in the input.txt BEFORE the settings section.")
+            
+            # create a list of evidence code groups instructions (multiple or a single)
+            evidence_code_instructions = evidence_code_instructions.split(",") if "," in evidence_code_instructions else [evidence_code_instructions]
+            # temporary dictionary to store processing results - so the program knows which groups of evidence codes have been processed
+            # if any group hasn't been processed (meaning it wasn't set by the user), automatically add all items of the unprocessed group to valid evidence codes
+            evidence_code_groups_processing_states = {}
+            for code_group,evidence_codes in all_evidence_codes.items():
+                evidence_code_groups_processing_states[code_group] = False
+            
+            # process instruction evidence code
+            valid_evidence_codes = []
+            for instruction in evidence_code_instructions: # example instruction: author_statement(~)
+                instruction_code_group = instruction.split("(")[0]
+                instruction_evidence_codes = instruction.split("(")[1].split(")")[0]
+                negate_group = False # if '!' is used to negate the meaning (exclude the group or evidence codes)
+                if '!' in instruction_code_group:
+                    negate_group = True
+                    instruction_code_group = instruction_code_group.replace("!", "")
+
+                evidence_code_groups_processing_states[instruction_code_group] = True
+
+                if instruction_evidence_codes == "~":
+                    if negate_group == False:
+                        # valid_evidence_codes += all_evidence_codes[instruction_code_group]
+                        for full_code in all_evidence_codes[instruction_code_group]:
+                            eco_evidence_code_id = full_code.split("_")[1]
+                            valid_evidence_codes.append(eco_evidence_code_id)
+                else: # instruction_evidence_codes contains specific evidence codes
+                    instruction_evidence_codes = instruction_evidence_codes.split(",") if "," in instruction_evidence_codes else [instruction_evidence_codes]
+                    if negate_group == False:
+                        # experimental(EXP) = include only EXP from experimental codes, exclude the rest of the experimental codes
+                        for instruction_evidence_code in instruction_evidence_codes:
+                            # instruction_evidence_code is only EXP or IBA (not the ECO:xxxx identifier) -> convert to ECO identifier
+                            valid_evidence_codes.append(settings.evidence_codes_to_ecoids.get(instruction_evidence_code))
+                    else: # !experimental(EXP) = exclude only EXP from experimental codes, include the rest
+                        for full_evidence_code in all_evidence_codes[instruction_code_group]:
+                            for instruction_evidence_code in instruction_evidence_codes:
+                                if instruction_evidence_code not in full_evidence_code and full_evidence_code.split("_")[1] not in valid_evidence_codes:
+                                    valid_evidence_codes.append(full_evidence_code.split("_")[1])
+            
+            # add all non-user-specified groups
+            for code_group,val in evidence_code_groups_processing_states.items():
+                if val == False: # if code group wasn't processed
+                    for full_code in all_evidence_codes[code_group]:
+                        eco_evidence_code_id = full_code.split("_")[1]
+                        valid_evidence_codes.append(eco_evidence_code_id)
+                    #valid_evidence_codes += all_evidence_codes[code_group]
+            
+            return valid_evidence_codes
 
         filepath_readlines = 0
         with open(filepath, 'r') as f:
             filepath_readlines = len(f.readlines())
 
         def process_file(filepath: str):
+            all_evidence_codes = {}
+            evidence_codes_to_ecoids = {} # maps evidence codes (e.g. EXP) to respective ECO ids (e.g. ECO:0000269)
             with open(filepath, "r") as read_content:
                 read_lines = read_content.read().splitlines()[2:]  # skip first 2 lines
                 section = ""  # what is the current section i am reading
@@ -2194,6 +2252,10 @@ class ReverseLookup:
                     elif "GO_terms" in line:
                         section = "GO"
                         continue
+                    if "evidence_code_groups" in line:
+                        section = "evidence_code_groups"
+                        continue
+                    
                     if section == "settings":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
                         setting_name = chunks[0]
@@ -2204,6 +2266,7 @@ class ReverseLookup:
                             setting_value = False
                         if setting_name == "pvalue":
                             setting_value = float(chunks[1])
+
                         if setting_name == "goterms_set":
                             if setting_value != 'all':
                                 if ',' in setting_value:
@@ -2212,9 +2275,11 @@ class ReverseLookup:
                                 else:
                                     # 'human' -> ["human"]
                                     setting_value = [setting_value]
+
                         if setting_name == "target_organism":
                             organism_info = OrganismInfo.parse_organism_info_str(metadata=setting_value)
                             setting_value = organism_info
+
                         if setting_name == "ortholog_organisms":
                             organism_info_dict = {}
                             for organism_info_str in setting_value.split(","): # split at commas
@@ -2226,6 +2291,39 @@ class ReverseLookup:
                                     organism_info_dict[organism_info.ncbi_id_full] = organism_info
                             setting_value = organism_info_dict
                         settings.set_setting(setting_name=setting_name, setting_value=setting_value)
+
+                        if setting_name == "evidence_codes":
+                            # example line: evidence_codes \t experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),curator_statement(IC),!electronic(~)
+                            valid_evidence_codes = process_evidence_codes(setting_value, settings.all_evidence_codes)
+                            settings.valid_evidence_codes = valid_evidence_codes
+
+                            # display evidence codes in user friendly format
+                            valid_true_evidence_codes = []
+                            ecoids_to_evidence_codes = DictUtil.reverse_dict(settings.evidence_codes_to_ecoids)
+                            for eco_id_code in settings.valid_evidence_codes:
+                                valid_true_evidence_codes.append(ecoids_to_evidence_codes.get(eco_id_code))
+                            logger.info(f"Using the following evidence codes: {valid_true_evidence_codes}")
+                            
+                    elif section == "evidence_code_groups":
+                        # line example: experimental \t EXP,IDA,IPI,IMP,IGI,IEP,HTP,HDA,HMP,HGI,HEP
+                        chunks = line.split(LINE_ELEMENT_DELIMITER)
+                        evidence_code_group = chunks[0]
+                        if "," in chunks[1]:
+                            evidence_codes = chunks[1].split(",")
+                        else: # no comma, thus a single value -> convert to list
+                            evidence_codes = [chunks[1]]
+                        all_evidence_codes[evidence_code_group] = evidence_codes
+                        settings.all_evidence_codes = all_evidence_codes
+
+                        # process eco id
+                        for full_code in evidence_codes:
+                            if "_" not in full_code:
+                                raise Exception(f"The character '_' isn't present in evidence code {full_code}. Is the full evidence code specified in the format CODE_ECOid? For example: EXP_ECO:0000269")
+                            true_evidence_code = full_code.split("_")[0] # e.g. EXP
+                            eco_id = full_code.split("_")[1] # e.g. ECO:0000269
+                            evidence_codes_to_ecoids[true_evidence_code] = eco_id
+                        settings.evidence_codes_to_ecoids = evidence_codes_to_ecoids
+
                     elif section == "filepaths":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
                         datafile_name = chunks[0]
@@ -2245,15 +2343,18 @@ class ReverseLookup:
                             'local_filepath': datafile_local_path,
                             'download_url': datafile_download_url
                         }
+                    
                     elif section == "process":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
                         target_processes.append({"process": chunks[0], "direction": chunks[1]})
+                    
                     elif section == "categories":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
                         category = chunks[0]
                         category_value = chunks[1]
                         if category_value == "True":
                             go_categories.append(category)
+                    
                     elif section == "GO":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
                         if len(chunks) == 5:
@@ -2289,7 +2390,7 @@ class ReverseLookup:
         try:
             process_file(filepath)
         except OSError:
-            logger.error(f"ERROR while opening filepath {filepath}")
+            logger.error(f"ERROR while processing input file at filepath {filepath}")
             return
 
         # PROCESS INPUT FILE

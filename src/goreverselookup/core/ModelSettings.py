@@ -182,6 +182,9 @@ class ModelSettings:
         self.ortholog_organisms_ncbi_full_ids = [] # a list containing only the full ids for all ortholog organisms
         self.gorth_ortholog_refetch = False
         self.gorth_ortholog_fetch_for_indefinitive_orthologs = True
+        self.all_evidence_codes = {} # a dict containing all evidence codes in existence assigned to groups
+        self.evidence_codes_to_ecoids = {} # a dict mapping true evidence codes (e.g. EXP) to ECO ids (e.g. ECO:0000269)
+        self.valid_evidence_codes = [] # a list containing all valid evidence codes for this research
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:

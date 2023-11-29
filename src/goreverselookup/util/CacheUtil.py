@@ -36,8 +36,7 @@ class Cacher:
     def init(
         cls,
         cache_dir: str = "cache",
-        store_data_atexit: bool = True,
-        enable_caching = True
+        store_data_atexit: bool = True
     ):
         """
         Initialises ConnectionCacher. This function must be called at the program startup in order to read
@@ -150,12 +149,10 @@ class Cacher:
 
         With this code, if the algorithm encounters and already queried url, it will pull its old response,
         rather than query a new one.
-        """
-        if cls.enable_caching == False:
-            return
-        
+        """ 
         if not hasattr(cls, "is_init"):
-            cls.init()
+            logger.warning(f"MAJOR WARNING: Cacher is not storing data. Was it initialised correctly?")
+            return
 
         if cls.is_init is False:
             cls.init()  # attempt cacher init, if the user forgot to initialise it
@@ -223,8 +220,8 @@ class Cacher:
 
     @classmethod
     def get_data(cls, data_location: str, data_key: str, debug_log:bool=False):
-        if cls.enable_caching == False:
-            return
+        if not hasattr(cls, "is_init"):
+            return None
         
         if cls.is_init is False:
             cls.init()

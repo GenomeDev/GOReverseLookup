@@ -35,6 +35,7 @@ from .util.Timer import Timer
 from .util.LogConfigLoader import LogConfigLoader
 from .util.WebsiteParser import WebsiteParser
 from .util.ApiUtil import EnsemblUtil
+from .util.DictUtil import DictUtil
 
 from .web_apis.EnsemblApi import EnsemblApi
 from .web_apis.UniprotApi import UniProtApi
@@ -70,6 +71,7 @@ __all__ = [
     "ConnectionCacher",
     "FileUtil",
     "JsonUtil",
+	"DictUtil",
     "Timer",
     "LogConfigLoader",
     "EnsemblApi",

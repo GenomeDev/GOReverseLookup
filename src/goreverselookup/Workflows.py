@@ -78,7 +78,6 @@ class Workflow:
             {}
         )  # a dictionary between Metrics: (Metrics) aka metrics class - metrics instance of computed scores, computed scores are saved here from self.scores and cannot be deleted.
         self.scores = []  # a list of scoring algorithms, temporary, can be deleted
-        # self.goaf = GOAnnotationsFile(go_categories=self.model.go_categories) # self.model.go_categories to ensure that model is initialised !!!
         self.goaf = self.model.goaf
 
         self.input_file_fpath = input_file_fpath
