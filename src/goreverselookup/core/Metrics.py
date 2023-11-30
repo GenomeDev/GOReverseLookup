@@ -614,6 +614,8 @@ class fisher_exact_test(Metrics):
             self.goaf = GOAnnotationsFile(
                 filepath=self.reverse_lookup.model_settings.datafile_paths["goa_human"], # TODO: change this !!!
                 go_categories=self.reverse_lookup.go_categories,
+                valid_evidence_codes=self.reverse_lookup.model_settings.valid_evidence_codes,
+                evidence_codes_to_ecoids=self.reverse_lookup.model_settings.evidence_codes_to_ecoids
             )
 
         self.name = "fisher_test"
@@ -658,14 +660,14 @@ class fisher_exact_test(Metrics):
             #   - can be queried either via online or offline pathway (determined by model_settings.fisher_test_use_online_query)
             #   - can have all child terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_indirect_annotations
             if self.reverse_lookup.model_settings.fisher_test_use_online_query is True:  # online pathway: get goterms associated with this product via a web query
-                goterms_product_general = self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories)
+                goterms_product_general = self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories, model_settings=self.reverse_lookup.model_settings)
                 if goterms_product_general is not None:
                     num_goterms_product_general = len(goterms_product_general)
                 else:
                     # skip iteration, there was an error with querying goterms associated with a product
                     logger.warning(f"Online query for GO Terms associated with {product.uniprot_id} failed! Product: {json.dumps(product.__dict__)}")
                     continue
-                # num_goterms_product_general = len(self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories))
+                # num_goterms_product_general = len(self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories, model_settings=self.reverse_lookup.model_settings))
                 logger.debug(f"Fisher test online num_goterms_product_general query: {num_goterms_product_general}")
             else:  # offline pathway: get goterms from GOAF
                 if self.reverse_lookup.model_settings.include_indirect_annotations == True:

@@ -78,15 +78,12 @@ class Workflow:
             {}
         )  # a dictionary between Metrics: (Metrics) aka metrics class - metrics instance of computed scores, computed scores are saved here from self.scores and cannot be deleted.
         self.scores = []  # a list of scoring algorithms, temporary, can be deleted
-        # self.goaf = GOAnnotationsFile(go_categories=self.model.go_categories) # self.model.go_categories to ensure that model is initialised !!!
         self.goaf = self.model.goaf
 
         self.input_file_fpath = input_file_fpath
         self.save_folder_dir = save_folder_dir
         self.model_save_filepath = os.path.join(save_folder_dir, "data.json")
-        self.model_statistically_relevant_products_filepath = os.path.join(
-            save_folder_dir, "statistically_relevant_genes.json"
-        )
+        self.model_statistically_relevant_products_filepath = os.path.join(save_folder_dir, "statistically_relevant_genes.json").replace("\\", "/")
         self.name = name
 
     def create_workflow():

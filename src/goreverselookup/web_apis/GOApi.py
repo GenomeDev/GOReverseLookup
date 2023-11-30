@@ -4,6 +4,7 @@ from json import JSONDecodeError
 import time
 import aiohttp
 import asyncio
+import json
 
 from ..util.FileUtil import FileUtil
 from ..core.ModelSettings import ModelSettings,OrganismInfo
@@ -220,7 +221,9 @@ class GOApi:
                     request_iterations += 1
                     response = await session.get(url, params=params, timeout=7)
                     response.raise_for_status()  # checks for anything other than status 200
-                    data = await response.json()
+                    # data = await response.json()
+                    response_content = await response.read()
+                    data = json.loads(response_content)
 
                     products_set = set()
                     _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
@@ -324,19 +327,13 @@ class GOApi:
         async with aiohttp.ClientSession(connector=connector) as session:
             response = await session.get(url, params=params)
             # response.raise_for_status() # checks for anything other than status 200
-            if (
-                response.status != 200
-            ):  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
-                logger.warning(
-                    f"HTTP Error when parsing {term_id}. Response status ="
-                    f" {response.status}"
-                )
-                return (
-                    f"HTTP Error: status = {response.status}, reason ="
-                    f" {response.reason}"
-                )
+            if response.status != 200:  # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
+                logger.warning(f"HTTP Error when parsing {term_id}. Response status ={response.status}")
+                return (f"HTTP Error: status = {response.status}, reason = {response.reason}")
 
-            data = await response.json()
+            # data = await response.json()
+            response_content = await response.read()
+            data = json.loads(response_content)
             products_set = set()
             for assoc in data["associations"]:
                 if assoc["object"]["id"] == term_id and any(
@@ -366,6 +363,7 @@ class GOApi:
         ],
         approved_taxa=["NCBITaxon:9696"],
         request_params={"rows": 10000000},
+        model_settings:ModelSettings=None
     ):
         """
         Gets all GO Terms associated with 'gene_id' in the form of a list.
@@ -380,7 +378,8 @@ class GOApi:
                                   num_goterms_product_general value of the Fisher exact test contingency table. Only include the taxon (or taxa) which is (are) part of the research. If you are interested
                                   in statistically significant genes for Homo Sapiens, then only include the Homo Sapiens NCBI Taxon.
                                   The taxon (taxa) should be in the form of a list, each taxon should be a full NCBITaxon, such as: ["NCBITaxon:9696"]
-
+          - (ModelSettings) model_settings: needed for valid reference codes
+          
         To carry out the query request, the following url is used:
             http://api.geneontology.org/api/bioentity/gene/{gene_id}/function
         """
@@ -391,6 +390,10 @@ class GOApi:
         if response.status_code == 200:
             response_json = response.json()
             for assoc in response_json["associations"]:
+                # if evidence is not confirmed, continue to next iteration
+                evidence_confirmed, evidence_code_eco_id = GOApi.check_GO_association_evidence_code_validity(assoc, model_settings.valid_evidence_codes)
+                if not evidence_confirmed:
+                    continue
                 if assoc["subject"]["taxon"]["id"] in approved_taxa:
                     if assoc["object"]["category"][0] in go_categories:
                         go_id = assoc["object"]["id"]
@@ -400,3 +403,42 @@ class GOApi:
         else:
             logger.warning(f"Response error when querying GO Terms for {gene_id}!")
             return None
+    
+    @classmethod
+    def check_GO_association_evidence_code_validity(cls, assoc, valid_evidence_codes):
+        """
+        Checks if an association (between a GO term and a gene) has a matching evidence code as are the
+        specified valid_evidence_codes list.
+
+        Parameters:
+          - assoc: dictionary representing the association. Associations are obtained for example using http://api.geneontology.org/api/bioentity/function/{term_id}/genes, querying for response.json()
+                    and then using response_json["associations"]
+          - valid_evidence_codes: a list of valid evidence codes. They must be in the ECO format. It is preferred to instantiate ModelSettings with evidence codes and pass evidence codes from ModelSettings.
+        
+        Returns: list
+          - [0]: True or False, if the association has a valid evidence code
+          - [1]: the evidence code of the association
+        """
+        evidence_code_eco_id = ""
+        evidence_confirmed = False # if any of the evidence codes for this object are among (ReverseLookup).model_settings.valid_evidence_codes
+        evidence_code = assoc.get('evidence', None)
+        if evidence_code is not None:
+            if isinstance(evidence_code, list):
+                for ev_c in evidence_code:
+                    evidence_code_eco_id = ev_c
+                    if ev_c in valid_evidence_codes:
+                        evidence_confirmed = True
+                        break
+            elif isinstance(evidence_code, str):
+                evidence_code_eco_id = evidence_code
+                if evidence_code in valid_evidence_codes:
+                    evidence_confirmed = True
+        else: # evidence_code is None -> check evidence types
+            evidence_types = assoc.get('evidence_types')
+            if evidence_types is not None:
+                for evidence_type in evidence_types:
+                    evidence_code_eco_id = evidence_type.get('id', None) # get ECO id
+                    if evidence_code_eco_id in valid_evidence_codes:
+                        evidence_confirmed = True
+                        break
+        return [evidence_confirmed, evidence_code_eco_id]

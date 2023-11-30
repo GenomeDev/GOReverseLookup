@@ -36,7 +36,7 @@ class Cacher:
     def init(
         cls,
         cache_dir: str = "cache",
-        store_data_atexit: bool = True,
+        store_data_atexit: bool = True
     ):
         """
         Initialises ConnectionCacher. This function must be called at the program startup in order to read
@@ -45,6 +45,7 @@ class Cacher:
         Parameters:
           - (str) cache_dir: the cache folder
           - (bool) store_data_atexit: if True, will only store data at program exit. If False, will store data each time store_data is called.
+          - (bool) use_cacher: if you wish to enable caching (setting this to 'False') will disable all Cacher functionalities
 
         Usage:
             model = ReverseLookup.load_model("diabetes_angio_4/model_async_test.json") # make sure that model products are already computed
@@ -53,7 +54,7 @@ class Cacher:
 
         NOTE: WARNING !! In order for the atexit storage to work, you mustn't run the Python program in VSCode in Debug mode. Run
         it in normal mode and finish the program execution with CTRL + C to test the functionality.
-        """
+        """        
         FileUtil.check_path(cache_dir, is_file=False)
         cls.store_data_atexit = store_data_atexit
         cls.CACHE_FILEPATH_URLS = os.path.join(cache_dir, "connection_cache.json").replace("\\", "/")
@@ -148,10 +149,11 @@ class Cacher:
 
         With this code, if the algorithm encounters and already queried url, it will pull its old response,
         rather than query a new one.
-        """
+        """ 
         if not hasattr(cls, "is_init"):
-            cls.init()
-            
+            logger.warning(f"MAJOR WARNING: Cacher is not storing data. Was it initialised correctly?")
+            return
+
         if cls.is_init is False:
             cls.init()  # attempt cacher init, if the user forgot to initialise it
 
@@ -218,6 +220,9 @@ class Cacher:
 
     @classmethod
     def get_data(cls, data_location: str, data_key: str, debug_log:bool=False):
+        if not hasattr(cls, "is_init"):
+            return None
+        
         if cls.is_init is False:
             cls.init()
 

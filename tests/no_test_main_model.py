@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.info("Starting Model Test!")
 logger.info(f"os.getcwd() =  {os.getcwd()}")
 
-Cacher.init(cache_dir="cache")
+Cacher.init(cache_dir="cache") 
 ModelStats.init()
 WebsiteParser.init()
 
@@ -29,12 +29,13 @@ model = ReverseLookup.from_input_file("input_files/input.txt")
 # model.goterms = model.goterms[0:5]     # TODO: comment out
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) # TODO: reenable this
 model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=20)
+model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=20)
 model.create_products_from_goterms()
 model.products_perform_idmapping()
 model.fetch_orthologs_products_batch_gOrth(target_taxon_number="9606")
-model.fetch_ortholog_products(run_async=True, max_connections=30, semaphore_connections=10, req_delay=0.1)
+model.fetch_ortholog_products(run_async=True, max_connections=20, semaphore_connections=10, req_delay=0.1)
 model.prune_products()
-
+#
 # when using gorth_ortholog_fetch_for_indefinitive_orthologs as True,
 # the ortholog count can go as high as 15.000 or even 20.000 -> fetch product infos
 # disconnects from server, because we are seen as a bot.
@@ -47,6 +48,7 @@ model.prune_products()
 #    semaphore_connections=10,
 #    req_delay=0.1,
 #)
+
 model.save_model("results/data.json")
 
 # test model load from existing json, perform model scoring

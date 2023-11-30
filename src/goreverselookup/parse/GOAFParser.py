@@ -5,6 +5,7 @@ import urllib
 
 from .OBOParser import OboParser
 from ..util.FileUtil import FileUtil
+from ..util.DictUtil import DictUtil
 
 import logging
 
@@ -47,7 +48,9 @@ class GOAFMaster:
                     'download_url': "http://current.geneontology.org/annotations/xenbase.gaf.gz"
                 }
             },
-            go_categories: list = ["biological_process", "molecular_activity", "cellular_component"]
+            go_categories: list = ["biological_process", "molecular_activity", "cellular_component"],
+            valid_evidence_codes:list = [],
+            evidence_codes_to_ecoids:dict = {}
     ):
         """
         This is a master-class, which allows managing of several GOAnnotationsFiles (for different organisms). Parameters:
@@ -77,6 +80,10 @@ class GOAFMaster:
             which could be accessed by self.goa_files[ORGANISM], in our case self.goa_files["homo_sapiens"].
 
           - go_categories: a list of GO categories to take into account. They must be supplied in the list as strings. Available options are: "biological_process", "molecular_activity" and "cellular_component"
+          - (list) valid_evidence_codes: a list of valid evidence codes. Annotations which do not have an evidence code aligned with this list will be discarded.
+                                         WARNING: supplied evidence codes must be in the user-friendly format (e.g. IEA, TAS, ...) and not the ECO format! If they are supplied in the ECO format, a conversion attempt will be made using 'evidence_codes_to_ecoids' parameter, if set
+          - (dict) evidence_codes_to_ecoids: a mapping from user-friendly evidence codes to their respective ECO ids. It is advisable to set this as a fallback if supplied evidence codes are in the ECO format.
+
         """
         self.goa_filepaths = goa_filepaths
         self.go_categories = go_categories
@@ -88,7 +95,9 @@ class GOAFMaster:
                 download_url=file_raw_info['download_url'],
                 go_categories=go_categories,
                 organism_label=file_raw_info['organism'],
-                organism_ncbi_taxon_id=file_raw_info['ncbi_taxon_id']
+                organism_ncbi_taxon_id=file_raw_info['ncbi_taxon_id'],
+                valid_evidence_codes=valid_evidence_codes,
+                evidence_codes_to_ecoids=evidence_codes_to_ecoids
             )
             self.goa_files[organism_key] = goa_file
 
@@ -166,7 +175,9 @@ class GOAnnotationsFile:
             "cellular_component",
         ],
         organism_label = "",
-        organism_ncbi_taxon_id = ""
+        organism_ncbi_taxon_id = "",
+        valid_evidence_codes:list = [],
+        evidence_codes_to_ecoids:dict = {}
     ) -> None:
         """
         TODO: update comment
@@ -184,11 +195,30 @@ class GOAnnotationsFile:
                                   the GOAF file read phase - lines not containing a desired category (from go_categories) won't be read.
           - (str) organism_label: a descriptive label of the organism, for which this GAF is constructed (eg. homo_sapiens)
           - (str) organism_ncbi_taxon_id: ncbi taxon id for the organism, for which this GAF is constructed(eg. 9606 for homo_sapiens)
+          - (list) valid_evidence_codes: a list of valid evidence codes. Annotations which do not have an evidence code aligned with this list will be discarded.
+                                         WARNING: supplied evidence codes must be in the user-friendly format (e.g. IEA, TAS, ...) and not the ECO format! If they are supplied in the ECO format, a conversion attempt will be made using 'evidence_codes_to_ecoids' parameter, if set
+          - (dict) evidence_codes_to_ecoids: a mapping from user-friendly evidence codes to their respective ECO ids. It is advisable to set this as a fallback if supplied evidence codes are in the ECO format.
                                   
         See also:
           - http://geneontology.org/docs/download-go-annotations/
           - http://current.geneontology.org/products/pages/downloads.html
         """
+        # check that all valid_evidence_codes are in the user-friendly (and not in the ECO) format
+        if evidence_codes_to_ecoids != {}:
+            _v = []
+            ecoids_to_evidence_codes = DictUtil.reverse_dict(evidence_codes_to_ecoids)
+            for vec in valid_evidence_codes:
+                if "ECO:" in vec:
+                    converted = ecoids_to_evidence_codes.get(vec, None)
+                    if vec is not None:
+                        _v.append(converted)
+                else:
+                    _v.append(vec)
+            logger.debug(f"Converted evidence codes:")
+            logger.debug(f"  - input: {valid_evidence_codes}")
+            logger.debug(f"  - output: {_v}")
+            valid_evidence_codes = _v
+
         self.go_categories = go_categories
         self.organism_label = organism_label
         self.organism_ncbi_taxon_id = organism_ncbi_taxon_id
@@ -212,7 +242,8 @@ class GOAnnotationsFile:
                 if not line.startswith("!") and not line.strip() == "":
                     line = line.strip()
                     line_category = self._get_go_category_from_line(line)
-                    if line_category in go_categories:
+                    line_evidence_code = self._get_evidence_code_from_line(line)
+                    if line_category in go_categories and line_evidence_code in valid_evidence_codes:
                         self._readlines.append(line)
         self.terms_dict = None
         self.products_dict = None
@@ -303,6 +334,27 @@ class GOAnnotationsFile:
                 return "molecular_activity"
             case "C":
                 return "cellular_component"
+        return None
+
+    def _get_evidence_code_from_line(self, line):
+        """
+        Extracts evidence code from the line. It is at position 5 or 6 in the split line and is of length 2 or 3 characters.
+        Evidence codes in the GOA files are in the user-friendly format (e.g. IEA) and not in the ECO identifier format.
+        The element before evidence code is always a DB:reference (eg GO_REF:xxxx or Reactome:xxx, ...)
+
+        Params:
+          - line: either a line already split at (\t characters). If line is a str, it will be split at tabs.
+        
+        Returns: the evidence code of this line
+        """
+        if isinstance(line, str):
+            line = line.split("\t")
+        evidence_code = line[6]
+        if len(evidence_code) == 2 or len(evidence_code) == 3:
+            return evidence_code
+        evidence_code = line[5]
+        if len(evidence_code) == 2 or len(evidence_code) == 3:
+            return evidence_code
         return None
 
     def get_all_products_for_goterm(self, goterm_id: str, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:

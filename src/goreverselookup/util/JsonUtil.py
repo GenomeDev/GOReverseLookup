@@ -36,10 +36,7 @@ class JsonUtil:
                         "Filepath when attempting load JSON is None! Initial filepath"
                         f" was {initial_filepath}"
                     )
-
-                # current_dir = os.path.dirname(os.path.abspath(traceback.extract_stack()[0].filename))
-                # filepath = os.path.join(current_dir, filepath)
-
+                
         # bugfix: if filepath is empty, I want load_json to return {} instead of JSONDecodeError
         if FileUtil.is_file_empty(filepath):
             return {}

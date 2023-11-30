@@ -117,7 +117,3 @@ class EnsemblUtil():
             return label
         
         return None
-
-
-
-

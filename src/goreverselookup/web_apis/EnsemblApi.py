@@ -2,6 +2,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 import aiohttp
 import asyncio
+import json
 
 from ..util.CacheUtil import Cacher
 from ..util.ApiUtil import EnsemblUtil
@@ -183,7 +184,9 @@ class EnsemblApi:
             try:
                 response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=10)
                 # response.raise_for_status()
-                response_json = await response.json()
+                # response_json = await response.json()
+                response_content = await response.read()
+                response_json = json.loads(response_content)
                 Cacher.store_data("url", url, response_json)
                 await asyncio.sleep(self.async_request_sleep_delay)
             # except (requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ClientResponseError) as e:
@@ -282,7 +285,9 @@ class EnsemblApi:
             try:
                 response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=15)
                 # response.raise_for_status()
-                response_json = await response.json()
+                # response_json = await response.json()
+                response_content = await response.read()
+                response_json = json.loads(response_content)
                 Cacher.store_data("url", url, response_json)
                 await asyncio.sleep(self.async_request_sleep_delay)
             # except (requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ClientResponseError) as e:
@@ -578,7 +583,9 @@ class EnsemblApi:
                 # logger.debug(f"Attempting url: {full_url}")
                 response = await session.get(url, headers={"content-type": "application/json"}, timeout=request_timeout)
                 response.raise_for_status()
-                response_json = await response.json()
+                # response_json = await response.json()
+                response_content = await response.read()
+                response_json = json.loads(response_content)
                 Cacher.store_data("url", url, response_json)
                 await asyncio.sleep(self.async_request_sleep_delay)
         except (
@@ -605,11 +612,11 @@ class EnsemblApi:
                     if previous_response is not None:
                         response_json = previous_response
                     else:
-                        response = await session.get(
-                            url, headers={"Content-Type": "application/json"}, timeout=request_timeout
-                        )
+                        response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=request_timeout)
                         # response.raise_for_status()
-                        response_json = await response.json()
+                        # response_json = await response.json()
+                        response_content = await response.read()
+                        response_json = json.loads(response_content)
                         Cacher.store_data("url", url, response_json)
                         await asyncio.sleep(self.async_request_sleep_delay)
                     # Use the first ENS ID in the xrefs response to make a new lookup request
@@ -627,11 +634,11 @@ class EnsemblApi:
                     if previous_response is not None:
                         response_json = previous_response
                     else:
-                        response = await session.get(
-                            url, headers={"Content-Type": "application/json"}, timeout=request_timeout
-                        )
+                        response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=request_timeout)
                         # response.raise_for_status()
-                        response_json = await response.json()
+                        # response_json = await response.json()
+                        response_content = await response.read()
+                        response_json = json.loads(response_content)
                         Cacher.store_data("url", url, response_json)
                         await asyncio.sleep(self.async_request_sleep_delay)
                 else:
@@ -684,11 +691,11 @@ class EnsemblApi:
                 if previous_response is not None:
                     response_json = previous_response
                 else:
-                    response = await session.get(
-                        url, headers={"Content-Type": "application/json"}, timeout=5
-                    )
+                    response = await session.get(url, headers={"Content-Type": "application/json"}, timeout=5)
                     response.raise_for_status()  # TODO: solve Too Many Requests error (429) -> aiohttp.client_exceptions.ClientResponseError: 429, message='Too Many Requests', url=URL('https://rest.ensembl.org/xrefs/id/ENST00000301012?all_levels=1;external_db=UniProt%25')
-                    response_json = await response.json()
+                    # response_json = await response.json()
+                    response_content = await response.read()
+                    response_json = json.loads(response_content)
                     Cacher.store_data("url", url, response_json)
                     await asyncio.sleep(self.async_request_sleep_delay)
             # except (requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ClientResponseError):

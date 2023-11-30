@@ -6,6 +6,7 @@ import json
 import time
 import zlib
 import re
+import json
 from xml.etree import ElementTree
 
 from urllib.parse import urlparse, parse_qs, urlencode
@@ -652,17 +653,15 @@ class UniProtApi:
                 i += 1
                 try:
                     response = await session.get(url, timeout=5)
-                    response_json = await response.json()
+                    # response_json = await response.json()
+                    response_content = await response.read()
+                    response_json = json.loads(response_content)
                     Cacher.store_data("url", url, response_json)
                 # except(requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ServerDisconnectedError, aiohttp.ClientResponseError) as e:
                 except Exception as e:
-                    logger.warning(
-                        f"Exception when querying info for {uniprot_id}. Exception: {str(e)}"
-                    )
+                    logger.warning(f"Exception when querying info for {uniprot_id}. Exception: {str(e)}")
                     self.uniprot_query_exceptions.append({f"{uniprot_id}": f"{str(e)}"})
-                    await asyncio.sleep(
-                        self.async_request_sleep_delay
-                    )  # sleep before retrying
+                    await asyncio.sleep(self.async_request_sleep_delay)  # sleep before retrying
                     continue
 
         results = response_json["results"]
