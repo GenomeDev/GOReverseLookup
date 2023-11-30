@@ -697,7 +697,7 @@ class fisher_exact_test(Metrics):
                 goterms_product_general = set(goterms_product_general)
                 num_goterms_product_general = len(goterms_product_general)  # calculate new num_goterms_product_general
             """
-            # find the number of child indirect annotations
+            # find the number of child indirect annotations for num_goterms_product_general
             if self.reverse_lookup.model_settings.include_indirect_annotations is True:
                 # include all indirect annotations for num_goterms_product_general
                 directly_associated_goterms = list(goterms_product_general) # calling list constructor creates two separate entities, which prevents infinite looping !
@@ -765,13 +765,15 @@ class fisher_exact_test(Metrics):
                 
                 # TODO: MAKE A SETTING FOR THIS !!!
                 # compute indirectly annotated goterms of goterms_all_process
+                # this can be dangerous - a user can associate a GO term "positive regulation of interleukin productin" as a positive regulator of a state of interest (SOI),
+                # however, some interleukins are pro- and some are antiinflammatory. Not computing this is the safest way.
                 if D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_PROCESS_ALL == True:
                     goterms_all_process_indirect = set()
                     for goterm in goterms_all_process:
                         children = self.reverse_lookup.obo_parser.get_child_terms(goterm.id)
                         goterms_all_process_indirect.update(children)
                     num_goterms_all_process += len(goterms_all_process_indirect)
-                else:
+                else: # THIS STATEMENT MUST ALWAYS RUN IF CHILDREN ARE BEING COMPUTED ABOVE!
                     # if children are computed for goterms, then also increase num_goterms_all_process, to prevent negative values in the contingency table (specifically upper-right quadrant: num_goterms_all_process-num_goterms_product_process) 
                     # don't run this if indirect annotations are already computed for num_goterms_all_proces
                     num_goterms_all_process += num_indirect_children 
@@ -779,12 +781,12 @@ class fisher_exact_test(Metrics):
                 # time for Binomial test and "risk ratio"
                 cont_table = [
                     [
-                        num_goterms_product_process,
-                        num_goterms_all_process - num_goterms_product_process
+                        num_goterms_product_process, # top-left
+                        num_goterms_all_process - num_goterms_product_process # top-right
                     ],
                     [
-                        num_goterms_product_general - num_goterms_product_process,
-                        num_goterms_all_general - num_goterms_product_general - (num_goterms_all_process - num_goterms_product_process)
+                        num_goterms_product_general - num_goterms_product_process, # bottom-left
+                        num_goterms_all_general - num_goterms_product_general - (num_goterms_all_process - num_goterms_product_process) # bottom-right
                     ],
                 ]
 
