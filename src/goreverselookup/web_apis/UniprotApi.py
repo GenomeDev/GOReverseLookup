@@ -7,6 +7,7 @@ import time
 import zlib
 import re
 import json
+import sys
 from xml.etree import ElementTree
 
 from urllib.parse import urlparse, parse_qs, urlencode
@@ -856,12 +857,19 @@ class UniProtApi:
         def get_batch(batch_response, file_format, compressed, session):
             batch_url = get_next_link(batch_response.headers)
             while batch_url:
-                batch_response = session.get(batch_url)
-                # batch_response = session.get(batch_url, verify=False) # verify = False to prevent SSL errors
-                batch_response.raise_for_status()
-                yield decode_results(batch_response, file_format, compressed)
-                batch_url = get_next_link(batch_response.headers)
-
+                try:
+                    batch_response = session.get(batch_url)
+                    # batch_response = session.get(batch_url, verify=False) # verify = False to prevent SSL errors
+                    batch_response.raise_for_status()
+                    yield decode_results(batch_response, file_format, compressed)
+                    batch_url = get_next_link(batch_response.headers)
+                except requests.exceptions.SSLError as e:
+                    logger.warning(f"SSL exception encountered when attempting batch UniProtKB id-convert.")
+                    logger.warning(f"Error: {e}")
+                    u_in = input(f"Enter y to continue or n to close application:")
+                    if u_in == "n":
+                        sys.exit("Application closed by user.")
+        
         def get_next_link(headers):
             re_next_link = re.compile(r'<(.+)>; rel="next"')
             if "Link" in headers:
