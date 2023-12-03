@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools", "setuptools-scm", "pyzmq>=25.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -13,7 +13,7 @@ authors = [
 ]
 description = "Python library for Gene Ontology Reverse Lookup"
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10"
 keywords = ["gene ontology", "reverse lookup"]
 license = {text = "Apache License 2.0"}
 classifiers = [
@@ -36,7 +36,7 @@ dependencies = [
     "statsmodels",
     "beautifulsoup4"
 ]
-version = "1.0.14"
+version = "1.0.15"
 #dynamic = ["version"]
 
 [project.optional-dependencies]
