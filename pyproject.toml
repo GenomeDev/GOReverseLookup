@@ -34,7 +34,7 @@ dependencies = [
     "tabulate",
     "statsmodels"
 ]
-version = "1.0.12"
+version = "1.0.13"
 #dynamic = ["version"]
 
 [project.optional-dependencies]
@@ -56,8 +56,8 @@ dev = [
 #Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
 [project.scripts]
-# goreverselookup = "goreverselookup.main_cli:main"
-goreverselookup = "goreverselookup.main_cli"
+goreverselookup = "goreverselookup.main_cli:main"
+# goreverselookup = "goreverselookup.main_cli" # build error: Invalid script entry point: <ExportEntry goreverselookup = goreverselookup.main_cli:None []> - A callable suffix is required.
 
 [tool.tox]
 legacy_tox_ini = """
