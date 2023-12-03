@@ -54,7 +54,12 @@ class Cacher:
 
         NOTE: WARNING !! In order for the atexit storage to work, you mustn't run the Python program in VSCode in Debug mode. Run
         it in normal mode and finish the program execution with CTRL + C to test the functionality.
-        """        
+        """
+
+        def faulty_cache_file_resolve(cache_filepath:str):
+            # TODO:implement
+            return 0
+
         FileUtil.check_path(cache_dir, is_file=False)
         cls.store_data_atexit = store_data_atexit
         cls.CACHE_FILEPATH_URLS = os.path.join(cache_dir, "connection_cache.json").replace("\\", "/")

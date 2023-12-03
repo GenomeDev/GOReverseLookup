@@ -957,8 +957,16 @@ class UniProtApi:
 
         # check idmapping results ready
         if check_idmapping_results_ready(request_job_id, session):
-            link = get_idmapping_results_link(request_job_id, session)
-            results = get_idmapping_results_search(link, session)
+            try:
+                link = get_idmapping_results_link(request_job_id, session)
+                results = get_idmapping_results_search(link, session)
+            except requests.exceptions.SSLError as e:
+                    logger.warning(f"SSL exception encountered when attempting batch UniProtKB id-convert.")
+                    logger.warning(f"Error: {e}")
+                    u_in = input(f"Enter y to continue or n to close application:")
+                    if u_in == "n":
+                        sys.exit("Application closed by user.")
+                    return None
 
             # cache results
             successful = results.get("results", [])

@@ -34,8 +34,7 @@ dependencies = [
     "tabulate",
     "statsmodels"
 ]
-
-version = "1.0.10"
+version = "1.0.12"
 #dynamic = ["version"]
 
 [project.optional-dependencies]
@@ -55,9 +54,10 @@ dev = [
 #Documentation = "https://readthedocs.org"
 #Repository = "https://github.com/me/spam.git"
 #Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
-#
-#[project.scripts]
-#spam-cli = "spam:main_cli"
+
+[project.scripts]
+# goreverselookup = "goreverselookup.main_cli:main"
+goreverselookup = "goreverselookup.main_cli"
 
 [tool.tox]
 legacy_tox_ini = """

@@ -623,6 +623,8 @@ class ReverseLookup:
                 from_db=db,
                 to_db=to_db
             )
+            if idmappings is None:
+                continue
             successful_mappings = idmappings['results']
             failed_mappings = idmappings['failedIds']
             logger.info(f"{db} id mapping conversion to UniProtKB: {len(successful_mappings)} successful mappings, {len(failed_mappings)} failed mappings.")
