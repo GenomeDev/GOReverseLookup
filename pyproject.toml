@@ -37,7 +37,7 @@ dependencies = [
     "beautifulsoup4",
     "pyzmq >= 25.0.0"
 ]
-version = "1.0.16"
+version = "1.0.17"
 #dynamic = ["version"]
 
 [project.optional-dependencies]
