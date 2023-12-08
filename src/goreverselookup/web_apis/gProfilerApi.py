@@ -158,7 +158,7 @@ class gProfiler:
         for source_id in source_ids:
             gOrth_data_key = f"[{self.__class__.__name__}][{self.find_orthologs.__name__}][id={source_id},source_taxon={source_taxon},target_taxon={target_taxon}]"
             previous_result = Cacher.get_data("gprofiler", gOrth_data_key)
-            if previous_result is not None:
+            if previous_result is not None or previous_result != "none":
                 cached_results[source_id] = previous_result
             else:
                 new_input_ids.append(source_id)
@@ -198,14 +198,13 @@ class gProfiler:
 
             # store web-queried ids in cache
             for entry_source_id, orthologs in target_ids.items():
-                if orthologs == []:
-                    continue
                 gOrth_data_key = f"[{self.__class__.__name__}][{self.find_orthologs.__name__}][id={entry_source_id},source_taxon={source_taxon},target_taxon={target_taxon}]"
-                Cacher.store_data("gprofiler", gOrth_data_key, orthologs)
+                if orthologs == []:
+                    Cacher.store_data("gprofiler", gOrth_data_key, "none")
+                else:
+                    Cacher.store_data("gprofiler", gOrth_data_key, orthologs)
 
-            logger.debug(
-                f"gProfiler orth query ({source_taxon} -> {target_taxon}): {len(new_input_ids)} input ids -> {num_orthologs} found, {num_no_orthologs} not found."
-            )
+            logger.debug(f"gProfiler orth query ({source_taxon} -> {target_taxon}): {len(new_input_ids)} input ids -> {num_orthologs} found, {num_no_orthologs} not found.")
 
         # parse cached ids
         for source_id, cached_value in cached_results.items():
