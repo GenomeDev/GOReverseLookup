@@ -1,6 +1,7 @@
 import pytest
 
-from goreverselookup.web_apis.gProfilerApi import NCBITaxon_to_gProfiler, gProfiler
+from goreverselookup.web_apis.gProfilerApi import gProfiler
+from goreverselookup import gProfilerUtil
 
 
 @pytest.fixture
@@ -14,7 +15,7 @@ def test_convert_ids(gProfiler_class):
 
 
 def test_NCBITaxon_to_gProfiler():
-    assert NCBITaxon_to_gProfiler("7955") == "drerio"
+    assert gProfilerUtil.NCBITaxon_to_gProfiler("7955") == "drerio"
 
 
 def test_find_orthologs(gProfiler_class):

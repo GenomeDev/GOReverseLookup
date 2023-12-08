@@ -12,15 +12,26 @@ on:
 jobs:
   lint-format-type-checkmanifest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"] # Add the Python versions you want to test
+#    env:
+#      SKIP_LINT_CHECK: true # if this is set to true, will skip this workflow
 
     steps:
+#      - name: Check skip linting
+#        run: |
+#          if ["$SKIP_LINT_CHECK" == "true"]; then
+#            echo "Lint skipped as SKIP_LINT_CHECK is true in .github/test_on_push.yml."
+#            exit 0
+#          fi
       - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.x  # Specify the Python version you want to use
+          python-version: ${{ matrix.python-version }}  # Specify the Python version you want to use
 
       - name: Install Dependencies
         run: |

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm", "pyzmq>=25.0.0"]
+requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -34,10 +34,9 @@ dependencies = [
     "networkx",
     "tabulate",
     "statsmodels",
-    "beautifulsoup4",
-    "pyzmq >= 25.0.0"
+    "beautifulsoup4"
 ]
-version = "1.0.16"
+version = "1.0.23"
 #dynamic = ["version"]
 
 [project.optional-dependencies]
