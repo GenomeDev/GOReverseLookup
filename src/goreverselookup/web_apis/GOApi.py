@@ -81,22 +81,23 @@ class GOApi:
         else:
             # new database key
             approved_dbs_and_taxa[model_settings.target_organism.database] = [model_settings.target_organism.ncbi_id_full]
+        
         # add ortholog organisms
-        for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
-            assert isinstance(ortholog_organism_object, OrganismInfo)
-            ortholog_organism = ortholog_organism_object
-            if ortholog_organism.database in approved_dbs_and_taxa:
-                # existing database key -> add taxon
-                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa[ortholog_organism.database]:
-                    approved_dbs_and_taxa[ortholog_organism.database] += [ortholog_organism.ncbi_id_full]
+        if model_settings.ortholog_organisms is not None:
+            for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
+                assert isinstance(ortholog_organism_object, OrganismInfo)
+                ortholog_organism = ortholog_organism_object
+                if ortholog_organism.database in approved_dbs_and_taxa:
+                    # existing database key -> add taxon
+                    if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa[ortholog_organism.database]:
+                        approved_dbs_and_taxa[ortholog_organism.database] += [ortholog_organism.ncbi_id_full]
                 
-                # automatically add ortholog organism taxon to the UniProtKB database query
-                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa['UniProtKB']:
-                    approved_dbs_and_taxa['UniProtKB'] += [ortholog_organism.ncbi_id_full]
-            else:
-                approved_dbs_and_taxa[ortholog_organism.database] = [ortholog_organism.ncbi_id_full]
-        
-        
+                    # automatically add ortholog organism taxon to the UniProtKB database query
+                    if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa['UniProtKB']:
+                        approved_dbs_and_taxa['UniProtKB'] += [ortholog_organism.ncbi_id_full]
+                else:
+                    approved_dbs_and_taxa[ortholog_organism.database] = [ortholog_organism.ncbi_id_full]
+         
         url = f"http://api.geneontology.org/api/bioentity/function/{term_id}/genes"
         params = request_params
 
@@ -189,20 +190,22 @@ class GOApi:
         else:
             # new database key
             approved_dbs_and_taxa[model_settings.target_organism.database] = [model_settings.target_organism.ncbi_id_full]
+        
         # add ortholog organisms
-        for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
-            assert isinstance(ortholog_organism_object, OrganismInfo)
-            ortholog_organism = ortholog_organism_object
-            if ortholog_organism.database in approved_dbs_and_taxa:
-                # existing database key -> add taxon
-                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa[ortholog_organism.database]:
-                    approved_dbs_and_taxa[ortholog_organism.database] += [ortholog_organism.ncbi_id_full]
+        if model_settings.ortholog_organisms is not None:
+            for ortholog_organism_id, ortholog_organism_object in model_settings.ortholog_organisms.items():
+                assert isinstance(ortholog_organism_object, OrganismInfo)
+                ortholog_organism = ortholog_organism_object
+                if ortholog_organism.database in approved_dbs_and_taxa:
+                    # existing database key -> add taxon
+                    if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa[ortholog_organism.database]:
+                        approved_dbs_and_taxa[ortholog_organism.database] += [ortholog_organism.ncbi_id_full]
                 
-                # automatically add ortholog organism taxon to the UniProtKB database query
-                if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa['UniProtKB']:
-                    approved_dbs_and_taxa['UniProtKB'] += [ortholog_organism.ncbi_id_full]
-            else:
-                approved_dbs_and_taxa[ortholog_organism.database] = [ortholog_organism.ncbi_id_full]
+                    # automatically add ortholog organism taxon to the UniProtKB database query
+                    if ortholog_organism.ncbi_id_full not in approved_dbs_and_taxa['UniProtKB']:
+                        approved_dbs_and_taxa['UniProtKB'] += [ortholog_organism.ncbi_id_full]
+                else:
+                    approved_dbs_and_taxa[ortholog_organism.database] = [ortholog_organism.ncbi_id_full]
         
         MAX_RETRIES = 5
         url = f"http://api.geneontology.org/api/bioentity/function/{term_id}/genes"

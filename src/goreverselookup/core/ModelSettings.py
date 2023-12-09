@@ -245,6 +245,8 @@ class ModelSettings:
                         self.ortholog_organisms_ncbi_full_ids.append(organism_info.ncbi_id_full)
                 else:
                     logger.warning(f"Couldn't set ncbi_id_full for OrganismInfo of {organism_info.label}")
+            # sort self.ortholog_organisms_ncbi_full ids alphabetically, since it is used as a data key in cache operations
+            self.ortholog_organisms_ncbi_full_ids.sort()
         if hasattr(self, setting_name):
             setattr(self, setting_name, setting_value)
         else:

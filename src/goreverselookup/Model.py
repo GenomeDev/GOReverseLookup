@@ -666,8 +666,9 @@ class ReverseLookup:
         # divide products into distinct groups
         taxa_ids = set()
         taxa_ids.add(f"{self.model_settings.target_organism.ncbi_id}")
-        for label,ortholog_organism in self.model_settings.ortholog_organisms.items():
-            taxa_ids.add(f"{ortholog_organism.ncbi_id}")
+        if self.model_settings.ortholog_organisms is not None:
+            for label,ortholog_organism in self.model_settings.ortholog_organisms.items():
+                taxa_ids.add(f"{ortholog_organism.ncbi_id}")
         taxa_ids = list(taxa_ids)
         
         # initialise empty dict; format: {'taxon_id_number': [LIST OF ASSOCIATED TAXON IDs]}
