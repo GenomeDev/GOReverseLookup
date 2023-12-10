@@ -106,9 +106,6 @@ class OrganismInfo:
 class ModelSettings:
     """
     Represents user-defined settings, which can be set for the model, to change the course of data processing.
-
-      - homosapiens_only: if only homosapiens products should be queried from uniprot and ensembl # TODO: currently, this is hardcoded into requests. change this. # TODO: remove this, as it is obsolete
-      - require_product_evidence_codes: # TODO implement logic
       - fisher_test_use_online_query: If True, will query the products of GO Terms (for the num_goterms_products_general inside fisher test) via an online pathway (GOApi.get_goterms).
                                       If False, fisher test will compute num_goterms_products_general (= the number of goterms associated with a product) via an offline pathway using GOAF parsing.
       - include_indirect_annotations: If True, each GO Term relevant to the analysis will hold a list of it's parents and children from the go.obo (Gene Ontology .obo) file. Also, the parents and children of GO Terms will be taken into
@@ -169,8 +166,6 @@ class ModelSettings:
 
     # note: specifying ModelSettings inside the ModelSettings class is allowed because of the 'from __future__ import annotations' import.
     def __init__(self) -> ModelSettings:
-        self.homosapiens_only = False # TODO: remove or implement
-        self.require_product_evidence_codes = False
         self.fisher_test_use_online_query = False
         self.include_indirect_annotations = False  # previously: include_all_goterm_parents
         self.uniprotkb_genename_online_query = False
@@ -219,6 +214,9 @@ class ModelSettings:
         """
         json_data = {}
         for attr_name, attr_value in vars(self).items():
+            if attr_value is None:
+                # this happens for example when only attr_name is defined without a value; e.g. "ortholog_organisms" without any following ortholog organisms.
+                continue
             # custom handling for target_organism and ortholog_organisms, as they are code objects -> convert them to json
             if not callable(attr_value) and not attr_name.startswith("__"):
                 if attr_name == "target_organism":

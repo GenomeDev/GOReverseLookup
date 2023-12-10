@@ -80,14 +80,14 @@ class HumanOrthologFinder:
     def __init__(
         self,
         goaf: GOAnnotationsFile,
-        zfin_filepath: str = "",
-        zfin_download_url:str = "",
-        xenbase_filepath: str = "",
-        xenbase_download_url:str = "",
-        mgi_filepath: str = "",
-        mgi_download_url:str = "",
-        rgd_filepath: str = "",
-        rgd_download_url:str = ""
+        zfin_filepath: str = None,
+        zfin_download_url:str = None,
+        xenbase_filepath: str = None,
+        xenbase_download_url:str = None,
+        mgi_filepath: str = None,
+        mgi_download_url:str = None,
+        rgd_filepath: str = None,
+        rgd_download_url:str = None
     ):
         """
         Constructs the HumanOrthologFinder, which uses file-based search on pre-downloaded 3rd party database ortholog mappings to find
@@ -182,13 +182,16 @@ class ZFINHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/zfin_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """        
-        self.filepath = "data_files/zfin_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.filepath = "data_files/zfin_human_ortholog_mapping.txt" if filepath is None else filepath
         self.download_url = "https://zfin.org/downloads/human_orthos.txt" if download_url == "" else download_url
 
-        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
-        with open(self.filepath, "r") as read_content:
-            self._readlines = read_content.readlines()
-        logger.info(f"ZFINHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        if self.filepath is not None:
+            FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+            with open(self.filepath, "r") as read_content:
+                self._readlines = read_content.readlines()
+            logger.info(f"ZFINHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        else:
+            self._readlines = []
 
     def find_human_ortholog(self, product_id):
         """
@@ -266,13 +269,16 @@ class XenbaseHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/xenbase_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        self.filepath = "data_files/xenbase_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.filepath = "data_files/xenbase_human_ortholog_mapping.txt" if filepath is None else filepath
         self.download_url = "https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt" if download_url == "" else download_url
 
-        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
-        with open(self.filepath, "r") as read_content:
-            self._readlines = read_content.readlines()
-        logger.info(f"XenbaseHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        if filepath is not None:
+            FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+            with open(self.filepath, "r") as read_content:
+                self._readlines = read_content.readlines()
+            logger.info(f"XenbaseHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        else:
+            self._readlines = []
 
     def find_human_ortholog(self, product_id):
         """
@@ -361,13 +367,16 @@ class MGIHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/mgi_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        self.filepath = "data_files/mgi_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.filepath = "data_files/mgi_human_ortholog_mapping.txt" if filepath is None else filepath
         self.download_url = "https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt" if download_url == "" else download_url
 
-        FileUtil.download_file(filepath=self.filepath, download_url=self.download_url)
-        with open(self.filepath, "r") as read_content:
-            self._readlines = read_content.readlines()
-        logger.info(f"MGIHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        if filepath is not None:
+            FileUtil.download_file(filepath=self.filepath, download_url=self.download_url)
+            with open(self.filepath, "r") as read_content:
+                self._readlines = read_content.readlines()
+            logger.info(f"MGIHumanOrthologFinder setup ok: {len(self._readlines)} readlines.")
+        else:
+            self._readlines = []
 
     def find_human_ortholog(self, product_id):
         """
@@ -503,15 +512,18 @@ class RGDHumanOrthologFinder(HumanOrthologFinder):
           - (str) filepath: if left to default value, self._filepath will be set to "app/goreverselookup/data_files/rgd_human_ortholog_mapping.txt", else
                             self._filepath will be set to {filepath}
         """
-        self.filepath = "data_files/rgd_human_ortholog_mapping.txt" if filepath == "" else filepath
+        self.filepath = "data_files/rgd_human_ortholog_mapping.txt" if filepath is None else filepath
         self.download_url = "https://download.rgd.mcw.edu/pub/data_release/orthologs/RGD_ORTHOLOGS_Ortholog.txt" if download_url == "" else download_url
 
-        FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
-        with open(self.filepath, "r") as read_content:
-            self._readlines = read_content.readlines()
-        logger.info(
-            f"RGDHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
-        )
+        if filepath is not None:
+            FileUtil.download_txt_file(filepath=self.filepath, download_url=self.download_url)
+            with open(self.filepath, "r") as read_content:
+                self._readlines = read_content.readlines()
+            logger.info(
+                f"RGDHumanOrthologFinder setup ok: {len(self._readlines)} readlines."
+            )
+        else:
+            self._readlines = []
 
     def find_human_ortholog(self, product_id):
         """

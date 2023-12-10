@@ -1,0 +1,399 @@
+# --- Input file for GO Reverse Lookup --- #
+#
+# The input file contains the following sections: 
+#   - settings
+#   - processes
+#   - categories
+#   - GO_terms
+# Each section in this file is denoted by ### preceding the section name.
+# The values in each section are TAB-delimited.
+#
+# *** Evidence code groups section ****
+# Contains the whole "tree" of possible evidence codes, attributed to their groups. This section only determines the possible evidence codes groups and specific evidence codes.
+# The evidence code groups and specific evidence codes are not set in this section, but rather in the Settings section via the evidence_codes setting.
+# This section exists to give user the option to add or exclude any evidence codes, should the GO evidence codes change in the future.
+# Each line contains two tab-separated elements:
+#	(1) evidence code group name (e.g. author_statement)
+#   (2) evidence codes (e.g. TAS,NAS) belonging to the group, along with their ECO identifiers (evidence code and identifier separated by underscore) as comma-separated values (e.g. TAS_ECO:0000304,NAS_ECO:0000303)
+#		ECO evidence code identifiers can be found on https://wiki.geneontology.org/index.php/Guide_to_GO_Evidence_Codes and https://www.ebi.ac.uk/QuickGO/term/ECO:0000245
+# WARNING: the Evidence codes section MUST be specified before the Settings section.
+#
+# *** Settings section ***
+# It contains several settings, which are used to change the flow of the algorithm.
+# The possible settings are:
+#	- evidence_codes: 
+#			Determines which annotations between GO terms and respective genes (vice versa) to accept, based on evidence codes.
+#			Based on https://geneontology.org/docs/guide-go-evidence-codes/, there are the following 6 evidence groups (noted with belonging evidence codes):
+#			  a. experimental evidence (EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, HEP) [experimental]
+#			  b. phylogenetically inferred evidence (IBA, IBD, IKR, IRD) [phylogenetic]
+#			  c. computational analysis evidence (ISS, ISO, ISA, ISM, IGC, RCA) [computational_analysis]
+#			  d. author statement evidence (TAS, NAS) [author_statement]
+#			  e. curator statement evidence (IC, ND) [curator_statement]
+#			  f. electronic annotation (IEA) [electronic]
+#			In the settings, user can choose which evidence codes are valid for the program by specifying evidence groups, and, with the usage of (...) also which exact evidence codes to (or not to) take into account.
+#			
+#			For example, to take into account all evidence codes belonging to experimental evidence, use a tilde (~)
+#				evidence_codes experimental(~)
+#			
+#			To take into account only specific evidence codes from a group, specify them between the parantheses. If evidence codes
+#			are specified among parantheses, all non-specified evidence codes will be excluded. 
+#			For example, to take into account only IC, but not ND, from curator_statement, use the following:
+#				evidence_codes curator_statement(IC)
+#
+#			Similarly, you can use an exclamation mark '!' to exclude evidence codes, while retaining the non-specified evidence codes.
+#			To exclude only HEP and retain the rest of experimental evidence codes, use:
+#				evidence_codes !experimental(HEP)
+#
+#			By default, if an evidence group is not specified, all belonging evidence codes will still be valid.
+#			To exclude evidence codes belonging to a group, do so with an exclamation mark '!'.
+#			For example, to exclude entire group of computational analysis evidence codes, use:
+#				evidence_codes !computational_analysis(~)
+#
+#			To merge multiple groups, supply them to the evidence_codes setting as comma-separated-values:
+#				evidence_codes experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),curator_statement(IC),!electronic(~)
+#
+# 	- fisher_test_use_online_query:
+#			If True, will query the products of GO Terms (for the num_goterms_products_general inside fisher test) via an online pathway (GOApi.get_goterms).
+#			If False, fisher test will compute num_goterms_products_general (= the number of goterms associated with a product) via an offline pathway using GOAF parsing.
+#
+#	- include_indirect_annotations:
+#			When querying GO terms associated with genes, only specific directly annotated GO Terms are returned (this is a direct annotation).
+#			However, all of the children of a directly annotated GO Term are also indirectly connected to the gene in question (these are indirect annotations).
+#
+#			Likewise, when computing the number of GO Terms associated with a user-defined pathophysiological process, the GO Terms that the user defines count as direct annotations.
+#			However, all the children of the directly annotated GO Terms (indirect annotations) to a pathophysiological process should also count towards the modulation of that pathophysiological process.
+#
+#			If this setting is set to True, each each GO Term relevant to the analysis will have a list of it's child term ids computed (using go.obo). These ids will be taken
+#			into account when performing the fisher exact test. 
+#			If this setting is set to False, only directly annotated GO Terms will be accounted for during the scoring process.
+#
+#	- uniprotkb_genename_online_query:
+#			When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD).
+#			During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function.
+#			The gene name can be obtained via two pathways:
+#				a) online pathway, using: info_dict = await uniprot_api.get_uniprot_info_async(self.id_synonyms[0], session)
+#				b) offline pathway, using the GO Annotations File: info_dict = {"genename": goaf.get_uniprotkb_genename(self.id_synonyms[0])}
+#			During testing which pathway is more accurate in querying a gene name from a UniProtKB identifier, it was found that querying using the offline pathway (GOAF)
+#			resulted in obtaining more valid gene names that an online query to the uniprotkb servers themselves. Therefore, if using the latest GOAF, it is advisable to set
+#			this setting to False. If using an older GOAF, then have this setting set to True.
+#			If True, will query genename from a UniProtKB id via an online server request.
+#			If False, will query genename from a UniProtKB id via the GO Annotations File.
+#
+#	- pvalue:
+#			Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than
+#			the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes
+#			(eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
+#
+#	- gorth_ortholog_refetch:
+#			We implemented a gOrth batch ortholog query (https://biit.cs.ut.ee/gprofiler/orth), which is called using (ReverseLookup).fetch_orthologs_products_batch_gOrth(target_taxon_number=...) function.
+#			The function attempts to find orthologs to genes in a single batch request. If 'gorth_ortholog_refetch' is True, then the genes for which orthologs were not found,
+#			will be re-fetched using the regular asynchronous ortholog query pipeline. If 'gorth_ortholog_refetch' is False, then the genes for which orthologs were not found will not be queried for orthologs again.
+#
+#			Warning: For some identifiers, gOrth ortholog query can be inconsistent. For example, consider the MGI id MGI:96824 (Tlr4) (UniProtKB:Q9QUK6): gOrth query from "Mus musculus" to "Homo sapiens" using ENTREZGENE-ACC finds no ortholog for
+#			the MGI id (96824), however it finds an ortholog when querying using the UniProtKB id (Q9QUK6) for the same gene. On the other hand, gOrth query for MGI:99512 (Wdr47) (UniProtKB:Q8CGF6) is consistent both for the MGI and for the UniProtKB identifiers.
+#			In the default code example, the algorithm attempts to map "3rd party" identifiers (such as ZFIN, RGD, ...) to respective UniProtKB and Ensembl identifiers, prior to executing the gOrth ortholog mappings, since mapping using UniProt or Ensembl ids was shown
+#			to be more reliable.
+#			
+#			For developers: It is highly advisable to call (ReverseLookup).products_perform_idmapping() prior to calling (ReverseLookup).fetch_orthologs_products_batch_gOrth(), so as to map as many "3rd party" ids (RGD, ZFIN, etc) to UniProtKB and Ensembl ids, which
+#			are then implicitly used inside fetch_orthologs_products_batch_gOrth() to obtain the best gOrth ortholog mapping results.
+#
+#	- gorth_ortholog_fetch_for_indefinitive_orthologs
+#			The gOrth batch query implementation can return the following options: a) multiple orthologous genes (these are called "indefinitive orthologs"), b) a single orthologous gene (called a "definitive ortholog") or 
+#			c) no orthologous genes. In our asynchronos ortholog query pipeline implementation, when multiple orthologous genes are returned from Ensembl, the orthologous gene with the highest percentage identity ("perc_id") is
+#			selected as the best ortholog and is assigned as the true ortholog to the input gene. However, gOrth has currently (10_29_2023) no option to return the "best" orthologous gene, neither it has the option to exclude obsolete ortholog gene ids (confirmed by the gProfiler team via an email conversation).
+#			Therefore, it is advisable to keep the gorth_ortholog_fetch_for_indefinitive_orthologs to True, so that indefinitive orthologs are discarded from the gOrth ortholog query and are instead fetched by the asynchronos pipeline, which has the ability to 
+#			select the best ortholog for the input gene. Having this setting set to False will choose, in the case of "indefinitive orthologs", the first returned ortholog id from the gOrth query, but with no guarantees that this ortholog id is not obsolete.
+#
+# *** Processes section ***
+# It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
+# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes
+# section as:
+# 	chronic_inflammation	+
+#	cancer	+
+# The processes are also used in the GO_terms section, to specify how a GO Term contributes to a given process.
+#
+# *** Categories section ***
+# Gene Ontology provides three categories of annotations (as known as Gene Ontology Aspects):
+# 	- molecular_activity
+#   - biological_process
+#   - cellular_component
+# The categories section allows you to determine which GO Terms will be queried either from online or from the GO Annotations File.
+# For example, when a researcher is only interested in GO Terms related to molecular activity and biological processes, querying GO Terms
+# related to a cellular component might result in an incorrect gene scoring process, resulting in some genes being scored as statistically insignificant,
+# whereas they should be statistically significant. Thus, a researcher should turn off or on the GO categories according to the research goals.
+# To turn on or off a specific GO category, provide a tab-delimited True or False value next to that category.
+#
+# *** GO_terms section ***
+# It contains all of the GO Terms that will be used in the analysis. Each line in the section contains one GO Term,
+# with the following tab-delimited values:
+#	- [0]: GO Term identifier (eg. GO:0006954)
+#   - [1]: process, which the GO Term supposedly regulates (eg. chronic_inflammation)
+#   - [2]: positive or negative regulation direction of the process (+ or -)
+#   - [3]: weight: the presumed importance of a GO Term in regulating the process. It is used only in the adv_product_score statistical test (a custom implementation of gene importance). If you only intend on using the Fisher's test, the weights are insignificant, just set them to 1.
+#   - [4]: GO Term name: the name of the GO Term (optional)
+#   - [5]: GO Term description: the description of the GO Term (optional)
+# 
+# This input file should be called by one of the two methods:
+# a) Using Workflows:
+# 		from goreverselookuplib.Workflows import WorkflowTwo
+#		from goreverselookuplib.CacheUtils import Cacher
+#		
+#		Cacher.init()
+#		workflow = WorkflowTwo(input_file_fpath="PATH_TO_THIS_INPUT_FILE", save_folder_dir="PATH_TO_SAVE_FOLDER_DIRECTORY")
+#		workflow.run_workflow()
+#
+# b) Using ReverseLookup model
+# 	 	from goreverselookuplib import ReverseLookup
+#		from goreverselookuplib.CacheUtils import Cacher
+#		from goreverselookuplib.Metrics import nterms, adv_product_score, binomial_test, fisher_exact_test
+#
+#		model_save_filepath = "model/data.json"
+#		input_file_filepath = "model/input.txt"
+#		statistically_significant_genes_filepath = "model/stat_significant_genes.json"
+#
+#		# setup cacher and model instance
+#		Cacher.init()
+#		model = ReverseLookup.from_input_file(input_file_filepath)
+#
+#		# query model data
+#		model.fetch_all_go_term_names_descriptions(run_async=True)
+#		model.fetch_all_go_term_products(web_download=True, run_async=True, recalculate=False, max_connections = 60, request_params={"rows":50000}, delay = 0.0)
+#		model.create_products_from_goterms()
+#		model.products_perform_idmapping()
+#		model.fetch_orthologs_products_batch_gOrth(target_taxon_number="9606")
+#		model.fetch_ortholog_products(refetch=False, run_async = True, max_connections=15, req_delay=0.1, semaphore_connections=5)
+#		model.prune_products()
+#		model.save_model(model_save_filepath)
+#		
+#		# perform scoring
+#		goaf = GOAnnotiationsFile(go_categories=model.go_categories)
+#		nterms_test = nterms(model)
+#		adv_test = adv_product_score(model)
+#		binomtest = binomial_test(model, goaf)
+#		fishertest = fisher_exact_test(model, goaf)
+#		model.score_products(score_classes=[nterms_test,adv_test,binomtest,fishertest], recalculate=True)
+#		model.save_model(model_save_filepath)
+#		model.perform_statistical_analysis(filepath=statistically_significant_genes_filepath)
+#
+#		# in future runs, you can load up the model using:
+#		model_data_file = "model/data.json"
+#		model = ReverseLookup.load_model(model_data_file)
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	False
+include_indirect_annotations	False
+uniprotkb_genename_online_query	False
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###processes [proces name] [to be expressed + or suppressed -]
+rheumatoid_arthritis	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	False
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+GO:0071663	rheumatoid_arthritis	+	1
+GO:0071661	rheumatoid_arthritis	+	1
+GO:0038110	rheumatoid_arthritis	+	1
+GO:0071352	rheumatoid_arthritis	+	1
+GO:0042416	rheumatoid_arthritis	+	1
+GO:0070669	rheumatoid_arthritis	+	1
+GO:0032966	rheumatoid_arthritis	+	1
+GO:0010713	rheumatoid_arthritis	+	1
+GO:0045019	rheumatoid_arthritis	+	1
+GO:1904406	rheumatoid_arthritis	+	1
+GO:0045348	rheumatoid_arthritis	+	1
+GO:0032695	rheumatoid_arthritis	+	1
+GO:0032717	rheumatoid_arthritis	+	1
+GO:0045346	rheumatoid_arthritis	+	1
+GO:0009713	rheumatoid_arthritis	+	1
+GO:0042423	rheumatoid_arthritis	+	1
+GO:0002902	rheumatoid_arthritis	+	1
+GO:0006809	rheumatoid_arthritis	+	1
+GO:0010888	rheumatoid_arthritis	+	1
+GO:0042088	rheumatoid_arthritis	+	1
+GO:0032682	rheumatoid_arthritis	+	1
+GO:0050860	rheumatoid_arthritis	+	1
+GO:0046209	rheumatoid_arthritis	+	1
+GO:0002437	rheumatoid_arthritis	+	1
+GO:2001057	rheumatoid_arthritis	+	1
+GO:0031664	rheumatoid_arthritis	+	1
+GO:0042417	rheumatoid_arthritis	+	1
+GO:0002862	rheumatoid_arthritis	+	1
+GO:0032720	rheumatoid_arthritis	+	1
+GO:1903556	rheumatoid_arthritis	+	1
+GO:0043030	rheumatoid_arthritis	+	1
+GO:0032677	rheumatoid_arthritis	+	1
+GO:0002702	rheumatoid_arthritis	+	1
+GO:0002718	rheumatoid_arthritis	+	1
+GO:0042130	rheumatoid_arthritis	+	1
+GO:0050868	rheumatoid_arthritis	+	1
+GO:0002700	rheumatoid_arthritis	+	1
+GO:0032680	rheumatoid_arthritis	+	1
+GO:0002720	rheumatoid_arthritis	+	1
+GO:0050871	rheumatoid_arthritis	+	1
+GO:0046425	rheumatoid_arthritis	+	1
+GO:1903555	rheumatoid_arthritis	+	1
+GO:1903038	rheumatoid_arthritis	+	1
+GO:0050672	rheumatoid_arthritis	+	1
+GO:0032649	rheumatoid_arthritis	+	1
+GO:0032945	rheumatoid_arthritis	+	1
+GO:1904892	rheumatoid_arthritis	+	1
+GO:0050851	rheumatoid_arthritis	+	1
+GO:0032642	rheumatoid_arthritis	+	1
+GO:0070664	rheumatoid_arthritis	+	1
+GO:0030183	rheumatoid_arthritis	+	1
+GO:0051250	rheumatoid_arthritis	+	1
+GO:0050728	rheumatoid_arthritis	+	1
+GO:0042102	rheumatoid_arthritis	+	1
+GO:0046631	rheumatoid_arthritis	+	1
+GO:0050671	rheumatoid_arthritis	+	1
+GO:0032946	rheumatoid_arthritis	+	1
+GO:0050852	rheumatoid_arthritis	+	1
+GO:0042129	rheumatoid_arthritis	+	1
+GO:0032652	rheumatoid_arthritis	+	1
+GO:0046634	rheumatoid_arthritis	+	1
+GO:0022408	rheumatoid_arthritis	+	1
+GO:0002699	rheumatoid_arthritis	+	1
+GO:0002695	rheumatoid_arthritis	+	1
+GO:0050670	rheumatoid_arthritis	+	1
+GO:0032944	rheumatoid_arthritis	+	1
+GO:0070665	rheumatoid_arthritis	+	1
+GO:0046651	rheumatoid_arthritis	+	1
+GO:0002460	rheumatoid_arthritis	+	1
+GO:0032943	rheumatoid_arthritis	+	1
+GO:0050864	rheumatoid_arthritis	+	1
+GO:0046649	rheumatoid_arthritis	+	1
+GO:0045621	rheumatoid_arthritis	+	1
+GO:0050866	rheumatoid_arthritis	+	1
+GO:0002832	rheumatoid_arthritis	+	1
+GO:0070663	rheumatoid_arthritis	+	1
+GO:0030217	rheumatoid_arthritis	+	1
+GO:0002285	rheumatoid_arthritis	+	1
+GO:0031348	rheumatoid_arthritis	+	1
+GO:0002429	rheumatoid_arthritis	+	1
+GO:0042113	rheumatoid_arthritis	+	1
+GO:0030098	rheumatoid_arthritis	+	1
+GO:0002697	rheumatoid_arthritis	+	1
+GO:0001818	rheumatoid_arthritis	+	1
+GO:0071222	rheumatoid_arthritis	+	1
+GO:0002757	rheumatoid_arthritis	+	1
+GO:0042110	rheumatoid_arthritis	+	1
+GO:0071219	rheumatoid_arthritis	+	1
+GO:0032102	rheumatoid_arthritis	+	1
+GO:0045619	rheumatoid_arthritis	+	1
+GO:0002768	rheumatoid_arthritis	+	1
+GO:0032496	rheumatoid_arthritis	+	1
+GO:0051251	rheumatoid_arthritis	+	1
+GO:0045321	rheumatoid_arthritis	+	1
+GO:0050727	rheumatoid_arthritis	+	1
+GO:1903131	rheumatoid_arthritis	+	1
+GO:0002764	rheumatoid_arthritis	+	1
+GO:0002237	rheumatoid_arthritis	+	1
+GO:0007162	rheumatoid_arthritis	+	1
+GO:0071216	rheumatoid_arthritis	+	1
+GO:0002683	rheumatoid_arthritis	+	1
+GO:0002521	rheumatoid_arthritis	+	1
+GO:0002253	rheumatoid_arthritis	+	1
+GO:0050730	rheumatoid_arthritis	+	1
+GO:1903037	rheumatoid_arthritis	+	1
+GO:0050870	rheumatoid_arthritis	+	1
+GO:0002696	rheumatoid_arthritis	+	1
+GO:0050863	rheumatoid_arthritis	+	1
+GO:0022409	rheumatoid_arthritis	+	1
+GO:0050867	rheumatoid_arthritis	+	1
+GO:0001775	rheumatoid_arthritis	+	1
+GO:1903039	rheumatoid_arthritis	+	1
+GO:0002833	rheumatoid_arthritis	+	1
+GO:0051249	rheumatoid_arthritis	+	1
+GO:0002250	rheumatoid_arthritis	+	1
+GO:0002443	rheumatoid_arthritis	+	1
+GO:0042742	rheumatoid_arthritis	+	1
+GO:0070372	rheumatoid_arthritis	+	1
+GO:0002252	rheumatoid_arthritis	+	1
+GO:0050778	rheumatoid_arthritis	+	1
+GO:0002831	rheumatoid_arthritis	+	1
+GO:0006954	rheumatoid_arthritis	+	1
+GO:1902105	rheumatoid_arthritis	+	1
+GO:0022407	rheumatoid_arthritis	+	1
+GO:0001819	rheumatoid_arthritis	+	1
+GO:0031347	rheumatoid_arthritis	+	1
+GO:0002694	rheumatoid_arthritis	+	1
+GO:0009617	rheumatoid_arthritis	+	1
+GO:0001817	rheumatoid_arthritis	+	1
+GO:0002684	rheumatoid_arthritis	+	1
+GO:0050776	rheumatoid_arthritis	+	1
+GO:1901652	rheumatoid_arthritis	+	1
+GO:0050865	rheumatoid_arthritis	+	1
+GO:0045785	rheumatoid_arthritis	+	1
+GO:0030097	rheumatoid_arthritis	+	1
+GO:0034097	rheumatoid_arthritis	+	1
+GO:0002682	rheumatoid_arthritis	+	1
+GO:0032101	rheumatoid_arthritis	+	1
+GO:0006955	rheumatoid_arthritis	+	1
+GO:0098542	rheumatoid_arthritis	+	1
+GO:0051707	rheumatoid_arthritis	+	1
+GO:0043207	rheumatoid_arthritis	+	1
+GO:0009607	rheumatoid_arthritis	+	1
+GO:0048871	rheumatoid_arthritis	+	1
+GO:0006952	rheumatoid_arthritis	+	1
+GO:0071345	rheumatoid_arthritis	+	1
+GO:0002376	rheumatoid_arthritis	+	1
+GO:0080134	rheumatoid_arthritis	+	1
+GO:0044419	rheumatoid_arthritis	+	1
+GO:0030155	rheumatoid_arthritis	+	1
+GO:0010629	rheumatoid_arthritis	+	1
+GO:0051241	rheumatoid_arthritis	+	1
+GO:0033993	rheumatoid_arthritis	+	1
+GO:1901698	rheumatoid_arthritis	+	1
+GO:0007166	rheumatoid_arthritis	+	1
+GO:0071310	rheumatoid_arthritis	+	1
+GO:0048585	rheumatoid_arthritis	+	1
+GO:0010628	rheumatoid_arthritis	+	1
+GO:0009968	rheumatoid_arthritis	+	1
+GO:0051240	rheumatoid_arthritis	+	1
+GO:0010033	rheumatoid_arthritis	+	1
+GO:0009605	rheumatoid_arthritis	+	1
+GO:1901700	rheumatoid_arthritis	+	1
+GO:0019220	rheumatoid_arthritis	+	1
+GO:0051174	rheumatoid_arthritis	+	1
+GO:0042127	rheumatoid_arthritis	+	1
+GO:0070887	rheumatoid_arthritis	+	1
+GO:0048584	rheumatoid_arthritis	+	1
+GO:0051239	rheumatoid_arthritis	+	1
+GO:0048468	rheumatoid_arthritis	+	1
+GO:0006950	rheumatoid_arthritis	+	1
+GO:0065009	rheumatoid_arthritis	+	1
+GO:0042221	rheumatoid_arthritis	+	1
+GO:0048583	rheumatoid_arthritis	+	1
+GO:0007165	rheumatoid_arthritis	+	1
+GO:0023052	rheumatoid_arthritis	+	1
+GO:0007154	rheumatoid_arthritis	+	1
+GO:0009893	rheumatoid_arthritis	+	1
+GO:0051716	rheumatoid_arthritis	+	1
+GO:0048518	rheumatoid_arthritis	+	1
+GO:0010468	rheumatoid_arthritis	+	1
+GO:0031323	rheumatoid_arthritis	+	1
+GO:0050896	rheumatoid_arthritis	+	1

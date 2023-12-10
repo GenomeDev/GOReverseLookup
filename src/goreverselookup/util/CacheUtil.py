@@ -13,24 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class Cacher:
-    CACHE_FILEPATH_URLS = (  # filepath to the file containing online url queries and the URL RESPONSES
-        ""
-    )
-    CACHE_FILEPATH_UNIPROT = (  # filepath to the file containing uniprot api queries and their final results (after processing of the url responses)
-        ""
-    )
-    CACHE_FILEPATH_ENSEMBL = (  # filepath to the file containing ensembl api queries and their final results (after processing of the url responses)
-        ""
-    )
-    CACHE_FILEPATH_GENEONTOLOGY = (  # filepath to the file containing gene ontology api queries and their final results (after processing of the url responses)
-        ""
-    )
+    CACHE_FILEPATH_URLS = ""# filepath to the file containing online url queries and the URL RESPONSES
+    CACHE_FILEPATH_UNIPROT = ""  # filepath to the file containing uniprot api queries and their final results (after processing of the url responses)
+    CACHE_FILEPATH_ENSEMBL = ""  # filepath to the file containing ensembl api queries and their final results (after processing of the url responses)
+    CACHE_FILEPATH_GENEONTOLOGY = ""  # filepath to the file containing gene ontology api queries and their final results (after processing of the url responses)
     CACHE_FILEPATH_GPROFILER = ""
     cached_urls = {}
     cached_uniprot = {}
     cached_ensembl = {}
     cached_geneontology = {}
     cached_gprofiler = {}
+    # if any new entries have been cached - used to prevent re-saving existing caches without any changes during runtime
+    delta_cached_urls = False
+    delta_cached_uniprot = False
+    delta_cached_ensembl = False
+    delta_cached_geneontology = False
+    delta_cached_gprofiler = False
 
     @classmethod
     def init(
@@ -93,6 +91,13 @@ class Cacher:
             atexit.register(cls.save_data)
 
         cls.is_init = True  # to highlight that init was successful
+        
+        # if any new entries have been cached - used to prevent re-saving existing caches without any changes during runtime
+        cls.delta_cached_urls = False
+        cls.delta_cached_uniprot = False
+        cls.delta_cached_ensembl = False
+        cls.delta_cached_geneontology = False
+        cls.delta_cached_gprofiler = False
 
     @classmethod
     def store_data(
@@ -167,14 +172,19 @@ class Cacher:
         match data_location:
             case "url":
                 cached_data = cls.cached_urls
+                cls.delta_cached_urls = True
             case "uniprot":
                 cached_data = cls.cached_uniprot
+                cls.delta_cached_uniprot = True
             case "ensembl":
                 cached_data = cls.cached_ensembl
+                cls.delta_cached_ensembl = True
             case "go":
                 cached_data = cls.cached_geneontology
+                cls.delta_cached_geneontology = True
             case "gprofiler":
                 cached_data = cls.cached_gprofiler
+                cls.delta_cached_gprofiler = True
 
         # calculate current time
         if timestamp == "":
@@ -183,9 +193,7 @@ class Cacher:
         # bugfix: some urls return the following response: {'error': 'No valid lookup found for symbol Oxct2a'}
         # if this happens, do not store data
         if data_location == "url" and "error" in data_value:
-            logger.warning(
-                f"Error in data value, aborting cache store. data_value: {data_value}"
-            )
+            logger.warning(f"Error in data value, aborting cache store. data_value: {data_value}")
             return
 
         # update cached_data
@@ -193,9 +201,7 @@ class Cacher:
             cached_data[data_key] = {"data_value": data_value, "timestamp": timestamp}
         else:  # this data_key already exists in previous data
             previous_data_timestamp = cached_data[data_key]["timestamp"]
-            if (
-                Timer.compare_time(previous_data_timestamp, timestamp) is True
-            ):  # will return true, if timestamp > previous_url_timestamp (timestamp is logged later in time than previous_url_timestamp)
+            if Timer.compare_time(previous_data_timestamp, timestamp) is True:  # will return true, if timestamp > previous_url_timestamp (timestamp is logged later in time than previous_url_timestamp)
                 if data_value is not None:
                     cached_data[data_key] = {
                         "data_value": data_value,
@@ -216,9 +222,7 @@ class Cacher:
                     JsonUtil.save_json(cls.cached_ensembl, cls.CACHE_FILEPATH_ENSEMBL)
                 case "go":
                     cls.cached_geneontology = cached_data
-                    JsonUtil.save_json(
-                        cls.cached_geneontology, cls.CACHE_FILEPATH_GENEONTOLOGY
-                    )
+                    JsonUtil.save_json(cls.cached_geneontology, cls.CACHE_FILEPATH_GENEONTOLOGY)
                 case "gprofiler":
                     cls.cached_gprofiler = cached_data
                     JsonUtil.save_json(cls.cached_gprofiler, cls.CACHE_FILEPATH_GPROFILER)
@@ -269,12 +273,17 @@ class Cacher:
         cache filepaths (CACHE_FILEPATH_URLS, CACHE_FILEPATH_UNIPROT, CACHE_FILEPATH_ENSEMBL)
         """
         logger.info("Cacher is saving data. Please, be patient.")
-        JsonUtil.save_json(cls.cached_urls, cls.CACHE_FILEPATH_URLS)
-        JsonUtil.save_json(cls.cached_uniprot, cls.CACHE_FILEPATH_UNIPROT)
-        JsonUtil.save_json(cls.cached_ensembl, cls.CACHE_FILEPATH_ENSEMBL)
-        JsonUtil.save_json(cls.cached_geneontology, cls.CACHE_FILEPATH_GENEONTOLOGY)
-        JsonUtil.save_json(cls.cached_gprofiler, cls.CACHE_FILEPATH_GPROFILER)
-        logger.info("Successfully saved url, uniprot, ensembl and geneontology cache.")
+        if cls.delta_cached_urls:
+            JsonUtil.save_json(cls.cached_urls, cls.CACHE_FILEPATH_URLS)
+        if cls.delta_cached_uniprot:
+            JsonUtil.save_json(cls.cached_uniprot, cls.CACHE_FILEPATH_UNIPROT)
+        if cls.delta_cached_ensembl:
+            JsonUtil.save_json(cls.cached_ensembl, cls.CACHE_FILEPATH_ENSEMBL)
+        if cls.delta_cached_geneontology:
+            JsonUtil.save_json(cls.cached_geneontology, cls.CACHE_FILEPATH_GENEONTOLOGY)
+        if cls.delta_cached_gprofiler:
+            JsonUtil.save_json(cls.cached_gprofiler, cls.CACHE_FILEPATH_GPROFILER)
+        logger.info("Successfully saved url, uniprot, ensembl, geneontology and gprofiler cache.")
 
     @classmethod
     def clear_cache(cls, cache_to_clear: str):

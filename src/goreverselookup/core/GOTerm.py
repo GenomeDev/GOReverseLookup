@@ -299,8 +299,8 @@ class GOTerm:
                         Cacher.store_data("url", url, data)
                         logger.debug(f"Cached async product fetch data for {self.id}")
                         break # reponse json was obtained, break the loop
-                except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError) as e:
-                    logger.warning(f"Error when fetching products for {self.id}.")
+                except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError, asyncio.TimeoutError) as e:
+                    logger.warning(f"Error when fetching products for {self.id}: {type(e).__name__}")
                     logger.warning(f"  - attempted url: {url}")
                     possible_http_error_text = f"{e}"
             
@@ -335,6 +335,7 @@ class GOTerm:
 
         self.products = products
         self.products_taxa_dict = products_taxa_dict
+        # logger.debug(f"Active session connections: {len(session.connector._conns)}")
         logger.info(f"Fetched {len(self.products)} products for GO term {self.id} from {len(_d_unique_dbs)} unique databases ({_d_unique_dbs})")
         Cacher.store_data("go", data_key, products)
         Cacher.store_data("go", f"{data_key}_products-taxa-dict", self.products_taxa_dict)

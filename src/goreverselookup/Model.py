@@ -417,7 +417,6 @@ class ReverseLookup:
                 logger.info(f"Fetched products for GO term {goterm.id}")
                 goterm.products = products
 
-    # TODO: implement all ortholog taxa in request params! For example: request_params={"rows": 10000000, "taxon": "NCBITaxon:9606"}
     async def _fetch_all_goterm_products_async_v3(
         self,
         model_settings:ModelSettings,
@@ -2261,6 +2260,9 @@ class ReverseLookup:
                     
                     if section == "settings":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
+                        if len(chunks) < 2:
+                            # means there is no setting value, e.g. only "ortholog_organisms" is specified without any ortholog organisms specified
+                            continue
                         setting_name = chunks[0]
                         setting_value = chunks[1]  # is string now
                         if setting_value == "True" or setting_value == "true":
