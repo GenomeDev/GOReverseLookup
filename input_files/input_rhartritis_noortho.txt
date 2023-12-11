@@ -196,6 +196,7 @@ gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
 include_indirect_annotations	False
 uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	20
 ###filepaths
 go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
 goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
@@ -214,186 +215,186 @@ biological_process	True
 molecular_activity	False
 cellular_component	False
 ###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
-GO:0071663	rheumatoid_arthritis	+	1
-GO:0071661	rheumatoid_arthritis	+	1
-GO:0038110	rheumatoid_arthritis	+	1
-GO:0071352	rheumatoid_arthritis	+	1
-GO:0042416	rheumatoid_arthritis	+	1
-GO:0070669	rheumatoid_arthritis	+	1
-GO:0032966	rheumatoid_arthritis	+	1
-GO:0010713	rheumatoid_arthritis	+	1
-GO:0045019	rheumatoid_arthritis	+	1
-GO:1904406	rheumatoid_arthritis	+	1
-GO:0045348	rheumatoid_arthritis	+	1
-GO:0032695	rheumatoid_arthritis	+	1
-GO:0032717	rheumatoid_arthritis	+	1
-GO:0045346	rheumatoid_arthritis	+	1
-GO:0009713	rheumatoid_arthritis	+	1
-GO:0042423	rheumatoid_arthritis	+	1
-GO:0002902	rheumatoid_arthritis	+	1
-GO:0006809	rheumatoid_arthritis	+	1
-GO:0010888	rheumatoid_arthritis	+	1
-GO:0042088	rheumatoid_arthritis	+	1
-GO:0032682	rheumatoid_arthritis	+	1
-GO:0050860	rheumatoid_arthritis	+	1
-GO:0046209	rheumatoid_arthritis	+	1
-GO:0002437	rheumatoid_arthritis	+	1
-GO:2001057	rheumatoid_arthritis	+	1
-GO:0031664	rheumatoid_arthritis	+	1
-GO:0042417	rheumatoid_arthritis	+	1
-GO:0002862	rheumatoid_arthritis	+	1
-GO:0032720	rheumatoid_arthritis	+	1
-GO:1903556	rheumatoid_arthritis	+	1
-GO:0043030	rheumatoid_arthritis	+	1
-GO:0032677	rheumatoid_arthritis	+	1
-GO:0002702	rheumatoid_arthritis	+	1
-GO:0002718	rheumatoid_arthritis	+	1
-GO:0042130	rheumatoid_arthritis	+	1
-GO:0050868	rheumatoid_arthritis	+	1
-GO:0002700	rheumatoid_arthritis	+	1
-GO:0032680	rheumatoid_arthritis	+	1
-GO:0002720	rheumatoid_arthritis	+	1
-GO:0050871	rheumatoid_arthritis	+	1
-GO:0046425	rheumatoid_arthritis	+	1
-GO:1903555	rheumatoid_arthritis	+	1
-GO:1903038	rheumatoid_arthritis	+	1
-GO:0050672	rheumatoid_arthritis	+	1
-GO:0032649	rheumatoid_arthritis	+	1
-GO:0032945	rheumatoid_arthritis	+	1
-GO:1904892	rheumatoid_arthritis	+	1
-GO:0050851	rheumatoid_arthritis	+	1
-GO:0032642	rheumatoid_arthritis	+	1
-GO:0070664	rheumatoid_arthritis	+	1
-GO:0030183	rheumatoid_arthritis	+	1
-GO:0051250	rheumatoid_arthritis	+	1
-GO:0050728	rheumatoid_arthritis	+	1
-GO:0042102	rheumatoid_arthritis	+	1
-GO:0046631	rheumatoid_arthritis	+	1
-GO:0050671	rheumatoid_arthritis	+	1
-GO:0032946	rheumatoid_arthritis	+	1
-GO:0050852	rheumatoid_arthritis	+	1
-GO:0042129	rheumatoid_arthritis	+	1
-GO:0032652	rheumatoid_arthritis	+	1
-GO:0046634	rheumatoid_arthritis	+	1
-GO:0022408	rheumatoid_arthritis	+	1
-GO:0002699	rheumatoid_arthritis	+	1
-GO:0002695	rheumatoid_arthritis	+	1
-GO:0050670	rheumatoid_arthritis	+	1
-GO:0032944	rheumatoid_arthritis	+	1
-GO:0070665	rheumatoid_arthritis	+	1
-GO:0046651	rheumatoid_arthritis	+	1
-GO:0002460	rheumatoid_arthritis	+	1
-GO:0032943	rheumatoid_arthritis	+	1
-GO:0050864	rheumatoid_arthritis	+	1
-GO:0046649	rheumatoid_arthritis	+	1
-GO:0045621	rheumatoid_arthritis	+	1
-GO:0050866	rheumatoid_arthritis	+	1
-GO:0002832	rheumatoid_arthritis	+	1
-GO:0070663	rheumatoid_arthritis	+	1
-GO:0030217	rheumatoid_arthritis	+	1
-GO:0002285	rheumatoid_arthritis	+	1
-GO:0031348	rheumatoid_arthritis	+	1
-GO:0002429	rheumatoid_arthritis	+	1
-GO:0042113	rheumatoid_arthritis	+	1
-GO:0030098	rheumatoid_arthritis	+	1
-GO:0002697	rheumatoid_arthritis	+	1
-GO:0001818	rheumatoid_arthritis	+	1
-GO:0071222	rheumatoid_arthritis	+	1
-GO:0002757	rheumatoid_arthritis	+	1
-GO:0042110	rheumatoid_arthritis	+	1
-GO:0071219	rheumatoid_arthritis	+	1
-GO:0032102	rheumatoid_arthritis	+	1
-GO:0045619	rheumatoid_arthritis	+	1
-GO:0002768	rheumatoid_arthritis	+	1
-GO:0032496	rheumatoid_arthritis	+	1
-GO:0051251	rheumatoid_arthritis	+	1
-GO:0045321	rheumatoid_arthritis	+	1
-GO:0050727	rheumatoid_arthritis	+	1
-GO:1903131	rheumatoid_arthritis	+	1
-GO:0002764	rheumatoid_arthritis	+	1
-GO:0002237	rheumatoid_arthritis	+	1
-GO:0007162	rheumatoid_arthritis	+	1
-GO:0071216	rheumatoid_arthritis	+	1
-GO:0002683	rheumatoid_arthritis	+	1
-GO:0002521	rheumatoid_arthritis	+	1
-GO:0002253	rheumatoid_arthritis	+	1
-GO:0050730	rheumatoid_arthritis	+	1
-GO:1903037	rheumatoid_arthritis	+	1
-GO:0050870	rheumatoid_arthritis	+	1
-GO:0002696	rheumatoid_arthritis	+	1
-GO:0050863	rheumatoid_arthritis	+	1
-GO:0022409	rheumatoid_arthritis	+	1
-GO:0050867	rheumatoid_arthritis	+	1
-GO:0001775	rheumatoid_arthritis	+	1
-GO:1903039	rheumatoid_arthritis	+	1
-GO:0002833	rheumatoid_arthritis	+	1
-GO:0051249	rheumatoid_arthritis	+	1
-GO:0002250	rheumatoid_arthritis	+	1
-GO:0002443	rheumatoid_arthritis	+	1
-GO:0042742	rheumatoid_arthritis	+	1
-GO:0070372	rheumatoid_arthritis	+	1
-GO:0002252	rheumatoid_arthritis	+	1
-GO:0050778	rheumatoid_arthritis	+	1
-GO:0002831	rheumatoid_arthritis	+	1
-GO:0006954	rheumatoid_arthritis	+	1
-GO:1902105	rheumatoid_arthritis	+	1
-GO:0022407	rheumatoid_arthritis	+	1
-GO:0001819	rheumatoid_arthritis	+	1
-GO:0031347	rheumatoid_arthritis	+	1
-GO:0002694	rheumatoid_arthritis	+	1
-GO:0009617	rheumatoid_arthritis	+	1
-GO:0001817	rheumatoid_arthritis	+	1
-GO:0002684	rheumatoid_arthritis	+	1
-GO:0050776	rheumatoid_arthritis	+	1
-GO:1901652	rheumatoid_arthritis	+	1
-GO:0050865	rheumatoid_arthritis	+	1
-GO:0045785	rheumatoid_arthritis	+	1
-GO:0030097	rheumatoid_arthritis	+	1
-GO:0034097	rheumatoid_arthritis	+	1
-GO:0002682	rheumatoid_arthritis	+	1
-GO:0032101	rheumatoid_arthritis	+	1
-GO:0006955	rheumatoid_arthritis	+	1
-GO:0098542	rheumatoid_arthritis	+	1
-GO:0051707	rheumatoid_arthritis	+	1
-GO:0043207	rheumatoid_arthritis	+	1
-GO:0009607	rheumatoid_arthritis	+	1
-GO:0048871	rheumatoid_arthritis	+	1
-GO:0006952	rheumatoid_arthritis	+	1
-GO:0071345	rheumatoid_arthritis	+	1
-GO:0002376	rheumatoid_arthritis	+	1
-GO:0080134	rheumatoid_arthritis	+	1
-GO:0044419	rheumatoid_arthritis	+	1
-GO:0030155	rheumatoid_arthritis	+	1
-GO:0010629	rheumatoid_arthritis	+	1
-GO:0051241	rheumatoid_arthritis	+	1
-GO:0033993	rheumatoid_arthritis	+	1
-GO:1901698	rheumatoid_arthritis	+	1
-GO:0007166	rheumatoid_arthritis	+	1
-GO:0071310	rheumatoid_arthritis	+	1
-GO:0048585	rheumatoid_arthritis	+	1
-GO:0010628	rheumatoid_arthritis	+	1
-GO:0009968	rheumatoid_arthritis	+	1
-GO:0051240	rheumatoid_arthritis	+	1
-GO:0010033	rheumatoid_arthritis	+	1
-GO:0009605	rheumatoid_arthritis	+	1
-GO:1901700	rheumatoid_arthritis	+	1
-GO:0019220	rheumatoid_arthritis	+	1
-GO:0051174	rheumatoid_arthritis	+	1
-GO:0042127	rheumatoid_arthritis	+	1
-GO:0070887	rheumatoid_arthritis	+	1
-GO:0048584	rheumatoid_arthritis	+	1
-GO:0051239	rheumatoid_arthritis	+	1
-GO:0048468	rheumatoid_arthritis	+	1
-GO:0006950	rheumatoid_arthritis	+	1
-GO:0065009	rheumatoid_arthritis	+	1
-GO:0042221	rheumatoid_arthritis	+	1
-GO:0048583	rheumatoid_arthritis	+	1
-GO:0007165	rheumatoid_arthritis	+	1
-GO:0023052	rheumatoid_arthritis	+	1
-GO:0007154	rheumatoid_arthritis	+	1
-GO:0009893	rheumatoid_arthritis	+	1
-GO:0051716	rheumatoid_arthritis	+	1
-GO:0048518	rheumatoid_arthritis	+	1
-GO:0010468	rheumatoid_arthritis	+	1
-GO:0031323	rheumatoid_arthritis	+	1
-GO:0050896	rheumatoid_arthritis	+	1
+GO:0071663	rheumatoid_arthritis	+	1	positive regulation of granzyme B production
+GO:0071661	rheumatoid_arthritis	+	1	regulation of granzyme B production
+GO:0038110	rheumatoid_arthritis	+	1	interleukin-2-mediated signaling pathway
+GO:0071352	rheumatoid_arthritis	+	1	cellular response to interleukin-2
+GO:0042416	rheumatoid_arthritis	+	1	dopamine biosynthetic process
+GO:0070669	rheumatoid_arthritis	+	1	response to interleukin-2
+GO:0032966	rheumatoid_arthritis	+	1	negative regulation of collagen biosynthetic process
+GO:0010713	rheumatoid_arthritis	+	1	negative regulation of collagen metabolic process
+GO:0045019	rheumatoid_arthritis	+	1	negative regulation of nitric oxide biosynthetic process
+GO:1904406	rheumatoid_arthritis	+	1	negative regulation of nitric oxide metabolic process
+GO:0045348	rheumatoid_arthritis	+	1	positive regulation of MHC class II biosynthetic process
+GO:0032695	rheumatoid_arthritis	+	1	negative regulation of interleukin-12 production
+GO:0032717	rheumatoid_arthritis	+	1	negative regulation of interleukin-8 production
+GO:0045346	rheumatoid_arthritis	+	1	regulation of MHC class II biosynthetic process
+GO:0009713	rheumatoid_arthritis	+	1	catechol-containing compound biosynthetic process
+GO:0042423	rheumatoid_arthritis	+	1	catecholamine biosynthetic process
+GO:0002902	rheumatoid_arthritis	+	1	regulation of B cell apoptotic process
+GO:0006809	rheumatoid_arthritis	+	1	nitric oxide biosynthetic process
+GO:0010888	rheumatoid_arthritis	+	1	negative regulation of lipid storage
+GO:0042088	rheumatoid_arthritis	+	1	T-helper 1 type immune response
+GO:0032682	rheumatoid_arthritis	+	1	negative regulation of chemokine production
+GO:0050860	rheumatoid_arthritis	+	1	negative regulation of T cell receptor signaling pathway
+GO:0046209	rheumatoid_arthritis	+	1	nitric oxide metabolic process
+GO:0002437	rheumatoid_arthritis	+	1	inflammatory response to antigenic stimulus
+GO:2001057	rheumatoid_arthritis	+	1	reactive nitrogen species metabolic process
+GO:0031664	rheumatoid_arthritis	+	1	regulation of lipopolysaccharide-mediated signaling pathway
+GO:0042417	rheumatoid_arthritis	+	1	dopamine metabolic process
+GO:0002862	rheumatoid_arthritis	+	1	negative regulation of inflammatory response to antigenic stimulus
+GO:0032720	rheumatoid_arthritis	+	1	negative regulation of tumor necrosis factor production
+GO:1903556	rheumatoid_arthritis	+	1	negative regulation of tumor necrosis factor superfamily cytokine production
+GO:0043030	rheumatoid_arthritis	+	1	regulation of macrophage activation
+GO:0032677	rheumatoid_arthritis	+	1	regulation of interleukin-8 production
+GO:0002702	rheumatoid_arthritis	+	1	positive regulation of production of molecular mediator of immune response
+GO:0002718	rheumatoid_arthritis	+	1	regulation of cytokine production involved in immune response
+GO:0042130	rheumatoid_arthritis	+	1	negative regulation of T cell proliferation 
+GO:0050868	rheumatoid_arthritis	+	1	negative regulation of T cell activation
+GO:0002700	rheumatoid_arthritis	+	1	regulation of production of molecular mediator of immune response
+GO:0032680	rheumatoid_arthritis	+	1	regulation of tumor necrosis factor production
+GO:0002720	rheumatoid_arthritis	+	1	positive regulation of cytokine production involved in immune response
+GO:0050871	rheumatoid_arthritis	+	1	positive regulation of B cell activation
+GO:0046425	rheumatoid_arthritis	+	1	regulation of receptor signaling pathway via JAK-STAT
+GO:1903555	rheumatoid_arthritis	+	1	regulation of tumor necrosis factor superfamily cytokine production
+GO:1903038	rheumatoid_arthritis	+	1	negative regulation of leukocyte cell-cell adhesion
+GO:0050672	rheumatoid_arthritis	+	1	negative regulation of lymphocyte proliferation
+GO:0032649	rheumatoid_arthritis	+	1	regulation of type II interferon production
+GO:0032945	rheumatoid_arthritis	+	1	negative regulation of mononuclear cell proliferation
+GO:1904892	rheumatoid_arthritis	+	1	regulation of receptor signaling pathway via STAT
+GO:0050851	rheumatoid_arthritis	+	1	antigen receptor-mediated signaling pathway
+GO:0032642	rheumatoid_arthritis	+	1	regulation of chemokine production
+GO:0070664	rheumatoid_arthritis	+	1	negative regulation of leukocyte proliferation
+GO:0030183	rheumatoid_arthritis	+	1	B cell differentiation
+GO:0051250	rheumatoid_arthritis	+	1	negative regulation of lymphocyte activation
+GO:0050728	rheumatoid_arthritis	+	1	negative regulation of inflammatory response
+GO:0042102	rheumatoid_arthritis	+	1	positive regulation of T cell proliferation
+GO:0046631	rheumatoid_arthritis	+	1	alpha-beta T cell activation
+GO:0050671	rheumatoid_arthritis	+	1	positive regulation of lymphocyte proliferation
+GO:0032946	rheumatoid_arthritis	+	1	positive regulation of mononuclear cell proliferation
+GO:0050852	rheumatoid_arthritis	+	1	T cell receptor signaling pathway
+GO:0042129	rheumatoid_arthritis	+	1	regulation of T cell proliferation
+GO:0032652	rheumatoid_arthritis	+	1	regulation of interleukin-1 production
+GO:0046634	rheumatoid_arthritis	+	1	regulation of alpha-beta T cell activation
+GO:0022408	rheumatoid_arthritis	+	1	negative regulation of cell-cell adhesion
+GO:0002699	rheumatoid_arthritis	+	1	positive regulation of immune effector process
+GO:0002695	rheumatoid_arthritis	+	1	negative regulation of leukocyte activation
+GO:0050670	rheumatoid_arthritis	+	1	regulation of lymphocyte proliferation
+GO:0032944	rheumatoid_arthritis	+	1	regulation of mononuclear cell proliferation 
+GO:0070665	rheumatoid_arthritis	+	1	positive regulation of leukocyte proliferation
+GO:0046651	rheumatoid_arthritis	+	1	lymphocyte proliferation
+GO:0002460	rheumatoid_arthritis	+	1	adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains
+GO:0032943	rheumatoid_arthritis	+	1	mononuclear cell proliferation
+GO:0050864	rheumatoid_arthritis	+	1	regulation of B cell activation
+GO:0046649	rheumatoid_arthritis	+	1	lymphocyte activation
+GO:0045621	rheumatoid_arthritis	+	1	positive regulation of lymphocyte differentiation
+# GO:0050866	rheumatoid_arthritis	+	1	negative regulation of cell activation
+# GO:0050867	rheumatoid_arthritis	+	1	positive regulation of cell activation
+GO:0002832	rheumatoid_arthritis	+	1	negative regulation of response to biotic stimulus
+GO:0070663	rheumatoid_arthritis	+	1	regulation of leukocyte proliferation
+GO:0030217	rheumatoid_arthritis	+	1	T cell differentiation
+GO:0002285	rheumatoid_arthritis	+	1	lymphocyte activation involved in immune response
+GO:0031348	rheumatoid_arthritis	+	1	negative regulation of defense response
+GO:0002429	rheumatoid_arthritis	+	1	immune response-activating cell surface receptor signaling pathway
+GO:0042113	rheumatoid_arthritis	+	1	B cell activation
+GO:0030098	rheumatoid_arthritis	+	1	lymphocyte differentiation
+GO:0002697	rheumatoid_arthritis	+	1	regulation of immune effector process
+GO:0001818	rheumatoid_arthritis	+	1	negative regulation of cytokine production
+GO:0071222	rheumatoid_arthritis	+	1	cellular response to lipopolysaccharide
+GO:0002757	rheumatoid_arthritis	+	1	immune response-activating signaling pathway
+GO:0042110	rheumatoid_arthritis	+	1	T cell activation
+GO:0071219	rheumatoid_arthritis	+	1	cellular response to molecule of bacterial origin
+# GO:0032102	rheumatoid_arthritis	+	1	negative regulation of response to external stimulus
+GO:0045619	rheumatoid_arthritis	+	1	regulation of lymphocyte differentiation
+GO:0002768	rheumatoid_arthritis	+	1	immune response-regulating cell surface receptor signaling pathway
+GO:0032496	rheumatoid_arthritis	+	1	response to lipopolysaccharide
+GO:0051251	rheumatoid_arthritis	+	1	positive regulation of lymphocyte activation
+GO:0045321	rheumatoid_arthritis	+	1	leukocyte activation
+GO:0050727	rheumatoid_arthritis	+	1	regulation of inflammatory response
+GO:1903131	rheumatoid_arthritis	+	1	mononuclear cell differentiation
+GO:0002764	rheumatoid_arthritis	+	1	immune response-regulating signaling pathway
+GO:0002237	rheumatoid_arthritis	+	1	response to molecule of bacterial origin
+GO:0007162	rheumatoid_arthritis	+	1	negative regulation of cell adhesion
+# GO:0071216	rheumatoid_arthritis	+	1	cellular response to biotic stimulus
+GO:0002683	rheumatoid_arthritis	+	1	negative regulation of immune system process
+GO:0002521	rheumatoid_arthritis	+	1	leukocyte differentiation
+GO:0002253	rheumatoid_arthritis	+	1	activation of immune response
+GO:0050730	rheumatoid_arthritis	+	1	regulation of peptidyl-tyrosine phosphorylation
+GO:1903037	rheumatoid_arthritis	+	1	regulation of leukocyte cell-cell adhesion
+GO:0050870	rheumatoid_arthritis	+	1	positive regulation of T cell activation
+GO:0002696	rheumatoid_arthritis	+	1	positive regulation of leukocyte activation
+GO:0050863	rheumatoid_arthritis	+	1	regulation of T cell activation
+GO:0022409	rheumatoid_arthritis	+	1	positive regulation of cell-cell adhesion
+GO:0001775	rheumatoid_arthritis	+	1	cell activation
+GO:1903039	rheumatoid_arthritis	+	1	positive regulation of leukocyte cell-cell adhesion
+# GO:0002833	rheumatoid_arthritis	+	1	positive regulation of response to biotic stimulus
+GO:0051249	rheumatoid_arthritis	+	1	regulation of lymphocyte activation
+GO:0002250	rheumatoid_arthritis	+	1	adaptive immune response
+GO:0002443	rheumatoid_arthritis	+	1	leukocyte mediated immunity
+GO:0042742	rheumatoid_arthritis	+	1	defense response to bacterium
+GO:0070372	rheumatoid_arthritis	+	1	regulation of ERK1 and ERK2 cascade
+GO:0002252	rheumatoid_arthritis	+	1	immune effector process
+GO:0050778	rheumatoid_arthritis	+	1	positive regulation of immune response
+# GO:0002831	rheumatoid_arthritis	+	1	regulation of response to biotic stimulus
+GO:0006954	rheumatoid_arthritis	+	1	inflammatory response
+GO:1902105	rheumatoid_arthritis	+	1	regulation of leukocyte differentiation
+GO:0022407	rheumatoid_arthritis	+	1	regulation of cell-cell adhesion
+GO:0001819	rheumatoid_arthritis	+	1	positive regulation of cytokine production
+GO:0031347	rheumatoid_arthritis	+	1	regulation of defense response
+GO:0002694	rheumatoid_arthritis	+	1	regulation of leukocyte activation
+GO:0009617	rheumatoid_arthritis	+	1	response to bacterium
+GO:0001817	rheumatoid_arthritis	+	1	regulation of cytokine production
+GO:0002684	rheumatoid_arthritis	+	1	positive regulation of immune system process
+GO:0050776	rheumatoid_arthritis	+	1	regulation of immune response
+GO:1901652	rheumatoid_arthritis	+	1	response to peptide
+GO:0050865	rheumatoid_arthritis	+	1	regulation of cell activation
+GO:0045785	rheumatoid_arthritis	+	1	positive regulation of cell adhesion
+GO:0030097	rheumatoid_arthritis	+	1	hemopoiesis
+GO:0034097	rheumatoid_arthritis	+	1	response to cytokine
+GO:0002682	rheumatoid_arthritis	+	1	regulation of immune system process
+# GO:0032101	rheumatoid_arthritis	+	1	regulation of response to external stimulus
+GO:0006955	rheumatoid_arthritis	+	1	immune response
+GO:0098542	rheumatoid_arthritis	+	1	defense response to other organism
+# GO:0051707	rheumatoid_arthritis	+	1	response to other organism # 2.1mil
+# GO:0043207	rheumatoid_arthritis	+	1	response to external biotic stimulus # 2.1 mil
+# GO:0009607	rheumatoid_arthritis	+	1	response to biotic stimulus # 2.2mil
+GO:0048871	rheumatoid_arthritis	+	1	multicellular organismal-level homeostasis 
+GO:0006952	rheumatoid_arthritis	+	1	defense response # 1.1mil
+GO:0071345	rheumatoid_arthritis	+	1	cellular response to cytokine stimulus
+GO:0002376	rheumatoid_arthritis	+	1	immune system process # 1 mil anns
+GO:0080134	rheumatoid_arthritis	+	1	regulation of response to stress
+# GO:0044419	rheumatoid_arthritis	+	1	biological process involved in interspecies interaction between organisms # 7.3mil annotations
+GO:0030155	rheumatoid_arthritis	+	1	regulation of cell adhesion
+# GO:0010629	rheumatoid_arthritis	+	1	negative regulation of gene expression
+# GO:0051241	rheumatoid_arthritis	+	1	negative regulation of multicellular organismal process
+GO:0033993	rheumatoid_arthritis	+	1	response to lipid
+GO:1901698	rheumatoid_arthritis	+	1	response to nitrogen compound
+# GO:0007166	rheumatoid_arthritis	+	1	cell surface receptor signaling pathway
+# GO:0071310	rheumatoid_arthritis	+	1	cellular response to organic substance
+# GO:0048585	rheumatoid_arthritis	+	1	negative regulation of response to stimulus
+# GO:0010628	rheumatoid_arthritis	+	1	positive regulation of gene expression
+# GO:0009968	rheumatoid_arthritis	+	1	negative regulation of signal transduction
+# GO:0051240	rheumatoid_arthritis	+	1	positive regulation of multicellular organismal process
+# GO:0010033	rheumatoid_arthritis	+	1	response to organic substance
+# GO:0009605	rheumatoid_arthritis	+	1	response to external stimulus # 4.5mil
+GO:1901700	rheumatoid_arthritis	+	1	response to oxygen-containing compound
+GO:0019220	rheumatoid_arthritis	+	1	regulation of phosphate metabolic process
+GO:0051174	rheumatoid_arthritis	+	1	regulation of phosphorus metabolic process
+GO:0042127	rheumatoid_arthritis	+	1	regulation of cell population proliferation
+# GO:0070887	rheumatoid_arthritis	+	1	cellular response to chemical stimulus # 4.5mil
+# GO:0048584	rheumatoid_arthritis	+	1	positive regulation of response to stimulus
+# GO:0051239	rheumatoid_arthritis	+	1	regulation of multicellular organismal process
+GO:0048468	rheumatoid_arthritis	+	1	cell development
+# GO:0006950	rheumatoid_arthritis	+	1	response to stress # 11 million anns
+# GO:0065009	rheumatoid_arthritis	+	1	regulation of molecular function
+# GO:0042221	rheumatoid_arthritis	+	1	response to chemical # 7 million anns
+# GO:0048583	rheumatoid_arthritis	+	1	regulation of response to stimulus # 1.5 million annotations
+# GO:0007165	rheumatoid_arthritis	+	1	signal transduction # 15 million annotations
+# GO:0023052	rheumatoid_arthritis	+	1	signaling # 15 million annotations
+# GO:0007154	rheumatoid_arthritis	+	1	cell communication # 16 million annotations
+# GO:0009893	rheumatoid_arthritis	+	1	positive regulation of metabolic process # 1.5 million annotations
+# GO:0051716	rheumatoid_arthritis	+	1	cellular response to stimulus # 28 million annotations
+# GO:0048518	rheumatoid_arthritis	+	1	positive regulation of biological process # 2.5 million annotations
+# GO:0010468	rheumatoid_arthritis	+	1	regulation of gene expression # 25 million annotations
+# GO:0031323	rheumatoid_arthritis	+	1	regulation of cellular metabolic process # 26 million annotations
+# GO:0050896	rheumatoid_arthritis	+	1 #531.000 annotations -> clogs server bandwidth

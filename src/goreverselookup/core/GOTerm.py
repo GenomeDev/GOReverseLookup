@@ -156,9 +156,6 @@ class GOTerm:
         Fetches UniProtKB products associated with a GO Term and sets the "products" member field of the GO Term to a list of all associated products.
         The link used to query for the response is http://api.geneontology.org/api/bioentity/function/{term_id}/genes.
 
-        The product IDs can be of any of the following databases: UniProt, ZFIN, Xenbase, MGI, RGD 
-        [TODO: enable the user to specify databases himself]
-
         Parameters:
           - source: can either be a GOApi instance (web-based download) or a GOAnnotationFile isntance (file-based download)
           - (ModelSettings) model_settings: the model settings of this model, used for parsing of target_organism and ortholog organisms
@@ -170,11 +167,18 @@ class GOTerm:
                 goterm.fetch_products(source)
         """
         if isinstance(source, GOApi):
-            products = source.get_products(self.id, model_settings=model_settings)
-            if products:
+            r = source.get_products(self.id, model_settings=model_settings)
+            if r is not None:
+                products = r[0]
+                products_taxa_dict = r[1]
                 self.products = products
+                self.products_taxa_dict = products_taxa_dict
+            else:
+                self.products = None
+                self.products_taxa_dict = None
+
         elif isinstance(source, GOAnnotationsFile):
-            # TODO: implement taxon here !!!
+            # TODO: reimplement or remove this
             products = source.get_products(self.id)
             if products:
                 self.products = products
@@ -287,7 +291,7 @@ class GOTerm:
             else:
                 try:
                     await asyncio.sleep(req_delay)
-                    response = await session.get(url, params=params)
+                    response = await session.get(url, params=params, timeout=model_settings.goterm_gene_query_timeout)
                     if response.status != 200: # return HTTP Error if status is not 200 (not ok), parse it into goterm.http_errors -> TODO: recalculate products for goterms with http errors
                         possible_http_error_text = f"HTTP Error when parsing {self.id}. Response status = {response.status}"
                         logger.warning(possible_http_error_text)
@@ -317,9 +321,7 @@ class GOTerm:
             _d_unique_dbs.add(assoc['subject']['id'].split(":")[0])
             _d_db = assoc['subject']['id'].split(":")[0]
             _d_taxon = assoc['subject']['taxon']['id']
-            if "UniProtKB" in _d_db and "9606" not in _d_taxon: # for debug purposes
-                # logger.info(f"UniProtKB - {_d_taxon}")
-                pass
+
             if assoc['object']['id'] == self.id:
                 for database,taxa in approved_dbs_and_taxa.items():
                     if database in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in taxa):

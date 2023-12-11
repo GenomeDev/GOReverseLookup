@@ -103,6 +103,10 @@
 #			selected as the best ortholog and is assigned as the true ortholog to the input gene. However, gOrth has currently (10_29_2023) no option to return the "best" orthologous gene, neither it has the option to exclude obsolete ortholog gene ids (confirmed by the gProfiler team via an email conversation).
 #			Therefore, it is advisable to keep the gorth_ortholog_fetch_for_indefinitive_orthologs to True, so that indefinitive orthologs are discarded from the gOrth ortholog query and are instead fetched by the asynchronos pipeline, which has the ability to 
 #			select the best ortholog for the input gene. Having this setting set to False will choose, in the case of "indefinitive orthologs", the first returned ortholog id from the gOrth query, but with no guarantees that this ortholog id is not obsolete.
+#  - goterm_gene_query_timeout:
+#			The timeout (in seconds) after which a goterm gene (product) query will be dropped. GO terms with ~30.000 associated genes take approximately 14 seconds to query.
+#			Must be specified as an integer.
+#			This setting impacts both synchronous and asynchronous requests. Do note that async requests may take longer than the aforementioned example.
 #
 # *** Processes section ***
 # It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
@@ -189,13 +193,14 @@ electronic	IEA_ECO:0000501
 pvalue	0.05
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
-#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
-evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
 gorth_ortholog_fetch_for_indefinitive_orthologs	True
 gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
 include_indirect_annotations	False
 uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	20
 ###filepaths
 go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
 goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens

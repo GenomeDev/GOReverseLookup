@@ -7,6 +7,8 @@ import asyncio
 import json
 
 from ..util.FileUtil import FileUtil
+from ..core.ModelStats import ModelStats
+from ..util.CacheUtil import Cacher
 from ..core.ModelSettings import ModelSettings,OrganismInfo
 
 import logging
@@ -24,7 +26,9 @@ class GOApi:
     def __init__(self):
         # Set up a retrying session
         retry_strategy = Retry(
-            total=3, status_forcelist=[429, 500, 502, 503, 504], backoff_factor=0.3
+            total=3, 
+            status_forcelist=[429, 500, 502, 503, 504], 
+            backoff_factor=0.3
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session = requests.Session()
@@ -59,7 +63,12 @@ class GOApi:
             return None
 
     def get_products(
-        self, term_id, model_settings:ModelSettings, get_url_only=False, get_response_only=False, request_params={"rows": 10000000}
+        self, 
+        term_id, 
+        model_settings:ModelSettings, 
+        get_url_only=False, 
+        get_response_only=False, 
+        request_params={"rows": 10000000}
     ):
         """
         Fetches product IDs (gene ids) associated with a given term ID from the Gene Ontology API. The product IDs can be of any of the following
@@ -67,12 +76,34 @@ class GOApi:
 
         The request uses this link: http://api.geneontology.org/api/bioentity/function/{term_id}/genes
 
-        Returns:
-          - (string as json) data: a json string, representing the api request response
+        Returns: a list of two elements
+          - [0]: (string as json) data: a json string, representing the api request response
+          - [1]: (dict) products_taxa_dict
         """
+        if model_settings.target_organism is None:
+            raise Exception("Target organism was not specified in input.txt. Make sure to specify a target organism in the 'settings' section of input.txt!")
+        if request_params is not None:
+            if 'rows' in request_params:
+                if request_params['rows'] < 10000000:
+                    logger.warning(f"MAJOR WARNING: Rows specified in request params ({request_params['rows']}) are less than {10000000}. You risk missing out important anootations!")
+            if 'rows' not in request_params:
+                logger.warning(f"MAJOR WARNING! You did not specify 'rows' in request params. You risk missing out important annotations!")
+
+         # data key is in the format [class_name][function_name][function_params]
+        data_key = f"[{self.__class__.__name__}][{self.get_products.__name__}][go_id={term_id}][target_organism={model_settings.target_organism.ncbi_id_full}][orthologs={model_settings.ortholog_organisms_ncbi_full_ids}]"
+        prev_data = Cacher.get_data("go", data_key=data_key)
+        previous_data_taxa_dict = Cacher.get_data("go", f"{data_key}_products-taxa-dict")
+
+        if prev_data is not None and previous_data_taxa_dict is not None:
+            logger.debug(f"Found cached previous product fetch data for {term_id}")
+            ModelStats.goterm_product_query_results[term_id] = prev_data
+            return [prev_data, previous_data_taxa_dict]
+
 
         approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
         approved_dbs_and_taxa['UniProtKB'] = [] # create uniprotkb by default
+        products_taxa_dict = {}
+
         # add target organism
         if model_settings.target_organism.database in approved_dbs_and_taxa:
             # existing database key -> add taxon!
@@ -114,7 +145,7 @@ class GOApi:
         max_retries = 5  # try api requests for max 5 times
         for i in range(max_retries):
             try:
-                response = self.s.get(url, params=params, timeout=5)
+                response = self.s.get(url, params=params, timeout=model_settings.goterm_gene_query_timeout)
                 response.raise_for_status()
 
                 data = response.json()
@@ -125,31 +156,34 @@ class GOApi:
                 _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
         
                 for assoc in data['associations']:
+                    evidence_confirmed, evidence_code_eco_id = GOApi.check_GO_association_evidence_code_validity(assoc, model_settings.valid_evidence_codes)
+                    if not evidence_confirmed:
+                        continue
+
                     _d_unique_dbs.add(assoc['subject']['id'].split(":")[0])
                     _d_db = assoc['subject']['id'].split(":")[0]
                     _d_taxon = assoc['subject']['taxon']['id']
-                    if "UniProtKB" in _d_db and "9606" not in _d_taxon: # for debug purposes
-                        # logger.info(f"UniProtKB - {_d_taxon}")
-                        pass
-                    if assoc['object']['id'] in term_id:
+
+                    if assoc['object']['id'] in term_id or term_id in assoc['object']['id']:
                         for database,taxa in approved_dbs_and_taxa.items():
                             if database in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in taxa):
                                 product_id = assoc['subject']['id']
                                 products_set.add(product_id)
+                                products_taxa_dict[product_id] = assoc['subject']['taxon']['id']
                 
                 products = list(products_set)
-                logger.info(f"Fetched products for GO term {term_id}")
-                return products
-
+                logger.info(f"{term_id}: fetched {len(products)} products.")
+                Cacher.store_data(data_location="go", data_key=data_key, data_value=products)
+                Cacher.store_data("go", f"{data_key}_products-taxa-dict", products_taxa_dict)
+                ModelStats.goterm_product_query_results[term_id] = products
+                return [products, products_taxa_dict]
+            
             except (requests.exceptions.RequestException, JSONDecodeError) as e:
                 if i == (max_retries - 1):  # this was the last http request, it failed
-                    logger.error(
-                        "Experienced an http exception or a JSONDecodeError while"
-                        f" fetching products for {term_id}"
-                    )
-                    error_log_filepath = FileUtil.find_win_abs_filepath(
-                        "log_output/error_log"
-                    )
+                    logger.error(f"Experienced an http exception or a JSONDecodeError while fetching products for {term_id}")
+                    ModelStats.goterm_product_query_results[term_id] = f"Error: {type(e).__name__}"
+                    
+                    error_log_filepath = FileUtil.find_win_abs_filepath("log_output/error_log")
                     error_type = type(e).__name__
                     error_text = str(e)
 
@@ -167,6 +201,10 @@ class GOApi:
                     # time.sleep(500) # sleep 500ms before trying another http request
                     time.sleep(0.5)  # time.sleep is in SECONDS !!!
                 return None
+            
+        logger.warning(f"Exceeded max retries when querying products for {term_id}")
+        ModelStats.goterm_product_query_results[term_id] = f"Error: Exceeded max retries."
+        return None
 
     async def get_products_async(self, term_id, model_settings:ModelSettings):
         """

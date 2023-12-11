@@ -180,6 +180,7 @@ class ModelSettings:
         self.all_evidence_codes = {} # a dict containing all evidence codes in existence assigned to groups
         self.evidence_codes_to_ecoids = {} # a dict mapping true evidence codes (e.g. EXP) to ECO ids (e.g. ECO:0000269)
         self.valid_evidence_codes = [] # a list containing all valid evidence codes for this research
+        self.goterm_gene_query_timeout = 20 
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:
@@ -201,6 +202,8 @@ class ModelSettings:
                         for label, organism_info_json_element in value_to_set.items():
                             res[label] = (OrganismInfo.from_json(organism_info_json_element))
                         value_to_set = res
+                    if attr_name == "goterm_gene_query_timeout":
+                        value_to_set = int(value_to_set)
 
                     # set the attribute    
                     setattr(instance, attr_name, value_to_set)  # set the attribute
@@ -228,6 +231,8 @@ class ModelSettings:
                         assert isinstance(ortholog_organism, OrganismInfo)
                         res[label] = (ortholog_organism.to_json())
                     attr_value = res
+                if attr_name == "goterm_gene_query_timeout":
+                    attr_value = int(attr_value)
 
                 # append to json_data result dict
                 json_data[attr_name] = attr_value
@@ -245,6 +250,10 @@ class ModelSettings:
                     logger.warning(f"Couldn't set ncbi_id_full for OrganismInfo of {organism_info.label}")
             # sort self.ortholog_organisms_ncbi_full ids alphabetically, since it is used as a data key in cache operations
             self.ortholog_organisms_ncbi_full_ids.sort()
+
+        if setting_name == "goterm_gene_query_timeout":
+            setting_value = int(setting_value)
+
         if hasattr(self, setting_name):
             setattr(self, setting_name, setting_value)
         else:
