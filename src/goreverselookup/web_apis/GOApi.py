@@ -131,7 +131,7 @@ class GOApi:
                     if "UniProtKB" in _d_db and "9606" not in _d_taxon: # for debug purposes
                         # logger.info(f"UniProtKB - {_d_taxon}")
                         pass
-                    if assoc['object']['id'] == self.id:
+                    if assoc['object']['id'] in term_id:
                         for database,taxa in approved_dbs_and_taxa.items():
                             if database in assoc['subject']['id'] and any(taxon in assoc['subject']['taxon']['id'] for taxon in taxa):
                                 product_id = assoc['subject']['id']
