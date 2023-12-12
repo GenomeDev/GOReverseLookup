@@ -112,6 +112,14 @@
 #  - goterm_gene_query_max_retries:
 #			The maximum amount of request retries for a single GO term gene (product) query
 #
+#  - exclude_opposite_regulation_direction_check:
+#           Determines if, during the gene scoring, both regulation directions (positive or negative) or only a single regulation direction should be accounted for.
+#           If True, will check only the direction of regulation for a target process, without taking into account the opposite regulation.
+#           For example, if target process is 'angiogenesis+' (stimulation of angiogenesis), and this setting is True, then only the p-values related to
+#           'angiogenesis+' will be used (aim: p<0.05), whereas the p-values for the opposite process 'angiogenesis-' (inhibition of angiogenesis) will not be used.
+#           If the setting is False, then a product will be statistically significant only if its p-value is less than 0.05 for target process (e.g. 'angiogenesis+') and
+#           its p-value for the opposite process greater than 0.05 (e.g. 'angiogenesis-')
+#
 # *** Processes section ***
 # It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
 # a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes
@@ -206,6 +214,7 @@ include_indirect_annotations	False
 uniprotkb_genename_online_query	False
 goterm_gene_query_timeout	25
 goterm_gene_query_max_retries	1
+exclude_opposite_regulation_direction_check True
 ###filepaths
 go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
 goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens

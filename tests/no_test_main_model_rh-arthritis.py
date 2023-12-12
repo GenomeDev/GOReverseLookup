@@ -62,6 +62,6 @@ model.save_model("results/data.json")
 model.perform_statistical_analysis(
 	test_name="fisher_test", 
 	filepath="results/statistically_relevant_genes.json", 
-	exclude_opposite_regulation_direction_check=True
+	exclude_opposite_regulation_direction_check=model.model_settings.exclude_opposite_regulation_direction_check
 )
 model.save_model("results/data.json")
