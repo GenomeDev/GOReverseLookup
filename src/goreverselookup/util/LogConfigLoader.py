@@ -33,7 +33,7 @@ class LogConfigLoader:
 
     @classmethod
     def setup_logging_config(
-        cls, log_config_json_filepath="app/goreverselookup/src/logging_config.json"
+        cls, log_config_json_filepath="data_files/logging_config.json"
     ):
         """
         Performs the following function calls in order to setup the logging configuration:

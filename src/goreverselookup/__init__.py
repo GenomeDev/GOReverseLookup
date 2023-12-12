@@ -74,11 +74,18 @@ __all__ = [
 	"DictUtil",
     "Timer",
     "LogConfigLoader",
+	"WebsiteParser",
+	"EnsemblUtil",
     "EnsemblApi",
     "UniProtApi",
     "GOApi",
+	"gProfiler",
+	"gProfilerUtil"
 ]
 
 import logging
+LogConfigLoader.setup_logging_config("config/logging_config.json")
+logger = logging.getLogger(__name__)
 
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+#import logging
+#logging.getLogger(__name__).addHandler(logging.NullHandler())

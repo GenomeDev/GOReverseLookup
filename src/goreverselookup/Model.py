@@ -25,11 +25,12 @@ from .util.Timer import Timer
 from .util.WebsiteParser import WebsiteParser
 from .util.DictUtil import DictUtil
 
-import logging
+from goreverselookup import logger
 
+#import logging
 # from logging import config
 # config.fileConfig("logging_config.py")
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 class TargetProcess:
