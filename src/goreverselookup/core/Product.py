@@ -13,10 +13,8 @@ from ..util.WebsiteParser import WebsiteParser
 from ..util.ApiUtil import EnsemblUtil
 
 import logging
-
-# from logging import config
-# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 
 class Product:

@@ -7,8 +7,8 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 
 import logging
-
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 
 class gProfiler:

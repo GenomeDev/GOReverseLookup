@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import logging
-
-# from logging import config
-# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 class OrganismInfo:
     def __init__(self, label:str="", database:str="", ncbi_id_full:str="", ncbi_id:int=-1):

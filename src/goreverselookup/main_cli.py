@@ -9,10 +9,16 @@ from goreverselookup import nterms, adv_product_score, binomial_test, fisher_exa
 from goreverselookup import LogConfigLoader
 from goreverselookup import WebsiteParser
 
+# setup project root dir
+#project_root_dir = os.path.dirname(os.path.abspath(__file__))
+#os.chdir(project_root_dir)
+
 # setup logger
 import logging
 LogConfigLoader.setup_logging_config(log_config_json_filepath="logging_config.json")
+print(f"cwd = {os.getcwd()}")
 logger = logging.getLogger(__name__)
+# from goreverselookup import logger
 
 logger.info("Starting GOReverseLookup analysis!")
 logger.info(f"os.getcwd() =  {os.getcwd()}")

@@ -15,10 +15,8 @@ from urllib.parse import urlparse, parse_qs, urlencode
 from ..util.CacheUtil import Cacher
 
 import logging
-
-# from logging import config
-# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 
 class UniProtApi:

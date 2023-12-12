@@ -18,12 +18,12 @@
 #   LogConfigLoader.setup_logging_config()
 #   logger = logging.getLogger(__name__)
 
-from logging import config
+
 from .JsonUtil import JsonUtil
-
+from logging import config
 import logging
-
 logger = logging.getLogger(__name__)
+# from goreverselookup import logger
 
 
 class LogConfigLoader:
@@ -40,6 +40,7 @@ class LogConfigLoader:
             log_config_dict = JsonUtil.load_json(log_config_json_filepath)
             config.dictConfig(log_config_dict)
         """
-        log_config_dict = JsonUtil.load_json(log_config_json_filepath)
+        log_config_dict = JsonUtil.load_json(log_config_json_filepath, display_json=True)
         config.dictConfig(log_config_dict)
         logger.info(f"Setup log config using: {log_config_json_filepath}")
+

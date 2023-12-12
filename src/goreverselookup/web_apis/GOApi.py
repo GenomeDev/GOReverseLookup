@@ -12,10 +12,8 @@ from ..util.CacheUtil import Cacher
 from ..core.ModelSettings import ModelSettings,OrganismInfo
 
 import logging
-
-# from logging import config
-# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 
 class GOApi:

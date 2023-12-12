@@ -82,10 +82,3 @@ __all__ = [
 	"gProfiler",
 	"gProfilerUtil"
 ]
-
-import logging
-LogConfigLoader.setup_logging_config("config/logging_config.json")
-logger = logging.getLogger(__name__)
-
-#import logging
-#logging.getLogger(__name__).addHandler(logging.NullHandler())

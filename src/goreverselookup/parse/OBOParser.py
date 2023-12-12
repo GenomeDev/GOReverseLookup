@@ -6,10 +6,8 @@ from ..util.Timer import Timer
 from ..util.FileUtil import FileUtil
 
 import logging
-
-# from logging import config
-# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 # workaround class, as importing GOTerm would cause a circular import
 class GOTerm_placeholder:

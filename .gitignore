@@ -1,6 +1,6 @@
 # Project files
-app/goreverselookup/data_files/*
-app/goreverselookup/cache/*
+data_files/*
+src/goreverselookup/cache/*
 data_files/*
 cache/*
 results/*

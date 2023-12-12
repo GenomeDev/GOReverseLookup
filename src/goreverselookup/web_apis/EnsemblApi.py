@@ -8,12 +8,8 @@ from ..util.CacheUtil import Cacher
 from ..util.ApiUtil import EnsemblUtil
 
 import logging
-#import aiologger
-#from aiologger import Logger
-#from aiologger.levels import LogLevel
-
 logger = logging.getLogger(__name__)
-# logger = Logger.with_default_handlers(name="async-logger", level=LogLevel.DEBUG)
+#from goreverselookup import logger
 
 class EnsemblApi:
     def __init__(self):

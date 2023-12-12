@@ -5,15 +5,13 @@ from types import SimpleNamespace
 from .FileUtil import FileUtil
 
 import logging
-
-# from logging import config
-# config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 
 class JsonUtil:
     @classmethod
-    def load_json(cls, filepath: str):
+    def load_json(cls, filepath: str, display_json:bool=False):
         """
         Loads a json file and returns the json object (a dictionary).
 
@@ -43,6 +41,9 @@ class JsonUtil:
 
         with open(filepath, "r") as f:
             data = json.load(f)
+            if display_json:
+                logger.info(f"JSON visualisation:")
+                logger.info(data)
             return data
 
     @classmethod

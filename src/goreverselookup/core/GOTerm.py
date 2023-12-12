@@ -9,9 +9,8 @@ from .ModelSettings import ModelSettings,OrganismInfo
 from .ModelStats import ModelStats
 
 import logging
-#from logging import config
-#config.fileConfig("../logging_config.py")
 logger = logging.getLogger(__name__)
+#from goreverselookup import logger
 
 class GOTerm:
     def __init__(self, id: str, processes: List[Dict] = None, name: Optional[str] = None, description: Optional[str] = None, category: Optional[str] = None, parent_term_ids: Optional[List[str]] = None, is_obsolete:bool = False, weight: float = 1.0, products: List[str] = [], http_error_codes:dict={}):
