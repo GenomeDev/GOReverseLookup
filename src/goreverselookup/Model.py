@@ -660,6 +660,10 @@ class ReverseLookup:
         fetch_orthologs_products_batch_gOrth, so that RGD ids will be mapped to their respective UniProt and Ensembl ids, which work
         with the ENTREZGENE-ACC namespace.
         """
+        if self.model_settings.ortholog_organisms is None or self.model_settings.ortholog_organisms == []:
+            logger.info(f"No orthologous organisms specified. Skipping batch gOrth query.")
+            return
+        
         # determine target_taxon_number if target organism is defined in ModelSettings
         if self.model_settings is not None:
             target_taxon_number = f"{self.model_settings.target_organism.ncbi_id}"
@@ -824,6 +828,10 @@ class ReverseLookup:
                 product.fetch_ortholog(human_ortholog_finder, uniprot_api, ensembl_api)
 
         """
+        if self.model_settings.ortholog_organisms is None or self.model_settings.ortholog_organisms == []:
+            logger.info(f"No orthologous organisms specified. Skipping product ortholog query.")
+            return
+        
         logger.info("Started fetching ortholog products.")
         self.timer.set_start_time()
 
@@ -1878,7 +1886,7 @@ class ReverseLookup:
             # merge both dictionaries
             return {**goterms_diff, **products_diff}
 
-    def perform_statistical_analysis(self, test_name="fisher_test", filepath=""):
+    def perform_statistical_analysis(self, test_name="fisher_test", filepath="", exclude_opposite_regulation_direction_check:bool = False):
         """
         Finds the statistically relevant products, saves them to 'filepath' (if it is provided) and returns a JSON object with the results.
 
@@ -1886,6 +1894,11 @@ class ReverseLookup:
           - (str) test_name: The name of the statistical test to use for product analysis. It must be either 'fisher_test' (the results of the fisher's test are then used)
           or 'binomial_test' (the results of the binom test are used).
           - (str) filepath: The path to the output file
+          - (bool) exclude_opposite_regulation_direction_check: If True, will check only the direction of regulation for a target process, without taking into account the opposite regulation.
+                                                                For example, if target process is 'angiogenesis+' (stimulation of angiogenesis), and this setting is True, then only the p-values related to
+                                                                'angiogenesis+' will be used (aim: p<0.05), whereas the p-values for the opposite process 'angiogenesis-' (inhibition of angiogenesis) will not be used.
+                                                                If the setting is False, then a product will be statistically significant only if its p-value is less than 0.05 for target process (e.g. 'angiogenesis+') and
+                                                                its p-value for the opposite process greater than 0.05 (e.g. 'angiogenesis-')
 
         Warning: Binomial test scoring is not yet implemented.
         Warning: Products in this model must be scored with the aforementioned statistical tests prior to calling this function.
@@ -1922,17 +1935,35 @@ class ReverseLookup:
             """
             pvalue_sum = 0
             for process in self.target_processes:
-                pvalue_process = product["scores"]["fisher_test"][
-                    f"{process['process']}{process['direction']}"
-                ]["pvalue_corr"]
+                pvalue_process = product["scores"][test_name][f"{process['process']}{process['direction']}"]["pvalue_corr"]
                 pvalue_sum += pvalue_process
             return pvalue_sum
+        
+        def determine_product_statistical_significance(product:Product, test_name, processes, exclude_opposite_regulation_direction_check):
+            if exclude_opposite_regulation_direction_check == False: # checks both target and the opposite processes
+                if all( # check target process < 0.05
+                    float(product.scores[test_name][f"{process['process']}{process['direction']}"].get("pvalue_corr", 1))
+                    < self.model_settings.pvalue
+                    for process in processes
+                ) and all( # check opposite process > 0.05
+                    float(product.scores[test_name][f"{process['process']}{'+' if process['direction'] == '-' else '-'}"].get("pvalue_corr", 1))
+                    >= self.model_settings.pvalue
+                    for process in processes
+                ):
+                    return True
+            else: # checks only target process
+                if all( # check target process < 0.05
+                    float(product.scores[test_name][f"{process['process']}{process['direction']}"].get("pvalue_corr", 1))
+                    < self.model_settings.pvalue
+                    for process in processes
+                ):
+                    return True
+            return False
 
-        statistically_relevant_products = (
-            []
-        )  # a list of lists; each member is [product, "process1_name_direction:process2_name_direction"]
+        statistically_relevant_products = []  # a list of lists; each member is [product, "process1_name_direction:process2_name_direction"]
+        
         for product in self.products:
-            # given three process: diabetes, angio, obesity, this code iterates through each 2-member combination possible
+            # example - given three process: diabetes, angio, obesity, this code iterates through each 2-member combination possible
             #
             # loop iteration \ process      diabetes    angio   obesity
             # it. 0  (i=0,j=1)                  |         |
@@ -1944,62 +1975,81 @@ class ReverseLookup:
             # Each member pair is used to assess statistically relevant genes, which either positively or
             # negatively regulate both of the processes in the pair.
 
+            if len(self.target_processes) == 1:
+                if determine_product_statistical_significance(
+                    product = product,
+                    test_name = test_name,
+                    processes = self.target_processes,
+                    exclude_opposite_regulation_direction_check = exclude_opposite_regulation_direction_check
+                ):
+                    statistically_relevant_products.append(
+                                [
+                                    product,
+                                    f"{self.target_processes[0]['process']}{self.target_processes[0]['direction']}"
+                                ]
+                            )
+                continue # do not advance to the multiple target process scoring phase
+
+            # multiple target process scoring phase
             for i in range(len(self.target_processes) - 1):
                 for j in range(i + 1, len(self.target_processes)):
                     process1 = self.target_processes[i]
                     process2 = self.target_processes[j]
                     pair = [process1, process2]
 
-                    if all(
-                        float(
-                            product.scores[test_name][
-                                f"{process['process']}{process['direction']}"
-                            ].get("pvalue_corr", 1)
-                        )
-                        < self.model_settings.pvalue
-                        for process in pair
-                    ) and all(
-                        float(
-                            product.scores[test_name][
-                                f"{process['process']}{'+' if process['direction'] == '-' else '-'}"
-                            ].get("pvalue_corr", 1)
-                        )
-                        >= self.model_settings.pvalue
-                        for process in pair
+                    if determine_product_statistical_significance(
+                        product = product,
+                        test_name = test_name,
+                        processes = pair,
+                        exclude_opposite_regulation_direction_check = exclude_opposite_regulation_direction_check
                     ):
                         statistically_relevant_products.append(
-                            [
-                                product,
-                                f"{process1['process']}{process1['direction']}:{process2['process']}{process2['direction']}",
-                            ]
-                        )
+                                [
+                                    product,
+                                    f"{process1['process']}{process1['direction']}:{process2['process']}{process2['direction']}"
+                                ]
+                            )
+        statistically_relevant_products_final = {} # dictionary between two processes (eg. angio+:diabetes+) and all statistically relevant products or a single target process (eg. angio+) and all statistically relevant products
+        if len(self.target_processes) == 1:
+            # do not advance to the multiple target process score analysis phase
+            target_process_code = ""
 
+            for element in statistically_relevant_products:
+                prod = element[0]
+                target_process_code = element[1]
+                if target_process_code not in statistically_relevant_products_final:
+                    statistically_relevant_products_final[target_process_code] = []
+                statistically_relevant_products_final[target_process_code].append(prod.__dict__)
+            # sort
+            statistically_relevant_products_final[target_process_code] = sorted(
+                statistically_relevant_products_final[target_process_code],
+                key=lambda gene: sorting_key(gene)
+            )
+            logger.info(f"Finished with product statistical analysis. Found {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}")
+            JsonUtil.save_json(
+                data_dictionary=statistically_relevant_products_final,
+                filepath=filepath
+            )
+            return statistically_relevant_products_final
+
+        # * multiple target process score analysis phase *
         # statistically_relevant_products stores a list of lists, each member list is a Product object bound to a specific pair code (e.g. angio+:diabetes+).
         # statistically_relevant_products_final is a dictionary. It's keys are process pair codes (e.g. angio+:diabetes+), each key holds a list of all statistically relevant products for the process pair
         # (eg. if angio+:diabetes+ it holds all products, which positively regulate both angiogenesis and diabetes)
-        process_pairs = (
-            []
-        )  # each element is a code binding two processes and their direction, eg. angio+:diabetes+
-        statistically_relevant_products_final = (
-            {}
-        )  # dictionary between two processes (eg. angio+:diabetes+) and all statistically relevant products
+        process_pairs = [] # each element is a code binding two processes and their direction, eg. angio+:diabetes+
         for i in range(len(self.target_processes) - 1):
             for j in range(i + 1, len(self.target_processes)):
                 process1 = self.target_processes[i]
                 process2 = self.target_processes[j]
                 pair_code = f"{process1['process']}{process1['direction']}:{process2['process']}{process2['direction']}"
                 process_pairs.append(pair_code)
-                statistically_relevant_products_final[
-                    pair_code
-                ] = []  # initialise to empty list
+                statistically_relevant_products_final[pair_code] = []  # initialise to empty list
 
         for element in statistically_relevant_products:
             # each element is a list [product, "process1_name_direction:process2_name_direction"]
             prod = element[0]
             process_pair_code = element[1]
-            statistically_relevant_products_final[process_pair_code].append(
-                prod.__dict__
-            )
+            statistically_relevant_products_final[process_pair_code].append(prod.__dict__)
 
         # sort the genes based on the ascending sum of pvalues (lowest pvalues first)
         statistically_relevant_products_final_sorted = {}
@@ -2008,28 +2058,19 @@ class ReverseLookup:
                 process1 = self.target_processes[i]
                 process2 = self.target_processes[j]
                 pair_code = f"{process1['process']}{process1['direction']}:{process2['process']}{process2['direction']}"
-                statistically_relevant_products_for_process_pair = (
-                    statistically_relevant_products_final[pair_code]
-                )
+                statistically_relevant_products_for_process_pair = (statistically_relevant_products_final[pair_code])
                 statistically_relevant_products_for_process_pair_sorted = sorted(
                     statistically_relevant_products_for_process_pair,
-                    key=lambda gene: sorting_key(gene),
+                    key=lambda gene: sorting_key(gene)
                 )
-                statistically_relevant_products_final_sorted[
-                    pair_code
-                ] = statistically_relevant_products_for_process_pair_sorted
+                statistically_relevant_products_final_sorted[pair_code] = statistically_relevant_products_for_process_pair_sorted
 
         # TODO: save statistical analysis as a part of the model's json and load it up on startup
-        self.statistically_relevant_products = (
-            statistically_relevant_products_final_sorted
-        )
-        logger.info(
-            "Finished with product statistical analysis. Found"
-            f" {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}"
-        )
+        self.statistically_relevant_products = statistically_relevant_products_final_sorted
+        logger.info(f"Finished with product statistical analysis. Found {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}")
         JsonUtil.save_json(
             data_dictionary=statistically_relevant_products_final_sorted,
-            filepath=filepath,
+            filepath=filepath
         )
         return statistically_relevant_products_final
 

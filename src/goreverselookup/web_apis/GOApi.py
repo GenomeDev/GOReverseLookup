@@ -143,7 +143,7 @@ class GOApi:
             return url
 
         max_retries = 5  # try api requests for max 5 times
-        for i in range(max_retries):
+        for i in range(model_settings.goterm_gene_query_max_retries):
             try:
                 response = self.s.get(url, params=params, timeout=model_settings.goterm_gene_query_timeout)
                 response.raise_for_status()

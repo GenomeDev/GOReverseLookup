@@ -276,12 +276,12 @@ class GOTerm:
         
         retries = 0
         data = None
-        for _ in range(max_retries):
+        for _ in range(model_settings.goterm_gene_query_max_retries):
             possible_http_error_text = ""
             if retries == (max_retries-1):
                 logger.warning(f"Exceeded max retries when parsing {self.id}")
                 ModelStats.goterm_product_query_results[self.id] = f"Error: Exceeded max retries. Error info: {possible_http_error_text}"
-                return []
+                return None
             retries +=1
 
             previous_response = Cacher.get_data("url", url)

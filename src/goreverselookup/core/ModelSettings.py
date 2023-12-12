@@ -181,6 +181,7 @@ class ModelSettings:
         self.evidence_codes_to_ecoids = {} # a dict mapping true evidence codes (e.g. EXP) to ECO ids (e.g. ECO:0000269)
         self.valid_evidence_codes = [] # a list containing all valid evidence codes for this research
         self.goterm_gene_query_timeout = 20 
+        self.goterm_gene_query_max_retries = 3
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:
@@ -202,7 +203,7 @@ class ModelSettings:
                         for label, organism_info_json_element in value_to_set.items():
                             res[label] = (OrganismInfo.from_json(organism_info_json_element))
                         value_to_set = res
-                    if attr_name == "goterm_gene_query_timeout":
+                    if attr_name == "goterm_gene_query_timeout" or attr_name == "goterm_gene_query_max_retries":
                         value_to_set = int(value_to_set)
 
                     # set the attribute    
@@ -231,7 +232,7 @@ class ModelSettings:
                         assert isinstance(ortholog_organism, OrganismInfo)
                         res[label] = (ortholog_organism.to_json())
                     attr_value = res
-                if attr_name == "goterm_gene_query_timeout":
+                if attr_name == "goterm_gene_query_timeout" or attr_name == "goterm_gene_query_max_retries":
                     attr_value = int(attr_value)
 
                 # append to json_data result dict
@@ -251,7 +252,7 @@ class ModelSettings:
             # sort self.ortholog_organisms_ncbi_full ids alphabetically, since it is used as a data key in cache operations
             self.ortholog_organisms_ncbi_full_ids.sort()
 
-        if setting_name == "goterm_gene_query_timeout":
+        if setting_name == "goterm_gene_query_timeout" or setting_name == "goterm_gene_query_max_retries":
             setting_value = int(setting_value)
 
         if hasattr(self, setting_name):
