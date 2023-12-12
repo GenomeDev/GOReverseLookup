@@ -1,4 +1,5 @@
 # Project files
+app/goreverselookup/data_files/*
 data_files/*
 src/goreverselookup/cache/*
 data_files/*
