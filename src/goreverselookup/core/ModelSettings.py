@@ -182,6 +182,7 @@ class ModelSettings:
         self.valid_evidence_codes = [] # a list containing all valid evidence codes for this research
         self.goterm_gene_query_timeout = 20 
         self.goterm_gene_query_max_retries = 3
+        self.exclude_opposite_regulation_direction_check = False
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:

@@ -1940,7 +1940,7 @@ class ReverseLookup:
             return pvalue_sum
         
         def determine_product_statistical_significance(product:Product, test_name, processes, exclude_opposite_regulation_direction_check):
-            if exclude_opposite_regulation_direction_check == False: # checks both target and the opposite processes
+            if self.model_settings.exclude_opposite_regulation_direction_check == False: # checks both target and the opposite processes
                 if all( # check target process < 0.05
                     float(product.scores[test_name][f"{process['process']}{process['direction']}"].get("pvalue_corr", 1))
                     < self.model_settings.pvalue
