@@ -6,6 +6,7 @@ from typing import List, Dict
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 import json
+import os
 
 from .core.ModelSettings import ModelSettings, OrganismInfo
 from .core.ModelStats import ModelStats
@@ -24,12 +25,14 @@ from .util.JsonUtil import JsonUtil, JsonToClass
 from .util.Timer import Timer
 from .util.WebsiteParser import WebsiteParser
 from .util.DictUtil import DictUtil
+from .util.FileUtil import FileUtil
+from .util.CacheUtil import Cacher
+
+import logging
 
 # from logging import config
 # config.fileConfig("logging_config.py")
-import logging
 logger = logging.getLogger(__name__)
-
 
 
 class TargetProcess:
@@ -63,6 +66,8 @@ class ReverseLookup:
         ],
         model_settings: ModelSettings = None,
         obo_parser: OboParser = None,
+        destination_dir:str = None,
+        input_filepath:str = None
     ):
         """
         A class representing a reverse lookup for gene products and their associated Gene Ontology terms.
@@ -80,6 +85,7 @@ class ReverseLookup:
                         when researching only GO Terms connected to biological processes and/or molecular activities helps to produce more accurate statistical scores.
             model_settings: used for saving and loading model settings
             obo_parser: Used for parsing the Gene Ontology's .obo file. If it isn't supplied, it will be automatically created
+            destination_dir: The directory where the output and intermediate files (such as data_files) are stored.
         """
         self.goterms = goterms
         self.products = products
@@ -89,7 +95,15 @@ class ReverseLookup:
         self.model_settings = model_settings
         self.execution_times = execution_times  # dict of execution times, logs of runtime for functions
         self.timer = Timer()
-
+        
+        if destination_dir is not None:
+            self.destination_dir = destination_dir
+        
+        if input_filepath is not None:
+            self.input_filepath = input_filepath
+            if destination_dir is None:
+                self.destination_dir = os.path.dirname(os.path.realpath(input_filepath))
+                
         # placeholder to populate after perform_statistical_analysis is called
         self.statistically_relevant_products = statistically_relevant_products
 
@@ -476,6 +490,8 @@ class ReverseLookup:
         for term in self.goterms:
             if term is None:
                 continue
+            if term.products is None:
+                continue
             for product in term.products:
                 if product not in products_set:
                     products_set.update(product)
@@ -599,9 +615,13 @@ class ReverseLookup:
         ### Run 1: map all non-uniprotkb ids to uniprotkb ids
         non_uniprot_dbs = [db for db in from_databases if "UniProtKB" not in db] # select all dbs besides uniprot
         non_uniprot_dbs_product_dict = {} # mapping {'ZFIN': [list_of_zfin_product_ids], ...}
+        non_uniprot_dbs_product_dict_new = {}
         
+        non_uniprot_product_dict_cached_successful = list()
+        non_uniprot_product_dict_cached_failed = list()
         for db in non_uniprot_dbs: # initialise with empty values
             non_uniprot_dbs_product_dict[db] = set()
+            non_uniprot_dbs_product_dict_new[db] = list()
         
         for product in self.products: # populate non_uniprot_dbs_product_dict
             if "UniProtKB" in product.id_synonyms[0]:
@@ -613,6 +633,33 @@ class ReverseLookup:
         # convert sets to lists
         for db, db_set in non_uniprot_dbs_product_dict.items():
             non_uniprot_dbs_product_dict[db] = list(db_set)
+        
+        # exclude cached mappings
+        for db, db_list in non_uniprot_dbs_product_dict.items():
+            start_count = len(db_list)
+            new_ids = []
+            
+            for id in db_list:
+                id = id.split(":")[1]
+                data_key_successful = f"product_idmapping[id={id},from_db={db},to_db={to_db}]"
+                data_key_failed = f"product_idmapping[id={id},failed-mapping]"
+                prev_data_successful = Cacher.get_data(data_location="uniprot", data_key=data_key_successful)
+                prev_data_failed = Cacher.get_data(data_location="uniprot", data_key=data_key_failed)
+                
+                is_new = True
+                if prev_data_successful is not None:
+                    non_uniprot_product_dict_cached_successful.append(prev_data_successful)
+                    is_new = False
+                if prev_data_failed is not None:
+                    non_uniprot_product_dict_cached_failed.append(prev_data_failed.get("id"))
+                    is_new = False
+                
+                if is_new:
+                    new_ids.append(id)
+                    
+            non_uniprot_dbs_product_dict[db] = new_ids
+            end_count = len(non_uniprot_dbs_product_dict[db])
+            logger.info(f"Cached {start_count-end_count} ids for idmapping for database {db}. Start count: {start_count}, end_count (these will be queried): {end_count}")
         
         # perform batch id mapping
         for db, db_ids_list in non_uniprot_dbs_product_dict.items():
@@ -633,11 +680,51 @@ class ReverseLookup:
                 initial_id = idmap['from']
                 uniprot_id = idmap['to']['primaryAccession']
                 uniprot_id_full = f"UniProtKB:{uniprot_id}"
+                
+                data_key = f"product_idmapping[id={initial_id},from_db={db},to_db={to_db}]"
+                Cacher.store_data(
+                    data_location="uniprot",
+                    data_key=data_key,
+                    data_value={
+                        'from_id': initial_id,
+                        'to_id': uniprot_id,
+                        'from_db': db,
+                        'to_db': to_db,
+                        'status': "successful"
+                    }
+                )
+                
                 for product in self.products:
                     if len(product.id_synonyms) == 0:
                         continue
                     if initial_id in product.id_synonyms[0] and db in product.id_synonyms[0]:
                         product.uniprot_id = uniprot_id_full
+            
+            # store failed ids in cache
+            for id in failed_mappings:
+                data_key = f"product_idmapping[id={id},failed-mapping]"
+                Cacher.store_data(
+                    data_location="uniprot", 
+                    data_key=data_key, 
+                    data_value= {
+                        'id': id,
+                        'status': "failed"
+                    }
+                )
+        
+        # also process cached ids
+        for element in non_uniprot_product_dict_cached_successful:
+            initial_id = element['from_id']
+            mapped_id = element['to_id']
+            to_db = element['to_db']
+            mapped_id_full = f"{to_db}:{mapped_id}"
+            for product in self.products:
+                if len(product.id_synonyms) == 0:
+                        continue
+                for syn in product.id_synonyms: # check all synonyms for a match
+                    if initial_id in syn and db in syn:
+                        if "UniProtKB" in mapped_id_full:
+                            product.uniprot_id = mapped_id_full         
         
         ### Run 2: attempt Ensembl gene mappings
         self.fetch_uniprot_product_ensg_ids()
@@ -751,7 +838,7 @@ class ReverseLookup:
                         if p.ensg_id is not None: # move existing ensembl id among id synonyms
                             p.id_synonyms.append(p.ensg_id)
                         p.ensg_id = ortholog_results[0]
-                        logger.warning(f"Autoselected ortholog {p.ensg_id} among {len(ortholog_results)}, but it MAY NOT have the highest percentage identity!")
+                        # logger.warning(f"Autoselected ortholog {p.ensg_id} among {len(ortholog_results)}, but it MAY NOT have the highest percentage identity!")
                         # TODO: this only takes the first ENS id. Implement perc_id (percentage identity) checks!!
                 
                 if len(ortholog_results) == 1 and p.gorth_ortholog_status != "definitive": # p.gorth_ortholog_status != "definitive" to prevent duplicates
@@ -1517,7 +1604,28 @@ class ReverseLookup:
         return product
         """
 
-    def save_model(self, filepath: str) -> None:
+    def save_model(self, filepath:str, use_dest_dir:bool=False) -> None:
+        """
+        Saves the model.
+        
+        Params:
+          - (str) filepath: The relative filepath (ending in .json) to the JSON output file.
+          - (bool) use_dest_dir: Whether the ReverseLookup model's destination_dir should be used as the reference for the relative filepath.
+                                 Production code should set 'use_dest_dir' to True, so that output files will be saved relatively to the specified destination directory.
+                                 Developers should set 'use_dest_dir' to False, so that the output files are saved relatively to the development directory
+        """
+        if ".json" not in filepath:
+            filepath = f"{filepath}.json"
+            
+        if use_dest_dir:
+            # use destination dir in project settings - this should be set to True for production-ready code
+            # for development, set 'use_dest_dir' to False, so files are saved relatively to filepath branching out from project root directory.
+            dest_dir = f"{self.destination_dir}"
+            filepath = os.path.join(dest_dir, filepath)
+            filepath = filepath.replace("\\", "/")
+        
+        FileUtil.check_path(filepath)
+            
         data = {}
         data["target_processes"] = self.target_processes
         data["go_categories"] = self.go_categories
@@ -1536,6 +1644,7 @@ class ReverseLookup:
         for mirna in self.miRNAs:
             data.setdefault("miRNAs", []).append(mirna.__dict__)
 
+        logger.info(f"Saving model to: {filepath}")
         JsonUtil.save_json(data, filepath)
 
     def compare_to(
@@ -1886,7 +1995,7 @@ class ReverseLookup:
             # merge both dictionaries
             return {**goterms_diff, **products_diff}
 
-    def perform_statistical_analysis(self, test_name="fisher_test", filepath="", exclude_opposite_regulation_direction_check:bool = False):
+    def perform_statistical_analysis(self, test_name="fisher_test", filepath="", use_dest_dir:bool = False):
         """
         Finds the statistically relevant products, saves them to 'filepath' (if it is provided) and returns a JSON object with the results.
 
@@ -1894,11 +2003,9 @@ class ReverseLookup:
           - (str) test_name: The name of the statistical test to use for product analysis. It must be either 'fisher_test' (the results of the fisher's test are then used)
           or 'binomial_test' (the results of the binom test are used).
           - (str) filepath: The path to the output file
-          - (bool) exclude_opposite_regulation_direction_check: If True, will check only the direction of regulation for a target process, without taking into account the opposite regulation.
-                                                                For example, if target process is 'angiogenesis+' (stimulation of angiogenesis), and this setting is True, then only the p-values related to
-                                                                'angiogenesis+' will be used (aim: p<0.05), whereas the p-values for the opposite process 'angiogenesis-' (inhibition of angiogenesis) will not be used.
-                                                                If the setting is False, then a product will be statistically significant only if its p-value is less than 0.05 for target process (e.g. 'angiogenesis+') and
-                                                                its p-value for the opposite process greater than 0.05 (e.g. 'angiogenesis-')
+          - (bool) use_dest_dir: Whether the ReverseLookup model's destination_dir should be used as the reference for the relative filepath.
+                                 Production code should set 'use_dest_dir' to True, so that output files will be saved relatively to the specified destination directory.
+                                 Developers should set 'use_dest_dir' to False, so that the output files are saved relatively to the development directory
 
         Warning: Binomial test scoring is not yet implemented.
         Warning: Products in this model must be scored with the aforementioned statistical tests prior to calling this function.
@@ -1939,7 +2046,7 @@ class ReverseLookup:
                 pvalue_sum += pvalue_process
             return pvalue_sum
         
-        def determine_product_statistical_significance(product:Product, test_name, processes, exclude_opposite_regulation_direction_check):
+        def determine_product_statistical_significance(product:Product, test_name, processes):
             if self.model_settings.exclude_opposite_regulation_direction_check == False: # checks both target and the opposite processes
                 if all( # check target process < 0.05
                     float(product.scores[test_name][f"{process['process']}{process['direction']}"].get("pvalue_corr", 1))
@@ -1962,6 +2069,13 @@ class ReverseLookup:
 
         statistically_relevant_products = []  # a list of lists; each member is [product, "process1_name_direction:process2_name_direction"]
         
+        if use_dest_dir:
+            # use destination dir in project settings - this should be set to True for production-ready code
+            # for development, set 'use_dest_dir' to False, so files are saved relatively to filepath branching out from project root directory.
+            dest_dir = f"{self.destination_dir}"
+            filepath = os.path.join(dest_dir, filepath)
+            filepath = filepath.replace("\\", "/")
+
         for product in self.products:
             # example - given three process: diabetes, angio, obesity, this code iterates through each 2-member combination possible
             #
@@ -1979,8 +2093,7 @@ class ReverseLookup:
                 if determine_product_statistical_significance(
                     product = product,
                     test_name = test_name,
-                    processes = self.target_processes,
-                    exclude_opposite_regulation_direction_check = exclude_opposite_regulation_direction_check
+                    processes = self.target_processes
                 ):
                     statistically_relevant_products.append(
                                 [
@@ -1991,7 +2104,7 @@ class ReverseLookup:
                 continue # do not advance to the multiple target process scoring phase
 
             # multiple target process scoring phase
-            for i in range(len(self.target_processes) - 1):
+            for i in range(len(self.target_processes) - 1): # if only 1 target process is specified, the whole loop skips because of this condition
                 for j in range(i + 1, len(self.target_processes)):
                     process1 = self.target_processes[i]
                     process2 = self.target_processes[j]
@@ -2000,8 +2113,7 @@ class ReverseLookup:
                     if determine_product_statistical_significance(
                         product = product,
                         test_name = test_name,
-                        processes = pair,
-                        exclude_opposite_regulation_direction_check = exclude_opposite_regulation_direction_check
+                        processes = pair
                     ):
                         statistically_relevant_products.append(
                                 [
@@ -2026,6 +2138,8 @@ class ReverseLookup:
                 key=lambda gene: sorting_key(gene)
             )
             logger.info(f"Finished with product statistical analysis. Found {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}")
+            
+            logger.info(f"Saving statistically relevant products to {os.path.abspath(filepath)}")
             JsonUtil.save_json(
                 data_dictionary=statistically_relevant_products_final,
                 filepath=filepath
@@ -2088,15 +2202,33 @@ class ReverseLookup:
                 setattr(product, member_field_name, value)
 
     @classmethod
-    def load_model(cls, filepath: str) -> "ReverseLookup":
+    def load_model(cls, filepath: str, destination_dir:str = None) -> "ReverseLookup":
         """
-        # TODO: method explanation
-
+        Loads the model representation from an existing .json file.
+        
+        Params:
+          - (str) filepath: the path to the .json file of a previously saved model
+          - (str) destination_dir: The destination_dir should be used in production code, especially if the ReverseLookup model is also being saved using a use_dest_dir = True parameter.
+        
         This method also parses GO Term parents for GO Terms, if setting include_indirect_annotations is True.
-        """
+        """        
+        if destination_dir is not None:
+            # use destination dir in project settings - this should be set to True for production-ready code
+            # for development, set 'use_dest_dir' to False, so files are saved relatively to filepath branching out from project root directory.
+            filepath = os.path.join(destination_dir, filepath)
+            filepath = filepath.replace("\\", "/")
+        
+        logger.info(f"Loading ReverseLookup model from {os.path.abspath(filepath)}")
         data = JsonUtil.load_json(filepath)
+        if data == {}:
+            logger.warning(f"Data is EMPTY!")
+            
         target_processes = data["target_processes"]
         miRNA_overlap_treshold = data["miRNA_overlap_treshold"]
+        
+        input_filepath = data.get("input_filepath", None)
+        if destination_dir is None:
+            destination_dir = data.get("destination_dir", None)
 
         execution_times = {}
         if "execution_times" in data:
@@ -2163,15 +2295,18 @@ class ReverseLookup:
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,
+            destination_dir=destination_dir,
+            input_filepath=input_filepath
         )
 
     @classmethod
-    def from_input_file(cls, filepath: str) -> "ReverseLookup":
+    def from_input_file(cls, filepath: str, destination_dir:str=None) -> "ReverseLookup":
         """
         Creates a ReverseLookup object from a text file.
 
         Args:
             filepath (str): The path to the input text file.
+            destination_dir (str): The destination directory where output files are stored
 
         Returns:
             ReverseLookup: A ReverseLookup object.
@@ -2503,6 +2638,7 @@ class ReverseLookup:
 
         logger.info("Creating model from input file with:")
         logger.info(f"  - input file filepath: {filepath}")
+        logger.info(f"  - destination dir: {destination_dir}")
         logger.info(f"  - input file line count: {filepath_readlines}")
         logger.info(f"  - count GO Terms: {len(go_terms)} ")
         logger.info(f"  - target_processes: {target_processes}")
@@ -2515,6 +2651,8 @@ class ReverseLookup:
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,
+            destination_dir=destination_dir,
+            input_filepath=filepath
         )
 
     @classmethod
@@ -2542,13 +2680,18 @@ class ReverseLookup:
             settings = ModelSettings.from_json(data["model_settings"])
         else:
             settings = ModelSettings()
+        
+        destination_dir = data.get("destination_dir", None)
+        input_filepath = data.get("input_filepath", None)
 
-        logger.info("Model creation from input file complete.")
+        logger.info("Model creation from dict complete.")
         return cls(
             goterms,
             target_processes,
             go_categories=go_categories,
             model_settings=settings,
+            destination_dir=destination_dir,
+            input_filepath=input_filepath
         )
 
     def _debug_shorten_GO_terms(self, count):

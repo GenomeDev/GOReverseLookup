@@ -164,10 +164,11 @@ class FileUtil:
     
     @classmethod
     def create_empty_file(cls, filepath:str):
+        cls.check_path(filepath)
         with open(filepath, "w"):
             pass
         if os.path.exists(filepath):
-            logger.info(f"Creates empty file at {filepath}")
+            logger.info(f"Created empty file at {filepath}")
 
     @classmethod
     def is_file_empty(cls, filepath: str):
@@ -216,6 +217,7 @@ class FileUtil:
         # check if directory exist - if it doesn't create it
         if not os.path.exists(dir_path) and auto_create is True:
             os.makedirs(dir_path)
+            logger.debug(f"Created absolute path: {os.path.abspath(dir_path)}")
 
         # check if the file exists - if it doesn't, create it
         if is_file is True:

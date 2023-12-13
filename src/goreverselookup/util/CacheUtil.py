@@ -32,7 +32,8 @@ class Cacher:
     def init(
         cls,
         cache_dir: str = "cache",
-        store_data_atexit: bool = True
+        store_data_atexit: bool = True,
+        files_to_init:list = None
     ):
         """
         Initialises ConnectionCacher. This function must be called at the program startup in order to read
@@ -42,7 +43,8 @@ class Cacher:
           - (str) cache_dir: the cache folder
           - (bool) store_data_atexit: if True, will only store data at program exit. If False, will store data each time store_data is called.
           - (bool) use_cacher: if you wish to enable caching (setting this to 'False') will disable all Cacher functionalities
-
+          - (list) files_to_init: The exact files which to init (files not specified will not be initialised). Possible values are: 
+                                  "url", "uniprot", "ensembl", "gprofiler", "go"
         Usage:
             model = ReverseLookup.load_model("diabetes_angio_4/model_async_test.json") # make sure that model products are already computed
             Cacher.init()
@@ -55,6 +57,30 @@ class Cacher:
         def faulty_cache_file_resolve(cache_filepath:str):
             # TODO:implement
             return 0
+        
+        should_init_urls = True
+        should_init_uniprot = True
+        should_init_ensembl = True
+        should_init_go = True
+        should_init_gprofiler = True
+        files_to_init_all = ["url", "uniprot", "ensembl", "go", "gprofiler"]
+        if files_to_init is not None:
+            if not isinstance(files_to_init, list):
+                files_to_init = [files_to_init]
+                # determine which files not to initialise. Keep the files from 'files_to_init' set to True, whereas files not found in 'files_to_init' should be False
+                for fa in files_to_init_all:
+                    if fa not in files_to_init:
+                        match fa:
+                            case "url":
+                                should_init_urls = False
+                            case "uniprot":
+                                should_init_uniprot = False
+                            case "ensembl":
+                                should_init_ensembl = False
+                            case "go":
+                                should_init_go = False
+                            case "gprofiler":
+                                should_init_gprofiler = False
 
         FileUtil.check_path(cache_dir, is_file=False)
         cls.store_data_atexit = store_data_atexit
@@ -72,11 +98,16 @@ class Cacher:
                 cls.CACHE_FILEPATH_GPROFILER
             ]
         )
-        cls.cached_urls = JsonUtil.load_json(cls.CACHE_FILEPATH_URLS)
-        cls.cached_uniprot = JsonUtil.load_json(cls.CACHE_FILEPATH_UNIPROT)
-        cls.cached_ensembl = JsonUtil.load_json(cls.CACHE_FILEPATH_ENSEMBL)
-        cls.cached_geneontology = JsonUtil.load_json(cls.CACHE_FILEPATH_GENEONTOLOGY)
-        cls.cached_gprofiler = JsonUtil.load_json(cls.CACHE_FILEPATH_GPROFILER)
+        if should_init_urls:
+            cls.cached_urls = JsonUtil.load_json(cls.CACHE_FILEPATH_URLS)
+        if should_init_uniprot:
+            cls.cached_uniprot = JsonUtil.load_json(cls.CACHE_FILEPATH_UNIPROT)
+        if should_init_ensembl:
+            cls.cached_ensembl = JsonUtil.load_json(cls.CACHE_FILEPATH_ENSEMBL)
+        if should_init_go:
+            cls.cached_geneontology = JsonUtil.load_json(cls.CACHE_FILEPATH_GENEONTOLOGY)
+        if should_init_gprofiler:
+            cls.cached_gprofiler = JsonUtil.load_json(cls.CACHE_FILEPATH_GPROFILER)
 
         logger.info("Cacher load dictionary response counts:")
         logger.info(f"  - urls: {len(cls.cached_urls)}")

@@ -15,7 +15,11 @@ class WebsiteParser():
         cls.ensembl_species_to_ids = cls.parse_ensembl_stable_id_prefixes_table()
         cls.ensembl_stable_id_feature_prefixes = cls.parse_ensembl_stable_id_feature_prefixes_table()
         cls.ensembl_species_to_ids_to_taxons_filepath = "data_files/ens_spec_ids_taxa.json"
-        cls.ensembl_species_to_ids_to_taxons = JsonUtil.load_json(cls.ensembl_species_to_ids_to_taxons_filepath)
+        cls.ensembl_species_to_ids_to_taxons = None
+        try:
+            cls.ensembl_species_to_ids_to_taxons = JsonUtil.load_json(cls.ensembl_species_to_ids_to_taxons_filepath)
+        except (FileExistsError, FileNotFoundError):
+            logger.debug(f"'data_files/ens_spec_ids_taxa.json' WAS NOT FOUND during WebsiteParser init.")
         
         if cls.ensembl_species_to_ids_to_taxons is None or cls.ensembl_species_to_ids_to_taxons == {}:
             # compute all taxon ids for species

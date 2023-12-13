@@ -97,7 +97,6 @@ class GOApi:
             ModelStats.goterm_product_query_results[term_id] = prev_data
             return [prev_data, previous_data_taxa_dict]
 
-
         approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
         approved_dbs_and_taxa['UniProtKB'] = [] # create uniprotkb by default
         products_taxa_dict = {}
