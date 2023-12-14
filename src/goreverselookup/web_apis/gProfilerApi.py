@@ -158,7 +158,7 @@ class gProfiler:
         for source_id in source_ids:
             gOrth_data_key = f"[{self.__class__.__name__}][{self.find_orthologs.__name__}][id={source_id},source_taxon={source_taxon},target_taxon={target_taxon}]"
             previous_result = Cacher.get_data("gprofiler", gOrth_data_key)
-            if previous_result is not None or previous_result != "none":
+            if previous_result is not None:
                 cached_results[source_id] = previous_result
             else:
                 new_input_ids.append(source_id)

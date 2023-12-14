@@ -101,6 +101,62 @@ class EnsemblApi:
         Cacher.store_data("ensembl", ensembl_data_key, ortholog)
         logger.info(f"Received ortholog for id {full_id} -> {ortholog}")
         return ortholog
+    
+    def batch_ensembl_lookup(self, ids:list, max_ids_per_request:int = 1000):
+        """
+        Performs a batch Ensembl lookup/id/<id> query for all input Ensembl ids.
+
+        Params:
+          - (list) ids: input Ensembl ids
+          - (int) max_ids_per_request: this is a value specified by Ensembl and do not change it
+        """
+        num_ids = len(ids)
+        logger.info(f"Received {num_ids} ids for batch Ens lookup.")
+        sublists = []
+        if num_ids > max_ids_per_request:
+            for i in range(0, num_ids, max_ids_per_request):
+                end = i+max_ids_per_request if (i+max_ids_per_request)<num_ids else num_ids # define the upper boundary
+                start = i
+                sublist = ids[start:end]
+                sublists.append(sublist)
+        else:
+            sublists = [ids]
+        
+        processed_count = 0
+        responses = []
+        for sublist in sublists:
+            processed_count += len(sublist)
+            logger.info(f"Processing {processed_count}/{num_ids} ids. Please, be patient.")
+
+            server = "https://rest.ensembl.org"
+            ext = "/lookup/id"
+            headers={ "Content-Type" : "application/json", "Accept" : "application/json"}
+            
+            data = json.dumps({"ids": sublist})
+            data = str(data)
+
+            # data = f"{{ \"ids\" : {sublist} }}"
+            
+            #data = {}
+            #data["ids"] = ids
+            #data = str(data) # example: '{ "ids" : ["ENSG00000157764", "ENSG00000248378" ] }'
+            r = requests.post(server+ext, headers=headers, data=data)
+            if not r.ok:
+                r.raise_for_status()
+                #sys.exit()
+
+            response_json = r.json()
+            responses.append(response_json)
+        
+        merged_dict = {}
+        for response in responses:
+            for key, value in response.items():
+                if key in merged_dict:
+                    merged_dict[key].update(value)
+                else:
+                    merged_dict[key] = value
+        
+        return merged_dict
 
     async def get_human_ortholog_async(self, id, session: aiohttp.ClientSession, taxon=""):
         """

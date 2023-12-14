@@ -206,12 +206,12 @@ target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|o
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
 evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
 #evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
-gorth_ortholog_fetch_for_indefinitive_orthologs	False
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
 gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
 include_indirect_annotations	False
 uniprotkb_genename_online_query	False
-goterm_gene_query_timeout	20
+goterm_gene_query_timeout	240
 goterm_gene_query_max_retries	3
 exclude_opposite_regulation_direction_check	False
 ###filepaths

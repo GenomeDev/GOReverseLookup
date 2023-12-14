@@ -117,3 +117,12 @@ class EnsemblUtil():
             return label
         
         return None
+    
+    @classmethod
+    def taxon_to_ensembl_stable_id_prefix(cls, taxon:str):
+        """
+        Maps a NCBITaxon (e.g. NCBITaxon:9606) to an Ensembl stable id prefix (e.g. 'ENS')
+        """
+        if "NCBITaxon:" in taxon:
+            taxon = taxon.replace("NCBITaxon:", "")
+        return WebsiteParser.ensembl_species_to_ids_to_taxons[taxon].get('stable_id_prefix')

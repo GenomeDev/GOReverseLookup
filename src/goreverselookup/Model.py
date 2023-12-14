@@ -27,6 +27,7 @@ from .util.WebsiteParser import WebsiteParser
 from .util.DictUtil import DictUtil
 from .util.FileUtil import FileUtil
 from .util.CacheUtil import Cacher
+from .util.ApiUtil import EnsemblUtil
 
 import logging
 
@@ -580,18 +581,24 @@ class ReverseLookup:
         successful_conversions = uniprot_to_ensembl_idmap['results']
         failed_conversions = uniprot_to_ensembl_idmap['failedIds']
         logger.info(f"UniProtKB->Ensembl id mapping results: successful = {len(successful_conversions)}, failed = {len(failed_conversions)}")
-        
+
+        target_organism_stable_id_prefix = EnsemblUtil.taxon_to_ensembl_stable_id_prefix(self.model_settings.target_organism.ncbi_id_full)
+
         # update self.produts
         for idmap in successful_conversions:
             uniprot_id = idmap['from']
             ensembl_id = idmap['to']
             if "." in ensembl_id: # ENSGxxxx.1 -> ENSGxxxx
                 ensembl_id = ensembl_id.split(".")[0]
+            ens_stable_id_prefix = EnsemblUtil.split_ensembl_id(ensembl_id).get('stable_id_prefix')
             for product in self.products:
                 if product.uniprot_id == None:
                     continue
                 if uniprot_id in product.uniprot_id:
-                    product.ensg_id = ensembl_id
+                    if ens_stable_id_prefix == target_organism_stable_id_prefix:
+                        product.ensg_id = ensembl_id
+                    else:
+                        product.id_synonyms.append(ensembl_id)
     
     def products_perform_idmapping(
         self,
@@ -806,15 +813,22 @@ class ReverseLookup:
         logger.info(f"gOrth query begin: querying a total of {total_ortholog_query_count} ids, maximum query count per request: {max_single_ortholog_query_count}.")
         # perform search and modify self.products with the search results
         gprofiler = gProfiler()
+        logger.info(f"Processing gOrth ortholog query dicts")
+        timer = Timer()
         for taxon, ids in ortholog_query_dict.items():
+            logger.info(f"  - taxon {taxon}: {len(ids)} items")
+            timer.set_start_time()
+
             ortholog_query_results = gprofiler.find_orthologs(source_ids=ids, source_taxon=taxon, target_taxon=target_taxon_number) #all ortholog query results for this taxon
             if ortholog_query_results is None:
                 # None can be returned from gprofiler.find_orthologs if source_ids is []
                 continue
 
-            # process results for this taxon
+            # process results for this taxon - this takes TOO long!
             for id, ortholog_results in ortholog_query_results.items():
-                p = self.get_product(id)           
+                p = self.get_product(id, identifier_type="id_synonyms")
+                if p is None:
+                    continue
 
                 if ortholog_results == [] and p.gorth_ortholog_exists != True: # p.gorth_ortholog_exists != True is set if this product had already been determined to have an existing ortholog. For example, ENSRNOGxxxx determines a valid gOrth ortholog, sets it, but then RGD:xxxx (pointing to the same gene) finds no gOrth ortholog -> RGD results in this case shouldn't disturb the successful ensembl gOrth ortholog query.
                     p.gorth_ortholog_exists = False
@@ -840,7 +854,7 @@ class ReverseLookup:
                         p.ensg_id = ortholog_results[0]
                         # logger.warning(f"Autoselected ortholog {p.ensg_id} among {len(ortholog_results)}, but it MAY NOT have the highest percentage identity!")
                         # TODO: this only takes the first ENS id. Implement perc_id (percentage identity) checks!!
-                
+
                 if len(ortholog_results) == 1 and p.gorth_ortholog_status != "definitive": # p.gorth_ortholog_status != "definitive" to prevent duplicates
                     # this is the ideal case -> gOrth returns only one ortholog id = "definitive ortholog"
                     p.gorth_ortholog_exists = True
@@ -848,6 +862,7 @@ class ReverseLookup:
                     if p.ensg_id is not None: # move existing ensembl id among id synonyms
                         p.id_synonyms.append(p.ensg_id)
                     p.ensg_id = ortholog_results[0]
+            logger.info(f"    elapsed: {timer.get_elapsed_formatted('milliseconds')}")
         
         for p in self.products:
             match p.gorth_ortholog_status:
@@ -1224,6 +1239,51 @@ class ReverseLookup:
                     tasks.append(task)
                     product.had_fetch_info_computed = True
             await asyncio.gather(*tasks)
+    
+    def bulk_ens_to_genename_mapping(self):
+        """
+        Uses Ensembl's batch mapping using a POST request (https://rest.ensembl.org/documentation/info/lookup_post) to query
+        the genename of all the genes with a valid ensembl id.
+        """
+        # loop over all products, find any ens ids
+        ens_ids = []
+        ensid_to_product_dict = {}
+        for product in self.products:
+            if product.ensg_id is not None:
+                ens_ids.append(product.ensg_id)
+                ensid_to_product_dict[product.ensg_id] = product
+            else:
+                for id_syn in product.id_synonyms:
+                    if "ENS" in id_syn:
+                        ens_ids.append(id_syn)
+                        ensid_to_product_dict[id_syn] = product
+                        break
+        
+        # fetch
+        ensapi = EnsemblApi()
+        lookup_result = EnsemblApi.batch_ensembl_lookup(ensapi, ids = ens_ids)
+        num_results = len(lookup_result)
+
+        # process results
+        ensid_to_genename_dict = {}
+        for ens_id, ens_data in lookup_result.items():
+            if ens_data is None:
+                continue
+            genename = ens_data.get('display_name', None)
+            if genename is not None:
+                ensid_to_genename_dict[ens_id] = genename
+        num_genenames = len(ensid_to_genename_dict)
+        
+        # modify products
+        number_updated_genenames = 0 # number of updated genename
+        for ens_id, genename in ensid_to_genename_dict.items():
+            if ens_id in ensid_to_product_dict:
+                p = ensid_to_product_dict[ens_id]
+                if p.genename is None:
+                    number_updated_genenames += 1
+                p.genename = genename
+        
+        logger.info(f"Finished batch Ensembl to genename mapping. Out of {num_results} mappings, parsed a total of {num_genenames} genenames. Number of updated gene names: {number_updated_genenames}")
 
     def score_products(
         self, score_classes: List[Metrics], recalculate: bool = True
@@ -1561,10 +1621,46 @@ class ReverseLookup:
         )
         return goterm
 
-    def get_product(self, identifier) -> Product:
+    def get_product(self, identifier, identifier_type=None) -> Product:
         """
         Return product based on any id
+
+        Params:
+          - identifier: the value to look for
+          - identifier_type: specify either 'id_synonyms', 'genename', 'description', 'uniprot_id', 'enst_id', 'refseq_nt_id' or 'mRNA' to speed up search
         """
+        ALLOWED_TYPES = ['id_synonyms', 'genename', 'description', 'uniprot_id', 'ensg_id', 'enst_id', 'refseq_nt_id', 'mRNA']
+        if identifier_type is not None and identifier_type in ALLOWED_TYPES:
+            predictive_dict_name = f"get_product_{identifier_type}_to_product"
+            predictive_dict = None
+            
+            if hasattr(self, predictive_dict_name): # check if predictive dict already exists
+                predictive_dict = getattr(self, predictive_dict_name)
+            
+            if predictive_dict is None: # create predictive dict for this identifier
+                res = {}
+                for p in self.products:
+                    attr = getattr(p, identifier_type)
+                    if attr is not None:
+                        # exception: add all id synonyms
+                        if identifier_type == "id_synonyms": # attr is a list of id synonyms
+                            for id_syn in attr:
+                                # add both a split and a full id syn
+                                if ":" in id_syn:
+                                    id_syn_split = id_syn.split(":")[1]
+                                    res[id_syn_split] = p
+                                res[id_syn] = p  
+                            continue
+                        # add the rest non-list variables normally
+                        res[attr] = p
+
+                setattr(self, predictive_dict_name, res)
+                predictive_dict = res
+            
+            if identifier in predictive_dict:
+                return predictive_dict[identifier]
+            return None
+
         for product in self.products:
             if any(identifier in id for id in product.id_synonyms):
                 return product

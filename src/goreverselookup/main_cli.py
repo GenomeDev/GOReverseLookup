@@ -39,13 +39,15 @@ def main(input_file:str, destination_dir:str = None):
     # load the model from input file and query relevant data from the web
     model = ReverseLookup.from_input_file(filepath=input_file, destination_dir=destination_dir)
     model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20)  # TODO: reenable this
-    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=20)
-    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=20)
+    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=10)
+    Cacher.save_data()
     model.create_products_from_goterms()
     model.products_perform_idmapping()
-    model.fetch_orthologs_products_batch_gOrth(target_taxon_number="9606")
-    model.fetch_ortholog_products(run_async=True, max_connections=20, semaphore_connections=10, req_delay=0.1)
+    Cacher.save_data()
+    model.fetch_orthologs_products_batch_gOrth(target_taxon_number=f"{model.model_settings.target_organism.ncbi_id}") # TODO: change!
+    model.fetch_ortholog_products(run_async=True, max_connections=15, semaphore_connections=7, req_delay=0.1)
     model.prune_products()
+    model.bulk_ens_to_genename_mapping()
     model.save_model("results/data.json", use_dest_dir=True)
 
     #
