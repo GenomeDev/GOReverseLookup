@@ -915,6 +915,7 @@ class UniProtApi:
             ) if ":" in id else processed_ids.append(id)
         ids = processed_ids
 
+        """
         # cache previous data
         cached_data = {"results": [], "failedIds": []}
         new_ids = []  # new ids that havent been yet queried (these must be queried now)
@@ -932,6 +933,8 @@ class UniProtApi:
         # if there is no new_ids (ie all previous ids are cached) -> return cached
         if new_ids == []:
             return cached_data
+        """
+        new_ids = ids # NOTE: if reimplementing caching here, delete this and use the above new_ids !!
 
         polling_interval = 3
 
@@ -966,9 +969,12 @@ class UniProtApi:
                         sys.exit("Application closed by user.")
                     return None
 
+            
             # cache results
             successful = results.get("results", [])
             failedIds = results.get("failedIds", [])
+            
+            """
             # store successful results to cache
             for element in successful:
                 # element = {'from': 'ZDB-GENE-020806-3', 'to': {'entryType': 'UniProtKB unreviewed (TrEMBL)', 'primaryAccession': 'Q90ZN6', 'uniProtkbId': 'Q90ZN6_DANRE', 'entryAudit': {...}, 'annotationScore': 2.0, 'organism': {...}, 'proteinExistence': '2: Evidence at transcript level', 'proteinDescription': {...}, 'genes': [...], ...}}
@@ -981,6 +987,7 @@ class UniProtApi:
                 data_key = f"[{self.__class__.__name__}][{self.idmapping_batch.__name__}][id={id},from_db={from_db},to_db={to_db}]"
                 to_cache = {"query_status": "failed", "results": id}
                 Cacher.store_data("uniprot", data_key, data_value=to_cache)
+            """
 
             # merge queried results and results obtained from cache
             return_value = {"results": [], "failedIds": []}
@@ -989,6 +996,7 @@ class UniProtApi:
                 return_value["results"].append(element)
             for id in failedIds:
                 return_value["failedIds"].append(id)
+            """
             # merge cached results
             cached_successful = cached_data["results"]
             cached_failedIds = cached_data["failedIds"]
@@ -996,7 +1004,7 @@ class UniProtApi:
                 return_value["results"].append(element)
             for id in cached_failedIds:
                 return_value["failedIds"].append(id)
-
+            """
             return return_value
 
     def idmapping_ensembl_batch(self, uniprot_ids: list):
