@@ -311,7 +311,8 @@ class GOTerm:
         products_taxa_dict = {}
         _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
         
-        associations = data.get('associations', [])
+        associations = data.get('associations', []) if data is not None else []
+        
         for assoc in associations:
             # if evidence is not confirmed, continue to next iteration
             evidence_confirmed, evidence_code_eco_id = GOApi.check_GO_association_evidence_code_validity(assoc, model_settings.valid_evidence_codes)

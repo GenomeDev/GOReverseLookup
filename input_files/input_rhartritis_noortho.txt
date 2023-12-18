@@ -212,7 +212,7 @@ gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
 include_indirect_annotations	False
 uniprotkb_genename_online_query	False
-goterm_gene_query_timeout	25
+goterm_gene_query_timeout	240
 goterm_gene_query_max_retries	1
 exclude_opposite_regulation_direction_check True
 ###filepaths
