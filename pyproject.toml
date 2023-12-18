@@ -55,6 +55,7 @@ dev = [
 name = "goreverselookup"
 version = "1.0.27"
 description = "Python library for Gene Ontology Reverse Lookup"
+readme = "README.md"
 authors = ["Aljoša Škorjanc", "Vladimir Smrkolj"]
 packages = [{include = "goreverselookup", from = "src"}]
 
