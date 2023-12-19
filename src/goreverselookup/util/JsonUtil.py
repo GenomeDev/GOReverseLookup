@@ -1,6 +1,7 @@
 import json
 import os
 from types import SimpleNamespace
+import platform
 
 from .FileUtil import FileUtil
 
@@ -24,16 +25,13 @@ class JsonUtil:
         if not os.path.exists(filepath):
             FileUtil.create_empty_file(filepath)
             
-            if not os.path.isabs(filepath):
+            if not os.path.isabs(filepath) and not platform.system == 'Darwin': # bugfix: fileutil.find_file doesn't work on Mac (platform.system == 'Darwin')
                 fileutil = FileUtil()
                 filepath = fileutil.find_file(filepath)  # attempt backtrace file search
                 logger.info(f"Filepath after file search: {filepath}")
 
                 if filepath is None:
-                    raise Exception(
-                        "Filepath when attempting load JSON is None! Initial filepath"
-                        f" was {initial_filepath}"
-                    )
+                    raise Exception(f"Filepath when attempting load JSON is None! Initial filepath was {initial_filepath}")
                 
         # bugfix: if filepath is empty, I want load_json to return {} instead of JSONDecodeError
         if FileUtil.is_file_empty(filepath):

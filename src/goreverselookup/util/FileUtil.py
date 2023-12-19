@@ -23,7 +23,7 @@ class FileUtil:
             self.project_root_path = root
         logger.info(f"Project root path set to: {self.project_root_path}")
 
-    def find_file(self, filepath: str, backtrace: int = 6):
+    def find_file(self, filepath: str, backtrace: int = 10):
         """
         Attempts a search for a relative filepath, by conducting a backwards-folder search. This function, unlike find_win_abs_filepath,
         cannot be statically called, meaning find_file(...) must be called on an instantiated FileUtil instance.
@@ -67,9 +67,7 @@ class FileUtil:
         folders = []
         file = ""
         if os.sep in filepath:
-            folders = filepath.split(os.sep)[
-                :-1
-            ]  # folders are all but the last element
+            folders = filepath.split(os.sep)[:-1]  # folders are all but the last element
             file = filepath.split(os.sep)[-1]  # file is the last in filepath
         elif "/" in filepath:
             folders = filepath.split("/")[:-1]  # folders are all but the last element
@@ -79,9 +77,7 @@ class FileUtil:
 
         current_path = self.project_root_path
         if len(folders) == 0:  # filepath is a single file
-            for i in range(
-                backtrace
-            ):  # ascend 'backtrace' levels to the parent directory
+            for i in range(backtrace):  # ascend 'backtrace' levels to the parent directory
                 # we ascend a directory using os.path.dirname on a filepath
                 if i != 0:  # don't ascend up 1 directory on the first iteration
                     parent_path = os.path.dirname(current_path)
