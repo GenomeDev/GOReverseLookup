@@ -43,7 +43,7 @@ The default Python installer window pops up:
 
 <img src="https://i.ibb.co/YR8qZMc/github-pyinstaller-greet.png" width="450">
 
-**Make sure** to also select **Add python.exe to PATH**. This will make Python available across all-file locations, which is of extreme importance for running Python commands from the console (Command prompt in Windows). Then, click on **Install Now**.
+**Make sure** to also select **Add python.exe to PATH**. This will make Python available across all-file locations, which is of extreme importance for running Python commands from the console (Command prompt in Windows). Then, click on **Install Now**. A further observation of the installer's window also reveals that this installer is bundled with PIP (Python's package manager), thus manual installation of PIP won't be necessary. This is important, since PIP will be used to download GOReverseLookup.
 
 <img src="https://i.ibb.co/5R9TrxP/github-pyinstaller-addpath.png" width="450">
 
@@ -51,6 +51,17 @@ Wait for the installation of Python to finish. Once it is finished, close the in
 
 If you wish to download a specific Python version, browse through the [Python's downloads page](https://www.python.org/downloads/) - for beginners, we advise you to find a release with an available installer. 
 
+Then, open the command prompt using the Windows search bar:
+
+<img src="https://i.ibb.co/PjkK65L/github-cmd.png" width="450">
+
+Inside the command prompt, execute the command `python --version`. If Python installation has been completed successfully, a version of the Python programming language will be displayed:
+
+![github cmd python version](https://i.ibb.co/RY55LKv/github-cmd-pyvers.png)
+
+Also verify that PIP (Python's package manager) is installed. In our instance, it has been mentioned in the Python installer's window that PIP will also be installed along with Python. To verify the installation of PIP, run the `pip --version` command:
+
+![cmd pip version](https://i.ibb.co/NFNgL40/github-cmd-pipvers.png)
 
 
 ### Dependencies
