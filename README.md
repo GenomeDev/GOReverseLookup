@@ -36,23 +36,24 @@ For your computer to understand the GOReverseLookup program, it requires the Pyt
 
 Open the File Explorer program, then open the Downloads folder and run the installer by double clicking it.
 
-#![downloads folder](https://i.ibb.co/8xFzpjY/github-downloads-folder.png)
-#![python installer](https://i.ibb.co/JcnB96N/github-pyinstall.png)
+![downloads folder](https://i.ibb.co/8xFzpjY/github-downloads-folder.png)
+![python installer](https://i.ibb.co/JcnB96N/github-pyinstall.png)
 
-<img src="(https://i.ibb.co/8xFzpjY/github-downloads-folder.png" width="100">
+<img src="https://i.ibb.co/8xFzpjY/github-downloads-folder.png" width="200">
 
 The default Python installer window pops up:
 
-![python installer greet window](https://i.ibb.co/YR8qZMc/github-pyinstaller-greet.png)
+<img src="https://i.ibb.co/YR8qZMc/github-pyinstaller-greet.png" width="450">
 
 **Make sure** to also select **Add python.exe to PATH**. This will make Python available across all-file locations, which is of extreme importance for running Python commands from the console (Command prompt in Windows). Then, click on **Install Now**.
 
-![python installer add path tickbox](https://i.ibb.co/5R9TrxP/github-pyinstaller-addpath.png)
+<img src="https://i.ibb.co/5R9TrxP/github-pyinstaller-addpath.png" width="450">
 
 Wait for the installation of Python to finish. Once it is finished, close the installer window.
 
-
 If you wish to download a specific Python version, browse through the [Python's downloads page](https://www.python.org/downloads/) - for beginners, we advise you to find a release with an available installer. 
+
+
 
 ### Dependencies
 
