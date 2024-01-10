@@ -28,6 +28,7 @@ You MUST create a local folder anywhere on your disk, which will be used as the 
 ```
 
 ### Installation
+#### Python installation
 For your computer to understand the GOReverseLookup program, it requires the Python programming language, which MUST be installed. Our program is currently tested on Python versions 3.10.x through 3.11.x, but not yet on 3.12.x. Thus, we advise you to use the Python version 3.11.5, which is available for download from [this website](https://www.python.org/downloads/release/python-3115/). Following this link, navigate to the _Files_ section:
 - if you are using Windows: download _Windows installer (64-bit)_
 - if you are using macOS: download _macOS 64-bit universal2 installer_
@@ -62,6 +63,28 @@ Inside the command prompt, execute the command `python --version`. If Python ins
 Also verify that PIP (Python's package manager) is installed. In our instance, it has been mentioned in the Python installer's window that PIP will also be installed along with Python. To verify the installation of PIP, run the `pip --version` command:
 
 ![cmd pip version](https://i.ibb.co/NFNgL40/github-cmd-pipvers.png)
+
+#### Creating your GOReverseLookup workspace
+To create a standalone GOReverseLookup workspace that will be central both to GOReverseLookup's installation files and the research files, create the folder setup as instructed in _Folder setup_. Create a Python's virtual environment in the `goreverselookup` folder using the command `python -m venv "PATH_TO_GOREVERSELOOKUP"`. For example, on my computer, the `goreverselookup` folder exists at `F:\Development\python_environments\goreverselookup`, thus the command to create the virtual environment is: `python -m venv "F:\Development\python_environments\goreverselookup"`:
+
+![pyvenv](https://i.ibb.co/3pNDHF0/github-pyvenv.png)
+
+To find the path to your goreverselookup folder, open the goreverselookup folder in the File Explorer and click on the Address Bar, then copy the filepath.
+
+![goreverselookup file explorer path 1](https://i.ibb.co/f2qp6Lr/github-fe-goreverselookup.png)
+
+![goreverselookup file explorer path 2](https://i.ibb.co/3dwZkyd/github-fe-adrbar.png)
+
+After running the virtual environment creation command, you should notice the goreverselookup folder be populated with new folders: `Include`, `Lib` and `Scripts`, and a file named `pyvenv.cfg`. These belong to the newly created Python's virtual environment, so do not change their contents in any way. As stated in the _Folder setup_ section, the goreverselookup folder also contains a `research_models` folder.
+
+![goreverselookup folder after pyvenv](https://i.ibb.co/D7MfZVv/github-grvfolder-after-pyvenv.png)
+
+
+
+
+
+
+
 
 
 ### Dependencies
