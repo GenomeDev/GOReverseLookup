@@ -84,7 +84,17 @@ To activate the newly created virtual environment, there exists an activation sc
 ![goreverselookup venv activation](https://i.ibb.co/Gx7g8kF/github-venvactivation.png)
 
 #### Installing GOReverseLookup
-todo
+As per instructions in _Creating your GOReverseLookup workspace_, activate the newly created virtual environment, so the current command prompt pointer points to the virtual environment. E.g.:
+
+<img src="https://i.ibb.co/Gx7g8kF/github-venvactivation.png" width="350">
+
+Now, run the command `pip install goreverselookup` and wait for the installation to complete:
+
+![goreverselookup pip install](https://i.ibb.co/T2drrGF/github-goreverselookup-install-pip.png)
+
+To confirm the installation, run the command `pip list` and find the `goreverselookup` package, along with it's version:
+
+![goreverselookup pip list](https://i.ibb.co/R99Rp9H/github-pip-list.png)
 
 
 
