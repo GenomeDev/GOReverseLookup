@@ -79,6 +79,14 @@ After running the virtual environment creation command, you should notice the go
 
 ![goreverselookup folder after pyvenv](https://i.ibb.co/D7MfZVv/github-grvfolder-after-pyvenv.png)
 
+To activate the newly created virtual environment, there exists an activation script named `activate.bat` in the newly created `Scripts` folder. You will need to activate this virtual environment in command prompt every time you begin working with GOReverseLookup, thus we advise you to save the activation command in a text file somewhere easily accessible, such as your desktop. To activate the virtual environment, just supply the path to the activation script to the command prompt - in our case, the path to the activation script is `F:\Development\python_environments\goreverselookup\Scripts\activate`. After running this in command prompt, the virtual environment will be activated:
+
+![goreverselookup venv activation](https://i.ibb.co/Gx7g8kF/github-venvactivation.png)
+
+#### Installing GOReverseLookup
+todo
+
+
 
 
 
