@@ -36,8 +36,10 @@ For your computer to understand the GOReverseLookup program, it requires the Pyt
 
 Open the File Explorer program, then open the Downloads folder and run the installer by double clicking it.
 
-![downloads folder](https://i.ibb.co/8xFzpjY/github-downloads-folder.png){: width="50%"}
-![python installer](https://i.ibb.co/JcnB96N/github-pyinstall.png)
+#![downloads folder](https://i.ibb.co/8xFzpjY/github-downloads-folder.png)
+#![python installer](https://i.ibb.co/JcnB96N/github-pyinstall.png)
+
+<img src="(https://i.ibb.co/8xFzpjY/github-downloads-folder.png" width="100">
 
 The default Python installer window pops up:
 
