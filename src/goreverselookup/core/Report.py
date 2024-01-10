@@ -61,10 +61,10 @@ class ReportGenerator:
         string += "-" * self.width + "\n"
         return string
 
-    def _generate_goterm_per_process_table(self) -> str:
+    def _generate_goterm_per_SOI_table(self) -> str:
         """
-        This function creates a general overview table, crossing each process against positive (+), negative (-) or general (0) regulation,
-        along with the count of GO Terms under each category. A second table is created, which again crosses each process against pos., neg. and
+        This function creates a general overview table, crossing each SOI against positive (+), negative (-) or general (0) regulation,
+        along with the count of GO Terms under each category. A second table is created, which again crosses each SOI against pos., neg. and
         general regulation, but included the GO IDs and GO labels of specific GO Terms under each category.
 
         Parameters: None
@@ -73,9 +73,9 @@ class ReportGenerator:
           - (str) string: The formatted tables using the data from the ReverseLookup model supplied in the constructor of this class
 
         Example:
-        GO TERMS PER PROCESS
+        GO TERMS PER SOI
         +-----------+-----+-----+-----+---------+
-        | Process   |   + |   - |   0 |   Total |
+        | SOI       |   + |   - |   0 |   Total |
         +===========+=====+=====+=====+=========+
         | diabetes  |   6 |   6 |  17 |      29 |
         +-----------+-----+-----+-----+---------+
@@ -84,7 +84,7 @@ class ReportGenerator:
         | Total     |  12 |  15 |  40 |      67 |
         +-----------+-----+-----+-----+---------+
         +-----------+--------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
-        | Process   | +                                                                                                                  | -                                                                                                                  | 0                                                                                                         |
+        | SOI       | +                                                                                                                  | -                                                                                                                  | 0                                                                                                         |
         +===========+====================================================================================================================+====================================================================================================================+===========================================================================================================+
         | diabetes  | GO:1900077 - negative regulation of cellular response to insulin stimulus                                          | GO:1900078 - positive regulation of cellular response to insulin stimulus                                          | GO:0046950 - cellular ketone body metabolic process                                                       |
         |           | GO:0046627 - negative regulation of insulin receptor signaling pathway                                             | GO:0046628 - positive regulation of insulin receptor signaling pathway                                             | GO:0032869 - cellular response to insulin stimulus                                                        |
@@ -108,37 +108,37 @@ class ReportGenerator:
         """
         # Use a dictionary comprehension for the grouped_goterms initialization
         grouped_goterms = {
-            (target["process"], direction): []
-            for target in self.reverse_lookup.target_processes
+            (target["SOI"], direction): []
+            for target in self.reverse_lookup.target_SOIs
             for direction in ("+", "-", "0")
         }
 
         # Use a for-loop to populate the grouped_goterms dictionary
         for goterm in self.reverse_lookup.goterms:
-            for goterm_process in goterm.processes:
-                key = (goterm_process["process"], goterm_process["direction"])
+            for goterm_SOI in goterm.SOIs:
+                key = (goterm_SOI["SOI"], goterm_SOI["direction"])
                 grouped_goterms[key].append(goterm)
 
-        string = "GO TERMS PER PROCESS" + "\n"
+        string = "GO TERMS PER SOI" + "\n"
 
         if self.verbosity >= 1:
-            table = [["Process", "+", "-", "0", "Total"]]
+            table = [["SOI", "+", "-", "0", "Total"]]
             table.extend(
                 [
                     [
-                        target["process"],
-                        len(grouped_goterms[(target["process"], "+")]),
-                        len(grouped_goterms[(target["process"], "-")]),
-                        len(grouped_goterms[(target["process"], "0")]),
+                        target["SOI"],
+                        len(grouped_goterms[(target["SOI"], "+")]),
+                        len(grouped_goterms[(target["SOI"], "-")]),
+                        len(grouped_goterms[(target["SOI"], "0")]),
                         sum(
                             [
-                                len(grouped_goterms[(target["process"], "+")]),
-                                len(grouped_goterms[(target["process"], "-")]),
-                                len(grouped_goterms[(target["process"], "0")]),
+                                len(grouped_goterms[(target["SOI"], "+")]),
+                                len(grouped_goterms[(target["SOI"], "-")]),
+                                len(grouped_goterms[(target["SOI"], "0")]),
                             ]
                         ),
                     ]
-                    for target in self.reverse_lookup.target_processes
+                    for target in self.reverse_lookup.target_SOIs
                 ]
             )
             table.append(
@@ -156,22 +156,22 @@ class ReportGenerator:
             )
 
         if self.verbosity == 2:
-            table = [["Process", "+", "-", "0"]]
+            table = [["SOI", "+", "-", "0"]]
             table.extend(
                 [
                     [
-                        target["process"],
+                        target["SOI"],
                         "\n".join(
-                            str(g.id) for g in grouped_goterms[(target["process"], "+")]
+                            str(g.id) for g in grouped_goterms[(target["SOI"], "+")]
                         ),
                         "\n".join(
-                            str(g.id) for g in grouped_goterms[(target["process"], "-")]
+                            str(g.id) for g in grouped_goterms[(target["SOI"], "-")]
                         ),
                         "\n".join(
-                            str(g.id) for g in grouped_goterms[(target["process"], "0")]
+                            str(g.id) for g in grouped_goterms[(target["SOI"], "0")]
                         ),
                     ]
-                    for target in self.reverse_lookup.target_processes
+                    for target in self.reverse_lookup.target_SOIs
                 ]
             )
             string += (
@@ -180,25 +180,25 @@ class ReportGenerator:
             )
 
         if self.verbosity == 3:
-            table = [["Process", "+", "-", "0"]]
+            table = [["SOI", "+", "-", "0"]]
             table.extend(
                 [
                     [
-                        target["process"],
+                        target["SOI"],
                         "\n".join(
                             str(f"{g.id} - {g.name}")
-                            for g in grouped_goterms[(target["process"], "+")]
+                            for g in grouped_goterms[(target["SOI"], "+")]
                         ),
                         "\n".join(
                             str(f"{g.id} - {g.name}")
-                            for g in grouped_goterms[(target["process"], "-")]
+                            for g in grouped_goterms[(target["SOI"], "-")]
                         ),
                         "\n".join(
                             str(f"{g.id} - {g.name}")
-                            for g in grouped_goterms[(target["process"], "0")]
+                            for g in grouped_goterms[(target["SOI"], "0")]
                         ),
                     ]
-                    for target in self.reverse_lookup.target_processes
+                    for target in self.reverse_lookup.target_SOIs
                 ]
             )
             string += tabulate(table, headers="firstrow", tablefmt="grid") + "\n"
@@ -509,7 +509,7 @@ class ReportGenerator:
         if len(self.reverse_lookup.goterms) > 0:
             report += self._generate_section("GO TERMS")
             report += self._generate_goterms_statistics() + "\n"
-            report += self._generate_goterm_per_process_table() + "\n"
+            report += self._generate_goterm_per_SOI_table() + "\n"
 
         # Generate section on Products
         if len(self.reverse_lookup.products) > 0:

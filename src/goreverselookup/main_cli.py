@@ -1,9 +1,7 @@
-# This is the main file for the project that is used when goreverselookup is used
-# from the command-line interface.
+# This is the main file for the project that is used when goreverselookup is used from the command-line interface.
 
 import argparse
 import os
-import sys
 from goreverselookup import Cacher, ModelStats
 from goreverselookup import ReverseLookup
 from goreverselookup import nterms, adv_product_score, binomial_test, fisher_exact_test

@@ -1,11 +1,6 @@
 # --- Input file for GO Reverse Lookup --- #
 #
-# The input file contains the following sections: 
-#   - settings
-#   - processes
-#   - categories
-#   - GO_terms
-# Each section in this file is denoted by ### preceding the section name.
+# The input file contains several sections, each section in this file is denoted by ### preceding the section name.
 # The values in each section are TAB-delimited.
 #
 # *** Evidence code groups section ****
@@ -81,7 +76,7 @@
 #
 #	- pvalue:
 #			Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than
-#			the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes
+#			the set pvalue (default is 0.05) for all the SOIs of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite SOIs
 #			(eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
 #
 #	- gorth_ortholog_refetch:
@@ -119,13 +114,12 @@
 #           If the setting is False, then a product will be statistically significant only if its p-value is less than 0.05 for target process (e.g. 'angiogenesis+') and
 #           its p-value for the opposite process greater than 0.05 (e.g. 'angiogenesis-')
 #
-# *** Processes section ***
-# It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
-# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes
-# section as:
+# *** States of interest section ***
+# It contains the SOIs in question to the researcher and the direction of regulation of these SOIs. For example, if
+# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct SOIs section as:
 # 	chronic_inflammation	+
 #	cancer	+
-# The processes are also used in the GO_terms section, to specify how a GO Term contributes to a given process.
+# The SOIs are also used in the GO_terms section, to specify how a GO Term contributes to a given process.
 #
 # *** Categories section ***
 # Gene Ontology provides three categories of annotations (as known as Gene Ontology Aspects):
@@ -225,7 +219,7 @@ ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin
 ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
 ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
 ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
-###processes [proces name] [to be expressed + or suppressed -]
+###states_of_interest [SOI name] [positive contribution to SOI: +, or negative contribution to SOI: -]
 chronic_inflammation	+
 cancer	+
 ###categories [category] [True / False]

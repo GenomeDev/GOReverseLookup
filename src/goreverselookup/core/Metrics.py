@@ -40,20 +40,20 @@ class adv_product_score(Metrics):
 
     Parameters:
       - (ReverseLookup) model: an instance of the ReverseLookup model.
-      - (float) a: is used to give a base score to a product when all target processes are regulated in the same direction as the GOTerms in the list.
-      - (float) b1, b2: are used to calculate the score based on the number of processes in target_processes that are regulated by GOTerms in the same (b1) or opposite (b2) direction as defined in the list.
+      - (float) a: is used to give a base score to a product when all target SOIs are regulated in the same direction as the GOTerms in the list.
+      - (float) b1, b2: are used to calculate the score based on the number of SOIs in target_SOIs that are regulated by GOTerms in the same (b1) or opposite (b2) direction as defined in the list.
       - (float) c1, c2: are used to adjust the score based on the number of GOTerms with direction "0"
 
     Scoring algorithm (explanation of the metric function):
       1. Start with score = 0.0
 
-      2. (a) If all GO Terms of a Product instance regulate the processes of the ReverseLookup instance (eg. angio, diabetes) positively (and none negatively), then add 'a' to score. The 'direction' value of a positive regulatory term is '+', whereas direction for a negative regulatory term is '-'.
+      2. (a) If all GO Terms of a Product instance regulate the SOIs of the ReverseLookup instance (eg. angio, diabetes) positively (and none negatively), then add 'a' to score. The 'direction' value of a positive regulatory term is '+', whereas direction for a negative regulatory term is '-'.
 
-      3. (b1) For each of the processes, compute sum(goterm.weight) ** b2, for every GO Term of the product, which positively regulates the process.
-         Final equation ADDED to the score is sum(b1 * sum(goterm.weight) ** b2). The first 'sum' is the sum of processes, whereas the second 'sum' is the sum of GO Terms, which pass the positive regulation check for the current process.
+      3. (b1) For each of the SOIs, compute sum(goterm.weight) ** b2, for every GO Term of the product, which positively regulates the SOI.
+         Final equation ADDED to the score is sum(b1 * sum(goterm.weight) ** b2). The first 'sum' is the sum of SOIs, whereas the second 'sum' is the sum of GO Terms, which pass the positive regulation check for the current SOI.
 
-      4. (b2) For each of the process, compute sum(goterm.weight ** b2), for every GO Term of the product, which negatively regulates the process.
-         Final equation SUBTRACTED from the score is sum(b1 * sum(goterm.weight ** b2)). The first 'sum' is the sum of processes, the second 'sum' is the sum of GO Terms, which pass the negative regulation check for the current process.
+      4. (b2) For each of the SOI, compute sum(goterm.weight ** b2), for every GO Term of the product, which negatively regulates the SOI.
+         Final equation SUBTRACTED from the score is sum(b1 * sum(goterm.weight ** b2)). The first 'sum' is the sum of SOIs, the second 'sum' is the sum of GO Terms, which pass the negative regulation check for the current SOI.
 
       5. (c1, c2): For the GO Terms of the product with "general" regulation (direction = 0), add a base score of c1 and add sum(c2 * goterm.weight) for every GO Term with direction = 0 (general regulation).
          Final equation ADDED to the score is score * (c1 + sum(c2 * goterm.weight)), the sum relating to the number of GO Terms with direction == 0.
@@ -108,185 +108,104 @@ class adv_product_score(Metrics):
             elif direction == "-":
                 return "+"
 
-        """ These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-        # Check if all target processes are regulated in the same direction as the GOTerms in the list
+        # Check if all target SOIs are regulated in the same direction as the GOTerms in the list
         # and none of them are regulated in the opposite direction
         if (
-            # Check if all processes in target_processes of the ReverseLookup model
-            # have a GOTerm in goterms_list that regulates it (them) in the same direction
-            all(
-                any(any(process['direction'] == p['direction'] and process['process'] == p['process'] for p in goterm.processes) for goterm in goterms_list)
-                for process in self.reverse_lookup.target_processes
-            )
-            # Check if none of the processes in target_processes have a GOTerm in goterms_list that regulates it in the opposite direction
-            and not any(
-                any(any(_opposite_direction(process['direction']) == p['direction'] and process['process'] == p['process'] for p in goterm.processes) for goterm in goterms_list)
-                for process in self.reverse_lookup.target_processes
-            )
-            
-        ):
-            # If all target processes are regulated in the same direction, add a points to the score
-            score += self.a
-        """
-
-        # Check if all target processes are regulated in the same direction as the GOTerms in the list
-        # and none of them are regulated in the opposite direction
-        if (
-            # Check if all processes in target_processes of the ReverseLookup model
+            # Check if all SOIs in target_SOIs of the ReverseLookup model
             # have a GOTerm in goterms_list that regulates it (them) in the same direction
             all(
                 any(
                     any(
-                        process["direction"] == goterm_process["direction"]
-                        and process["process"] == goterm_process["process"]
-                        for goterm_process in goterm.processes
+                        SOI["direction"] == goterm_SOI["direction"]
+                        and SOI["SOI"] == goterm_SOI["SOI"]
+                        for goterm_SOI in goterm.SOIs
                     )
                     for goterm in goterms_list
                 )
-                for process in self.reverse_lookup.target_processes
+                for SOI in self.reverse_lookup.target_SOIs
             )
-            # Check if none of the processes in target_processes have a GOTerm in goterms_list that regulates it in the opposite direction
+            # Check if none of the SOIs in target_SOIs have a GOTerm in goterms_list that regulates it in the opposite direction
             and not any(
                 any(
                     any(
-                        _opposite_direction(process["direction"])
-                        == goterm_process["direction"]
-                        and process["process"] == goterm_process["process"]
-                        for goterm_process in goterm.processes
+                        _opposite_direction(SOI["direction"]) == goterm_SOI["direction"]
+                        and SOI["SOI"] == goterm_SOI["SOI"]
+                        for goterm_SOI in goterm.SOIs
                     )
                     for goterm in goterms_list
                 )
-                for process in self.reverse_lookup.target_processes
+                for SOI in self.reverse_lookup.target_SOIs
             )
         ):
-            # If all target processes are regulated in the same direction, add a points to the score
+            # If all target SOIs are regulated in the same direction, add a points to the score
             score += self.a
 
-        """ These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-        # Check if all target processes are regulated in the opposite direction as the GOTerms in the list
+        # Check if all target SOIs are regulated in the opposite direction as the GOTerms in the list
         # and none of them are regulated in the same direction
         if (
-            # Check if all processes in target_processes have a GOTerm in goterms_list that regulates it in the opposite direction
-            all(
-                any(any(_opposite_direction(process['direction']) == p['direction'] and process['process'] == p['process'] for p in goterm.processes) for goterm in goterms_list)
-                for process in self.reverse_lookup.target_processes
-            )
-            # Check if none of the processes in target_processes have a GOTerm in goterms_list that regulates it in the same direction
-            and not any(
-                any(any(process['direction'] == p['direction'] and process['process'] == p['process'] for p in goterm.processes) for goterm in goterms_list)
-                for process in self.reverse_lookup.target_processes
-            )
-        ):
-            # If all target processes are regulated in the opposite direction, subtract a points from the score
-            score -= self.a
-        """
-        # Check if all target processes are regulated in the opposite direction as the GOTerms in the list
-        # and none of them are regulated in the same direction
-        if (
-            # Check if all processes in target_processes have a GOTerm in goterms_list that regulates it in the opposite direction
+            # Check if all SOIs in target_SOIs have a GOTerm in goterms_list that regulates it in the opposite direction
             all(
                 any(
                     any(
-                        _opposite_direction(process["direction"])
-                        == goterm_process["direction"]
-                        and process["process"] == goterm_process["process"]
-                        for goterm_process in goterm.processes
+                        _opposite_direction(SOI["direction"]) == goterm_SOI["direction"]
+                        and SOI["SOI"] == goterm_SOI["SOI"]
+                        for goterm_SOI in goterm.SOIs
                     )
                     for goterm in goterms_list
                 )
-                for process in self.reverse_lookup.target_processes
+                for SOI in self.reverse_lookup.target_SOIs
             )
-            # Check if none of the processes in target_processes have a GOTerm in goterms_list that regulates it in the same direction
+            # Check if none of the SOIs in target_SOIs have a GOTerm in goterms_list that regulates it in the same direction
             and not any(
                 any(
                     any(
-                        process["direction"] == goterm_process["direction"]
-                        and process["process"] == goterm_process["process"]
-                        for goterm_process in goterm.processes
+                        SOI["direction"] == goterm_SOI["direction"]
+                        and SOI["SOI"] == goterm_SOI["SOI"]
+                        for goterm_SOI in goterm.SOIs
                     )
                     for goterm in goterms_list
                 )
-                for process in self.reverse_lookup.target_processes
+                for SOI in self.reverse_lookup.target_SOIs
             )
         ):
-            # If all target processes are regulated in the opposite direction, subtract a points from the score
+            # If all target SOIs are regulated in the opposite direction, subtract a points from the score
             score -= self.a
 
-        """ These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-        # Calculate the score based on the number of processes in target_processes that are regulated
-        # by GOTerms in the same direction as defined in the list
-        score += sum(
-            (self.b1 * sum(
-                # Check if the direction and process in the process dict matches with the direction and process in any GOTerm dict
-                goterm.weight for goterm in goterms_list if any(process['direction'] == p['direction'] and process['process'] == p['process'] for p in goterm.processes)
-                ) ** self.b2)
-                for process in self.reverse_lookup.target_processes
-        )
-        """
-
-        # Calculate the score based on the number of processes in target_processes that are regulated
+        # Calculate the score based on the number of SOIs in target_SOIs that are regulated
         # by GOTerms in the same direction as defined in the list
         sum_weights = 0
         for goterm in goterms_list:
-            for goterm_process in goterm.processes:
-                for process in self.reverse_lookup.target_processes:
+            for goterm_SOI in goterm.SOIs:
+                for SOI in self.reverse_lookup.target_SOIs:
                     if (
-                        goterm_process["direction"] == process["direction"]
-                        and goterm_process["process"] == process["process"]
+                        goterm_SOI["direction"] == SOI["direction"]
+                        and goterm_SOI["SOI"] == SOI["SOI"]
                     ):
                         sum_weights += goterm.weight
 
                 score += self.b1 * sum_weights**self.b2
                 sum_weights = 0
 
-        """ These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-        # Calculate the score based on the number of processes in target_processes that are regulated
-        # by GOTerms in the oposite direction as defined in the list
-        score -= sum(
-            (self.b1 * sum(
-                # Check if the direction and process in the process dict matches with the direction and process in any GOTerm dict
-                goterm.weight for goterm in goterms_list if any(_opposite_direction(process['direction']) == p['direction'] and process['process'] == p['process'] for p in goterm.processes)
-                ) ** self.b2)
-                for process in self.reverse_lookup.target_processes
-        )
-        """
-
-        # Calculate the score based on the number of processes in target_processes that are regulated
+        # Calculate the score based on the number of SOIs in target_SOIs that are regulated
         # by GOTerms in the oposite direction as defined in the list
         sum_weights = 0
         for goterm in goterms_list:
-            for goterm_process in goterm.processes:
-                for process in self.reverse_lookup.target_processes:
+            for goterm_SOI in goterm.SOIs:
+                for SOI in self.reverse_lookup.target_SOIs:
                     if (
-                        goterm_process["direction"]
-                        == _opposite_direction(process["direction"])
-                        and goterm_process["process"] == process["process"]
+                        goterm_SOI["direction"] == _opposite_direction(SOI["direction"])
+                        and goterm_SOI["SOI"] == SOI["SOI"]
                     ):
                         sum_weights += goterm.weight
 
                 score -= self.b1 * sum_weights**self.b2
                 sum_weights = 0
 
-        """
-        # These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-        # Calculate the score by multiplying the current score with a factor based on the number of GOTerms with direction "0"
-        score = score * (
-            self.c1  # Start with a base factor of 1
-            + (self.c2  # Add a factor based on a constant value c
-                * sum(  # Multiply c by the sum of weights of all GOTerms with direction "0"
-                    goterm.weight  # Get the weight of each GOTerm
-                    for goterm in goterms_list  # Iterate over all GOTerms in the list
-                    if any(p['direction'] == 0 for p in goterm.processes)  # Only consider GOTerms with direction "0"
-                )
-            )
-        )
-        """
-
         # Calculate the score by multiplying the current score with a factor based on the number of GOTerms with direction "0"
         sum_weights = 0
         for goterm in goterms_list:
-            for goterm_process in goterm.processes:
-                if goterm_process["direction"] == "0":
+            for goterm_SOI in goterm.SOIs:
+                if goterm_SOI["direction"] == "0":
                     sum_weights += goterm.weight
         score *= self.c1 + self.c2 * sum_weights
         sum_weights = 0
@@ -296,17 +215,17 @@ class adv_product_score(Metrics):
 
 class nterms(Metrics):
     """
-    An implementation of the Metrics interface, it scores the products by positive, negative or general regulation of a speciffic process.
+    An implementation of the Metrics interface, it scores the products by positive, negative or general regulation of a speciffic SOI.
     It takes in a model (in the form of a ReverseLookup object) in it's constructor.
 
     Parameters:
       - (ReverseLookup) model: an instance of the ReverseLookup model.
 
     Scoring algorithm (explanation of the metric function):
-      Create an empty nterms_dict, where descriptive regulatory keys (eg. 'angio+', 'angio-', 'angio0') will be mapped to a count of terms regulating a specific process in a specific direction
-      For each process in the model's (ReverseLookup) 'target_processes':
-        a) create the following keys in nterms_dict: '{process}+', '{process}-', '{process}0'; if process is 'angio', then 'angio+', 'angio-', 'angio0' will be the keys in nterms_dict
-        b) populate each of the keys with the count of GO Terms, which positively (direction == '+'), negatively (direction == '-') or generally (direction == '0') regulate the process
+      Create an empty nterms_dict, where descriptive regulatory keys (eg. 'angio+', 'angio-', 'angio0') will be mapped to a count of terms regulating a specific SOI in a specific direction
+      For each SOI in the model's (ReverseLookup) 'target_SOIs':
+        a) create the following keys in nterms_dict: '{SOI}+', '{SOI}-', '{SOI}0'; if SOI is 'angio', then 'angio+', 'angio-', 'angio0' will be the keys in nterms_dict
+        b) populate each of the keys with the count of GO Terms, which positively (direction == '+'), negatively (direction == '-') or generally (direction == '0') regulate the SOI
 
     Example of calling and usage:
     1. Create a ReverseLookup model
@@ -331,57 +250,53 @@ class nterms(Metrics):
           - (Product) product: an instance of a Product
 
         Returns:
-          - (dict) nterms_dict: a dictionary with (ReverseLookup).target_processes * 3 keys. Each process of a ReverseLookup instance has 3 keys,
-                                '{process}+', '{process}-', '{process}0'. Each key has an integer count value of the amount of GO Terms of the input Product instance,
-                                which positively (direction == '+'), negatively (direction == '-') or generally (direction == '0') regulate a speciffic process.
+          - (dict) nterms_dict: a dictionary with (ReverseLookup).target_SOIs * 3 keys. Each SOI of a ReverseLookup instance has 3 keys,
+                                '{SOI}+', '{SOI}-', '{SOI}0'. Each key has an integer count value of the amount of GO Terms of the input Product instance,
+                                which positively (direction == '+'), negatively (direction == '-') or generally (direction == '0') regulate a speciffic SOI.
 
-                                For a ReverseLookup model with defined processed 'angio' and 'diabetes', the returned dictionary would have 6 keys:
+                                For a ReverseLookup model with defined SOIs 'angio' and 'diabetes', the returned dictionary would have 6 keys:
                                 angio+, angio-, angio0, diabetes+, diabetes-, diabetes0
         """
         # A list of GO Terms associated with the current Product
         goterms_list = self.reverse_lookup.get_all_goterms_for_product(product)
-        # An empty dictionary to store the count of GOTerms for each process and direction
+        # An empty dictionary to store the count of GOTerms for each SOI and direction
         nterms_dict = {}
 
-        # Iterate over each process in the target_processes list
-        for process in self.reverse_lookup.target_processes:
-            # Count the number of GOTerms that have a direction of "+" and a process matching the current process
-            # nterms_dict[f"{process['process']}+"] = sum(1 for goterm in goterms_list if (goterm.direction == "+" and process['process'] == goterm.process)) # These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-            nterms_dict[f"{process['process']}+"] = sum(
+        for SOI in self.reverse_lookup.target_SOIs:
+            # Count the number of GOTerms that have a direction of "+" and a SOI matching the current SOI
+            nterms_dict[f"{SOI['SOI']}+"] = sum(
                 1
                 for goterm in goterms_list
                 if any(
-                    goterm_process["direction"] == "+"
-                    and process["process"] == goterm_process["process"]
-                    for goterm_process in goterm.processes
+                    goterm_SOI["direction"] == "+"
+                    and SOI["SOI"] == goterm_SOI["SOI"]
+                    for goterm_SOI in goterm.SOIs
                 )
             )
 
-            # Count the number of GOTerms that have a direction of "-" and a process matching the current process
-            # nterms_dict[f"{process['process']}-"] = sum(1 for goterm in goterms_list if (goterm.direction == "-" and process['process'] == goterm.process)) # These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-            nterms_dict[f"{process['process']}-"] = sum(
+            # Count the number of GOTerms that have a direction of "-" and a SOI matching the current SOI
+            nterms_dict[f"{SOI['SOI']}-"] = sum(
                 1
                 for goterm in goterms_list
                 if any(
-                    goterm_process["direction"] == "-"
-                    and process["process"] == goterm_process["process"]
-                    for goterm_process in goterm.processes
+                    goterm_SOI["direction"] == "-"
+                    and SOI["SOI"] == goterm_SOI["SOI"]
+                    for goterm_SOI in goterm.SOIs
                 )
             )
 
-            # Count the number of GOTerms that have a direction of "0" and a process matching the current process
-            # nterms_dict[f"{process['process']}0"] = sum(1 for goterm in goterms_list if (goterm.direction == "0" and process['process'] == goterm.process)) # These scorings worked, when "direction" was a direct submember of a GOTerm instance. Now, each GOTerm has a list of dictionaries, each dictionary representing one process with keys "process" and "direction"
-            nterms_dict[f"{process['process']}0"] = sum(
+            # Count the number of GOTerms that have a direction of "0" and a SOI matching the current SOI
+            nterms_dict[f"{SOI['SOI']}0"] = sum(
                 1
                 for goterm in goterms_list
                 if any(
-                    goterm_process["direction"] == "0"
-                    and process["process"] == goterm_process["process"]
-                    for goterm_process in goterm.processes
+                    goterm_SOI["direction"] == "0"
+                    and SOI["SOI"] == goterm_SOI["SOI"]
+                    for goterm_SOI in goterm.SOIs
                 )
             )
 
-        # Return the dictionary containing the count of GOTerms for each process and direction
+        # Return the dictionary containing the count of GOTerms for each SOI and direction
         return nterms_dict
 
 
@@ -411,18 +326,17 @@ class binomial_test(Metrics):
 
         results_dict = {}
 
-        for process in self.reverse_lookup.target_processes:
-            process_goterms_list = self.reverse_lookup.get_all_goterms_for_process(process["process"])  # get all (positive, negative, neutral) GO terms for this process from the input file
-            # TODO: debate on the use of .goaf for num_goterms_product_general
+        for SOI in self.reverse_lookup.target_SOIs:
+            SOI_goterms_list = self.reverse_lookup.get_all_goterms_for_SOI(SOI["SOI"])  # get all (positive, negative, neutral) GO terms for this SOI from the input file
             num_goterms_product_general = len(self.goaf.get_all_terms_for_product(product.genename))  # get all GO terms associated with this product from the GOAF
             num_goterms_all_general = self._num_all_goterms
             for direction in ["+", "-"]:
-                # num goterms associated with input Product p AND the current process (including process direction)
-                num_goterms_product_process = sum(
+                # num goterms associated with input Product p AND the current SOI (including SOI direction)
+                num_goterms_product_SOI = sum(
                     1
-                    for goterm in process_goterms_list
+                    for goterm in SOI_goterms_list
                     if (
-                        any(i["direction"] == direction for i in goterm.processes)
+                        any(i["direction"] == direction for i in goterm.SOIs)
                         and (
                             any(
                                 product_id in goterm.products
@@ -432,34 +346,32 @@ class binomial_test(Metrics):
                         )
                     )
                 )
-                # num goterms associated with this process (incl. direction)
-                num_goterms_all_process = sum(
+                # num goterms associated with this SOI (incl. direction)
+                num_goterms_all_SOI = sum(
                     1
-                    for goterm in process_goterms_list
-                    if any(i["direction"] == direction for i in goterm.processes)
+                    for goterm in SOI_goterms_list
+                    if any(i["direction"] == direction for i in goterm.SOIs)
                 )
 
                 # time for Binomial test and "risk ratio"
-                # binom = binomtest(num_goterms_product_process, num_goterms_all_process,
-                #                  (num_goterms_product_general/num_goterms_all_general), alternative='greater')
                 try:
                     binom = binomtest(
-                        num_goterms_product_process,
-                        num_goterms_all_process,
+                        num_goterms_product_SOI,
+                        num_goterms_all_SOI,
                         (
                             num_goterms_product_general / num_goterms_all_general
                             if num_goterms_all_general != 0
                             else 0
                         ),
                         alternative="greater",
-                    )  # bugfix: ZeroDivisionError
+                    ) 
                 except ValueError as e:
-                    # this might happen because num_goterms_all_process is 0 
-                    results_dict[f"{process['process']}{direction}"] = {
+                    # this might happen because num_goterms_all_SOI is 0 
+                    results_dict[f"{SOI['SOI']}{direction}"] = {
                         "pvalue": 1.0,
                         "error": "ValueError",
-                        "n_prod_process" : num_goterms_product_process,
-                        "n_all_process" : num_goterms_all_process,
+                        "n_prod_SOI" : num_goterms_product_SOI,
+                        "n_all_SOI" : num_goterms_all_SOI,
                         "n_prod_general" : num_goterms_product_general,
                         "n_all_general" : num_goterms_all_general,
                     }
@@ -470,8 +382,8 @@ class binomial_test(Metrics):
                     num_goterms_product_general != 0 and num_goterms_all_general != 0
                 ):  # bugfix: ZeroDivisionError
                     risk_ratio = (
-                        num_goterms_product_process / num_goterms_all_process
-                        if num_goterms_all_process != 0
+                        num_goterms_product_SOI / num_goterms_all_SOI
+                        if num_goterms_all_SOI != 0
                         else 0
                     ) / (num_goterms_product_general / num_goterms_all_general)
                 else:
@@ -479,22 +391,21 @@ class binomial_test(Metrics):
 
                 fold_enrichment_score = 0
                 if (
-                    num_goterms_all_process != 0
+                    num_goterms_all_SOI != 0
                     and num_goterms_product_general != 0
                     and num_goterms_all_general != 0
                 ):
-                    fold_enrichment_score = num_goterms_product_process / (
-                        num_goterms_all_process
+                    fold_enrichment_score = num_goterms_product_SOI / (
+                        num_goterms_all_SOI
                         * (num_goterms_product_general / num_goterms_all_general)
                     )
 
-                results_dict[f"{process['process']}{direction}"] = {
-                    # "n_prod_process" : num_goterms_product_process,
-                    # "n_all_process" : num_goterms_all_process,
-                    # "n_prod_general" : num_goterms_product_general,
-                    # "n_all_general" : num_goterms_all_general,
-                    "num": num_goterms_product_process,
-                    "expected": num_goterms_all_process
+                results_dict[f"{SOI['SOI']}{direction}"] = {
+                    "n_prod_SOI" : num_goterms_product_SOI,
+                    "n_all_SOI" : num_goterms_all_SOI,
+                    "n_prod_general" : num_goterms_product_general,
+                    "n_all_general" : num_goterms_all_general,
+                    "expected": num_goterms_all_SOI
                     * (
                         num_goterms_product_general / num_goterms_all_general
                         if num_goterms_all_general != 0
@@ -502,16 +413,10 @@ class binomial_test(Metrics):
                     ),
                     "fold_enrichment": (
                         fold_enrichment_score
-                    ),  # bugfix: ZeroDivisionError
+                    ), 
                     "pvalue": binom_pvalue,
                     "risk_ratio": risk_ratio,
                 }
-
-        # all_target_pvalues = [results_dict[f"{process['process']}{process['direction']}"]['pvalue'] for process in self.reverse_lookup.target_processes]
-        # combined_p = combine_pvalues(all_target_pvalues)
-        # results_dict["comb_binom_pvalue"] = combined_p.pvalue
-        # combined_rr = statistics.mean([results_dict[f"{process['process']}{process['direction']}"]['risk_ratio'] for process in self.reverse_lookup.target_processes])
-        # results_dict["comb_risk_ratio"] = combined_rr
 
         return results_dict
 
@@ -529,8 +434,8 @@ class fisher_exact_test(Metrics):
     then num_goterms_product_general will be determined via an https query. Otherwise, num_goterms_product_general will be determined from
     the GOAF.
 
-    Each process can have 2 sets of GO terms - one set includes GO terms, which promote,
-    and the other set includes GO terms which inhibit the process. The “general” set
+    Each SOI can have 2 sets of GO terms - one set includes GO terms, which promote,
+    and the other set includes GO terms which inhibit the SOI. The “general” set
     contains all GO terms in existence (found in the GOAF). Note that when supplying a ReverseLookup
     and a GOAnnotationsFile instances to the constructor, ideally they should match in their go_categories.
     If ReverseLookup and GOAF don't match in go_categories, then GOAF will be recalculated using ReverseLookup's
@@ -540,14 +445,14 @@ class fisher_exact_test(Metrics):
     to Fischer’s exact test.
 
     The gene is a candidate gene for a “positive” (stimulatory) cross section
-    (eg angiogenesis + diabetes) only if p<0.05 for all stimulatory processes
-    (angio+, diab+) and p>0.05 for all inhibitory processes (angio-,diab-).
-    Because we calculate 2*n_processes (each process has + or - direction) p values
+    (eg angiogenesis + diabetes) only if p<0.05 for all stimulatory SOIs
+    (angio+, diab+) and p>0.05 for all inhibitory SOIs (angio-,diab-).
+    Because we calculate 2*n_SOIs (each SOI has + or - direction) p values
     for each gene, we need to calculate the final overall p value using BH correction.
     Note that BH correction is calculated in (ReverseLookup).score_products after all products have
     been scored.
 
-    Example: consider process “angiogenesis+”. Let there exist 100 GO terms, which
+    Example: consider SOI “angiogenesis+”. Let there exist 100 GO terms, which
     stimulate angiogenesis. The gene in question is SOX2, which is associated in 10
     of the 100 GO terms of angiogenesis+. Gene SOX2 is also associated with 100 GO
     terms in the “general” set (containing all existing GO terms - 10000 GO terms).
@@ -564,7 +469,7 @@ class fisher_exact_test(Metrics):
     The same table with filled out base code variables for the Fisher's test:
                                 | n GOt (contains SOX2)         | n GOt (doesnt contain SOX2)  | total
     --------------------------------------------------------------------------------------------------
-    set of GOt for angio+       | num_goterms_product_process   | ?                            | num_goterms_all_process
+    set of GOt for angio+       | num_goterms_product_SOI       | ?                            | num_goterms_all_SOI
     --------------------------------------------------------------------------------------------------
     general set of GOt (all)    |                               |                              |
     MINUS set of GOt for angio+ | ?                             | ?                            | 
@@ -574,31 +479,12 @@ class fisher_exact_test(Metrics):
     The complete table can now be calculated:
                                     | n GOt (contains gene)         | n GOt (doesnt contain gene)                               | total
     -------------------------------------------------------------------------------------------------------------------------------------------------------
-    set of GOt for process+         | num_goterms_product_process   | num_goterms_all_process - num_goterms_product_process     |  num_goterms_all_process
+    set of GOt for SOI+             | num_goterms_product_SOI       | num_goterms_all_SOI - num_goterms_product_SOI             |  num_goterms_all_SOI
     -------------------------------------------------------------------------------------------------------------------------------------------------------
     general set of GOt (all)        | num_goterms_product_general - | num_goterms_all_general - num_goterms_product_general -   | num_goterms_all_general -
-    MINUS set of GOt for process+   | num_goterms_product_process   | (num_goterms_all_process - num_goterms_product_process)   | num_goterms_all_process
+    MINUS set of GOt for SOI+       | num_goterms_product_SOI       | (num_goterms_all_SOI - num_goterms_product_SOI)           | num_goterms_all_SOI
     -------------------------------------------------------------------------------------------------------------------------------------------------------
     total                           | num_goterms_product_general   | num_goterms_all_general - num_goterms_product_general     | num_goterms_all_general
-
-
-    Ladi original:
-    Recimo da imaš 3 processe, katere zelis da se skupaj zgodijo: za vsak process določiš
-    dva seta, enega z gotermi, ki sprožajo proces in enega z gotermi, ki zavirajo process
-    (negative regulation + posredno zaviralci prek nasprotujočih se procesov).
-    Nato določiš še splošni set (vsebuje vse goterme, ki se pojavljajo v tvojem tarčnem
-    "organizmu", to ubistu pomeni kar vsi gotermi v GO, izjemno redko bi ožal, če bi imel
-    kak specifičen primer), s katerim boš primerjal vsakega od prej definiranih dveh setov
-    za vsak proces. Nato za vsak gen "nardis" kontingencno tabelco in izračunaš p-vrednost
-    po Fischer's exact test in s tem dobimo p vrednost.
-
-    In gen je kandidatni samo ce je p vrednost recmo manjsa od 0.05 v vseh procesih in ni
-    manjsa od 0.05 v nobenem od setov gotermov, ki zavirajo proces. Aha pa se to:
-    ker ubistu vsakemu genu izracunava 2*N(processov) p-vrednosti, je to treba upostevat,
-    recimo bonferoni popravek za p vrednost je (target p-value)/number of test. No cisto
-    nakoncu lahko iz Nprocessov p-vrednosti za sete, ki pospesujejo process izracunava neko
-    meta-p vrednost, ki bi bla recmo povprecje al pa neki tazga (to morm se preucit), in nato
-    bi za razvrstitev kandidatnih genov zracunala se -log(p-value) in risk ratio.
     """
 
     def __init__(self, model: ReverseLookup, goaf: GOAnnotationsFile = None):
@@ -610,7 +496,7 @@ class fisher_exact_test(Metrics):
         
         if self.goaf is None:
             self.goaf = GOAnnotationsFile(
-                filepath=self.reverse_lookup.model_settings.datafile_paths["goa_human"], # TODO: change this !!!
+                filepath=self.reverse_lookup.model_settings.datafile_paths["goa_human"], # TODO: change this to enable scoring of all species !!!
                 go_categories=self.reverse_lookup.go_categories,
                 valid_evidence_codes=self.reverse_lookup.model_settings.valid_evidence_codes,
                 evidence_codes_to_ecoids=self.reverse_lookup.model_settings.evidence_codes_to_ecoids
@@ -621,17 +507,10 @@ class fisher_exact_test(Metrics):
         if self.reverse_lookup.model_settings.fisher_test_use_online_query is True:
             self.online_query_api = self.reverse_lookup.go_api
         if self.goaf.go_categories != self.reverse_lookup.go_categories:
-            logger.warning(
-                "GOAF categories don't match ReverseLookup model GO categories!"
-            )
+            logger.warning("GOAF categories don't match ReverseLookup model GO categories!")
             logger.warning(f"  - GOAF GO categories: {self.goaf.go_categories}")
-            logger.warning(
-                f"  - ReverseLookup GO categories: {self.reverse_lookup.go_categories}"
-            )
-            logger.info(
-                "GOAF will be recalculated using the ReverseLookup's GO categories:"
-                f" {self.reverse_lookup.go_categories}"
-            )
+            logger.warning(f"  - ReverseLookup GO categories: {self.reverse_lookup.go_categories}")
+            logger.info(f"GOAF will be recalculated using the ReverseLookup's GO categories: {self.reverse_lookup.go_categories}")
 
     def metric(self, product: Product, use_goaf=False) -> Dict: # TODO: IMPLEMENT .OBO INSTEAD OF GOAF FOR NUM_GOTERMS_ALL !!!
         """
@@ -642,16 +521,16 @@ class fisher_exact_test(Metrics):
         However, if you wish to use a GO Annotations File for a specific species (e.g. ZFIN), then set use_goaf to True, so a ZFIN.gaf file will be used to
         calculate all GO Terms in existence for the zebrafish. You must construct the binomial_test instance in this case with the ZFIN.gaf!!!
         """
-        D_DEBUG_CALCULATE_DESIRED_N_PROD_PROCESS = False  # TODO: delete this # calculates num_goterms_product_process which would be sufficient for the product's statistical importance (p < 0.05)
-        D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_PROCESS_ALL = False # TODO: remove/integrate this
+        D_DEBUG_CALCULATE_DESIRED_N_PROD_SOI = False  # TODO: delete this # calculates num_goterms_product_SOI which would be sufficient for the product's statistical importance (p < 0.05)
+        D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_SOI_ALL = False # TODO: remove/integrate this
 
         if self._num_all_goterms == 0:
             self._num_all_goterms = len(self.reverse_lookup.obo_parser.get_goterms(validity="valid", go_categories=self.reverse_lookup.go_categories))
 
         results_dict = {}
 
-        for process in self.reverse_lookup.target_processes:  # example self.reverse_lookup.target_processes: [0]: {'process': 'chronic_inflammation', 'direction': '+'}, [1]: {{'process': 'cancer', 'direction': '+'}}
-            process_goterms_list = self.reverse_lookup.get_all_goterms_for_process(process["process"])  # all GO Term ids associated with a specific process (eg. angio, diabetes, obesity) for the current MODEL
+        for SOI in self.reverse_lookup.target_SOIs:  # example self.reverse_lookup.target_SOIs: [0]: {'SOI': 'chronic_inflammation', 'direction': '+'}, [1]: {{'SOI': 'cancer', 'direction': '+'}}
+            SOI_goterms_list = self.reverse_lookup.get_all_goterms_for_SOI(SOI["SOI"])  # all GO Term ids associated with a specific SOI (eg. angio, diabetes, obesity) for the current MODEL
             num_goterms_all_general = self._num_all_goterms  # number of all GO Terms from the GO Annotations File (current total: 18880)
 
             # num_goterms_product_general ... # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
@@ -674,29 +553,6 @@ class fisher_exact_test(Metrics):
                     goterms_product_general = self.goaf.get_all_terms_for_product(product.genename)
                 num_goterms_product_general = len(goterms_product_general)  # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
 
-            """
-            # This is probably an error - why did we even bother implementing the parent scores?
-            # GOxxx
-            #   - GOxxx <-- this term doesnt have the gene (parent)
-            #       - GOxxx <-- gene associated to this term
-            #           - GOxxx <-- indirect annotation (child)
-            #               - GOxxx <-- indirect annotation (child)
-            #   - GOxxx <-- this term doesn't have the gene
-            #       ...
-            #   - GOxxx
-            #       ...
-            
-            # find the number of parent indirect annotations
-            if self.reverse_lookup.model_settings.include_indirect_annotations is True:
-                # include all parent goterms in the scoring
-                directly_associated_goterms = list(goterms_product_general)  # calling list constructor creates two separate entities, which prevents infinite looping !
-                for directly_associated_goterm in directly_associated_goterms:  # WARNING: don't iterate over goterms_product_general, since this list is being updated in the for loop !!
-                    parent_goterms = self.reverse_lookup.obo_parser.get_parent_terms(directly_associated_goterm)  # indirectly associated goterms
-                    goterms_product_general += parent_goterms  # expand goterms_product_general by the parent goterms
-                # delete duplicate parents by converting a list to set
-                goterms_product_general = set(goterms_product_general)
-                num_goterms_product_general = len(goterms_product_general)  # calculate new num_goterms_product_general
-            """
             # find the number of child indirect annotations for num_goterms_product_general
             if self.reverse_lookup.model_settings.include_indirect_annotations is True:
                 # include all indirect annotations for num_goterms_product_general
@@ -709,84 +565,84 @@ class fisher_exact_test(Metrics):
                 num_goterms_product_general = len(goterms_product_general)  # calculate new num_goterms_product_general
     
             for direction in ["+", "-"]:
-                # num_goterms_product_process = sum(1 for goterm in process_goterms_list if (any(goterm_process['direction'] == direction for goterm_process in goterm.processes) and (any(product_id in goterm.products for product_id in product.id_synonyms) or product.genename in goterm.products)))
+                # num_goterms_product_SOI= sum(1 for goterm in SOI_goterms_list if (any(goterm_SOI['direction'] == direction for goterm_SOI in goterm.SOIs) and (any(product_id in goterm.products for product_id in product.id_synonyms) or product.genename in goterm.products)))
                 # the above line is a single-line implementation of the below nested for loops
-                num_goterms_product_process = 0  # all GO Terms which are associated with the current 'process' and the current 'direction' of regulation and are also associated with the current gene (product)
-                goterms_product_process = [] # used for the results dict to be readable by the user
-                goterms_product_process_ids = []  # used for calculation of child terms
-                for goterm in process_goterms_list:  # iterate through each GO Term associated with the current pathophysiological process
-                    for goterm_process in goterm.processes:  # goterm.processes holds which pathophysiological processes (eg. {'process': "cancer", 'direction': "-"}) the GO Term is associated with (this is determined by the user in the input.txt file)
-                        if goterm_process["direction"] == direction:
+                num_goterms_product_SOI = 0  # all GO Terms which are associated with the current 'SOI' and the current 'direction' of regulation and are also associated with the current gene (product)
+                goterms_product_SOI = [] # used for the results dict to be readable by the user
+                goterms_product_SOI_ids = []  # used for calculation of child terms
+                for goterm in SOI_goterms_list:  # iterate through each GO Term associated with the current SOI
+                    for goterm_SOI in goterm.SOIs:  # goterm.SOIs holds which states of interest (eg. {'SOI': "cancer", 'direction': "-"}) the GO Term is associated with (this is determined by the user in the input.txt file)
+                        if goterm_SOI["direction"] == direction:
                             if product.genename in goterm.products:  # attemp genename search first
-                                num_goterms_product_process += 1
-                                goterms_product_process.append(f"{goterm.id}: {goterm.name}")
-                                goterms_product_process_ids.append(goterm.id)
+                                num_goterms_product_SOI += 1
+                                goterms_product_SOI.append(f"{goterm.id}: {goterm.name}")
+                                goterms_product_SOI_ids.append(goterm.id)
                                 break
                             for product_id in product.id_synonyms:  # if genename is not found, also look into product.id_synonyms
                                 if product_id in goterm.products:
-                                    num_goterms_product_process += 1
-                                    goterms_product_process.append(f"{goterm.id}: {goterm.name}")
-                                    goterms_product_process_ids.append(goterm.id)
+                                    num_goterms_product_SOI += 1
+                                    goterms_product_SOI.append(f"{goterm.id}: {goterm.name}")
+                                    goterms_product_SOI_ids.append(goterm.id)
                                     break
 
-                # find all go term children of num_goterms_product_process here
+                # find all go term children of num_goterms_product_SOI here
                 num_indirect_children = 0
                 if self.reverse_lookup.model_settings.include_indirect_annotations is True:
                     all_indirect_children = []  # list of ids
-                    for id in goterms_product_process_ids: # goterms_products_process_ids are all goterms from input.txt that are involved in the specific direction of regulation of a process (eg. cancer+)
+                    for id in goterms_product_SOI_ids: # goterms_products_SOI_ids are all goterms from input.txt that are involved in the specific direction of regulation of a SOI (eg. cancer+)
                         child_goterms = self.reverse_lookup.obo_parser.get_child_terms(id)
                         all_indirect_children += child_goterms
                     all_indirect_children = set(all_indirect_children)  # to remove duplicates
-                    # append to goterms product process so the user can see the results in data.json
+                    # append to goterms product SOI so the user can see the results in data.json
                     for child_id in all_indirect_children:
-                        goterms_product_process.append(f"indirect: {child_id}")
-                    # update num_goterms_product_process
-                    num_goterms_product_process += len(all_indirect_children)
+                        goterms_product_SOI.append(f"indirect: {child_id}")
+                    # update num_goterms_product_SOI
+                    num_goterms_product_SOI += len(all_indirect_children)
                     num_indirect_children += len(all_indirect_children)
 
                 # first, compute the sum of direct annotations
-                goterms_all_process = []
-                # TODO: integrate process-specific lists of GO Terms into the ReverseLookup instance to prevent recalculations
-                for goterm in process_goterms_list:
+                goterms_all_SOI = []
+                # TODO: integrate SOI-specific lists of GO Terms into the ReverseLookup instance to prevent recalculations
+                for goterm in SOI_goterms_list:
                     if any(
-                        goterm_process["direction"] == direction
-                        for goterm_process in goterm.processes
+                        goterm_SOI["direction"] == direction
+                        for goterm_SOI in goterm.SOIs
                     ):
-                        goterms_all_process.append(goterm)
+                        goterms_all_SOI.append(goterm)
 
-                num_goterms_all_process = sum(
+                num_goterms_all_SOI = sum(
                     1
-                    for goterm in process_goterms_list
+                    for goterm in SOI_goterms_list
                     if any(
-                        goterm_process["direction"] == direction
-                        for goterm_process in goterm.processes
+                        goterm_SOI["direction"] == direction
+                        for goterm_SOI in goterm.SOIs
                     )
-                )  # all of the GO Terms from input.txt file associated with the current process (and the process' regulation direction)
+                )  # all of the GO Terms from input.txt file associated with the current SOI (and the SOI's regulation direction)
                 
                 # TODO: MAKE A SETTING FOR THIS !!!
-                # compute indirectly annotated goterms of goterms_all_process
+                # compute indirectly annotated goterms of goterms_all_SOI
                 # this can be dangerous - a user can associate a GO term "positive regulation of interleukin productin" as a positive regulator of a state of interest (SOI),
                 # however, some interleukins are pro- and some are antiinflammatory. Not computing this is the safest way.
-                if D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_PROCESS_ALL == True:
-                    goterms_all_process_indirect = set()
-                    for goterm in goterms_all_process:
+                if D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_SOI_ALL == True:
+                    goterms_all_SOI_indirect = set()
+                    for goterm in goterms_all_SOI:
                         children = self.reverse_lookup.obo_parser.get_child_terms(goterm.id)
-                        goterms_all_process_indirect.update(children)
-                    num_goterms_all_process += len(goterms_all_process_indirect)
+                        goterms_all_SOI_indirect.update(children)
+                    num_goterms_all_SOI += len(goterms_all_SOI_indirect)
                 else: # THIS STATEMENT MUST ALWAYS RUN IF CHILDREN ARE BEING COMPUTED ABOVE!
-                    # if children are computed for goterms, then also increase num_goterms_all_process, to prevent negative values in the contingency table (specifically upper-right quadrant: num_goterms_all_process-num_goterms_product_process) 
+                    # if children are computed for goterms, then also increase num_goterms_all_SOI, to prevent negative values in the contingency table (specifically upper-right quadrant: num_goterms_all_SOI-num_goterms_product_SOI) 
                     # don't run this if indirect annotations are already computed for num_goterms_all_proces
-                    num_goterms_all_process += num_indirect_children 
+                    num_goterms_all_SOI += num_indirect_children 
 
                 # time for Binomial test and "risk ratio"
                 cont_table = [
                     [
-                        num_goterms_product_process, # top-left
-                        num_goterms_all_process - num_goterms_product_process # top-right
+                        num_goterms_product_SOI, # top-left
+                        num_goterms_all_SOI - num_goterms_product_SOI # top-right
                     ],
                     [
-                        num_goterms_product_general - num_goterms_product_process, # bottom-left
-                        num_goterms_all_general - num_goterms_product_general - (num_goterms_all_process - num_goterms_product_process) # bottom-right
+                        num_goterms_product_general - num_goterms_product_SOI, # bottom-left
+                        num_goterms_all_general - num_goterms_product_general - (num_goterms_all_SOI - num_goterms_product_SOI) # bottom-right
                     ],
                 ]
 
@@ -803,19 +659,11 @@ class fisher_exact_test(Metrics):
                                 " certain GO Term (obtained via web-download), isn't"
                                 " found in the GO Annotations File."
                             )
-                            results_dict[f"{process['process']}{direction}"] = {
-                                # "n_prod_process" : num_goterms_product_process,
-                                # "n_all_process" : num_goterms_all_process,
-                                # "n_prod_general" : num_goterms_product_general,
-                                # "n_all_general" : num_goterms_all_general,
+                            results_dict[f"{SOI['SOI']}{direction}"] = {
                                 "error": f"{stat_error}",
-                                "num_terms_product_process": (
-                                    num_goterms_product_process
-                                ),
-                                "num_terms_all_process": num_goterms_all_process,
-                                "num_terms_product_general": (
-                                    num_goterms_product_general
-                                ),
+                                "num_terms_product_SOI": num_goterms_product_SOI,
+                                "num_terms_all_SOI": num_goterms_all_SOI,
+                                "num_terms_product_general": num_goterms_product_general,
                                 "fold_enrichment": None,
                                 "pvalue": None,
                                 "odds_ratio": None,
@@ -830,96 +678,32 @@ class fisher_exact_test(Metrics):
                 fisher_pvalue = fisher.pvalue
                 odds_ratio = fisher.statistic
 
-                # calculate what amount of num_goterms_product_process would make this product statistically significant
-                required_n_prod_process_for_stat_relevance = -1
-                if D_DEBUG_CALCULATE_DESIRED_N_PROD_PROCESS and fisher_pvalue > 0.05:
-                    previous_pvalue = fisher_pvalue
-                    new_num_goterms_product_process = num_goterms_product_process
-                    success = True  # if a pvalue less than 0.05 was found
-                    while previous_pvalue > 0.05:
-                        new_num_goterms_product_process += 1
-                        new_cont_table = [
-                            [
-                                new_num_goterms_product_process,
-                                num_goterms_all_process
-                                - new_num_goterms_product_process,
-                            ],
-                            [
-                                num_goterms_product_general
-                                - new_num_goterms_product_process,
-                                num_goterms_all_general
-                                - (
-                                    num_goterms_all_process
-                                    - new_num_goterms_product_process
-                                ),
-                            ],
-                        ]
-                        all_non_negative = all(
-                            value >= 0 for row in new_cont_table for value in row
-                        )
-                        if all_non_negative is False:
-                            # logger.warning("Values in cont. table are negative.")
-                            success = False
-                            break
-                        new_fisher = fisher_exact(new_cont_table, alternative="greater")
-                        new_pvalue = new_fisher.pvalue
-                        if new_pvalue > previous_pvalue:
-                            #logger.warning(
-                            #    "Newly calculated pvalue is greater! prev_pvalue ="
-                            #    f" {previous_pvalue}, new_pvalue = {new_pvalue}"
-                            #)
-                            success = False
-                            break
-                        else:
-                            previous_pvalue = new_pvalue
-                    if success:
-                        required_n_prod_process_for_stat_relevance = (
-                            new_num_goterms_product_process
-                        )
-
-                # TODO: NaN is necessary for further calculations! Do a json postproccess. START FROM HERE.
-                # if math.isnan(odds_ratio) or math.isnan(fisher_pvalue):
-                #    fisher_pvalue = None
-                #    odds_ratio = None
-
                 fold_enrichment_score = 0
                 if (
-                    num_goterms_all_process != 0
+                    num_goterms_all_SOI != 0
                     and num_goterms_product_general != 0
                     and num_goterms_all_general != 0
                 ):
-                    fold_enrichment_score = num_goterms_product_process / (
-                        num_goterms_all_process
+                    fold_enrichment_score = num_goterms_product_SOI / (
+                        num_goterms_all_SOI
                         * (num_goterms_product_general / num_goterms_all_general)
                     )
 
-                results_dict[f"{process['process']}{direction}"] = {
-                    "n_prod_process": num_goterms_product_process,
-                    "n_all_process": num_goterms_all_process,
+                results_dict[f"{SOI['SOI']}{direction}"] = {
+                    "n_prod_SOI": num_goterms_product_SOI,
+                    "n_all_SOI": num_goterms_all_SOI,
                     "n_prod_general": num_goterms_product_general,
                     "n_all_general": num_goterms_all_general,
-                    "required_n_prod_process_for_statistical_relevance": (
-                        required_n_prod_process_for_stat_relevance
-                    ),
-                    "expected": num_goterms_all_process
-                    * (
+                    "expected": num_goterms_all_SOI * (
                         num_goterms_product_general / num_goterms_all_general
                         if num_goterms_all_general != 0
                         else 0
                     ),
-                    "fold_enrichment": (
-                        fold_enrichment_score
-                    ),  # BUGFIX: ZeroDivisionError
+                    "fold_enrichment": fold_enrichment_score,
                     "pvalue": fisher_pvalue,
                     "odds_ratio": odds_ratio,
-                    "goterms_prod_process": goterms_product_process,
+                    "goterms_prod_SOI": goterms_product_SOI,
                 }
-
-        # all_target_pvalues = [results_dict[f"{process['process']}{process['direction']}"]['pvalue'] for process in self.reverse_lookup.target_processes]
-        # combined_p = combine_pvalues(all_target_pvalues)
-        # results_dict["comb_fisher_pvalue"] = combined_p.pvalue
-        # combined_rr = statistics.mean([results_dict[f"{process['process']}{process['direction']}"]['odds_ratio'] for process in self.reverse_lookup.target_processes])
-        # results_dict["comb_odds_ratio"] = combined_rr
 
         return results_dict
 
@@ -996,7 +780,7 @@ class basic_mirna_score(Metrics):
                 if overlap >= self.treshold:  # inhibited
                     a = (
                         -1
-                    )  # deduct the score, since high score indicates the products is favourable for our target processes
+                    )  # deduct the score, since high score indicates the products is favourable for our target SOIs
                 else:
                     a = 1
                 score += a * product.scores["adv_score"]
