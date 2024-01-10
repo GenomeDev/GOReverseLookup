@@ -97,9 +97,89 @@ To confirm the installation, run the command `pip list` and find the `goreversel
 ![goreverselookup pip list](https://i.ibb.co/R99Rp9H/github-pip-list.png)
 
 
+## Usage
+### Creating the input file
+The entry to the program is an input file, which is ideally placed in the `.../goreverselookup/research_models/` folder, as explained in _Folder setup_. It contains all the relevant data for the program to complete the analysis of statistically important genes that positively or negatively contribute to one or more states of interest.
 
+An example input.txt file to discover the genes that positively contribute to both the development of chronic inflammation and cancer is:
+```
+# Comments are preceded by a single '#'. Comment lines will not be parsed in code.
+# Section titles are preceded by three '###'
+# The values at each line are usually delineated using the TAB character. E.g. pvalue    0.05 (pvalue and it's value 0.05 are separated by a TAB).
+#
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	False
+include_indirect_annotations	False
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###processes [proces name] [to be expressed + or suppressed -]
+chronic_inflammation	+
+cancer	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+GO:0006954	chronic_inflammation	+	1	inflammatory response
+GO:1900408	chronic_inflammation	-	1	negative regulation of cellular response to oxidative stress
+GO:1900409	chronic_inflammation	+	1	positive regulation of cellular response to oxidative stress
+GO:2000524	chronic_inflammation	-	1	negative regulation of T cell costimulation
+GO:2000525	chronic_inflammation	+	1	positive regulation of T cell costimulation
+GO:0002578	chronic_inflammation	-	1	negative regulation of antigen processing and presentation
+GO:0002579	chronic_inflammation	+	1	positive regulation of antigen processing and presentation
+GO:1900017	chronic_inflammation	+	1	positive regulation of cytokine production involved in inflammatory response
+GO:1900016	chronic_inflammation	-	1	negative regulation of cytokine production involved in inflammatory response
+GO:0001819	chronic_inflammation	+	1	positive regulation of cytokine production
+GO:0001818	chronic_inflammation	-	1	negative regulation of cytokine production
+GO:0050777	chronic_inflammation	-	1	negative regulation of immune response
+GO:0050778	chronic_inflammation	+	1	positive regulation of immune response
+GO:0002623	chronic_inflammation	-	1	negative regulation of B cell antigen processing and presentation
+GO:0002624	chronic_inflammation	+	1	positive regulation of B cell antigen processing and presentation
+GO:0002626	chronic_inflammation	-	1	negative regulation of T cell antigen processing and presentation
+GO:0002627	chronic_inflammation	+	1	positive regulation of T cell antigen processing and presentation
 
-
+GO:0007162	cancer	+	1	negative regulation of cell adhesion
+GO:0045785	cancer	-	1	positive regulation of cell adhesion
+GO:0010648	cancer	+	1	negative regulation of cell communication
+GO:0010647	cancer	-	1	positive regulation of cell communication
+GO:0045786	cancer	-	1	negative regulation of cell cycle
+GO:0045787	cancer	+	1	positive regulation of cell cycle
+GO:0051782	cancer	-	1	negative regulation of cell division
+GO:0051781	cancer	+	1	positive regulation of cell division
+GO:0030308	cancer	-	1	negative regulation of cell growth
+GO:0030307	cancer	+	1	positive regulation of cell growth
+#GO:0043065	cancer	-	1	positive regulation of apoptotic process
+#GO:0043066	cancer	+	1	negative regulation of apoptotic process
+GO:0008285	cancer	-	1	negative regulation of cell population proliferation
+GO:0008284	cancer	+	1	positive regulation of cell population proliferation
+```
 
 
 
