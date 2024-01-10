@@ -39,8 +39,6 @@ Open the File Explorer program, then open the Downloads folder and run the insta
 ![downloads folder](https://i.ibb.co/8xFzpjY/github-downloads-folder.png)
 ![python installer](https://i.ibb.co/JcnB96N/github-pyinstall.png)
 
-<img src="https://i.ibb.co/8xFzpjY/github-downloads-folder.png" width="200">
-
 The default Python installer window pops up:
 
 <img src="https://i.ibb.co/YR8qZMc/github-pyinstaller-greet.png" width="450">
