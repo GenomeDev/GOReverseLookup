@@ -139,7 +139,7 @@ ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin
 ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
 ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
 ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
-###processes [proces name] [to be expressed + or suppressed -]
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
 chronic_inflammation	+
 cancer	+
 ###categories [category] [True / False]
@@ -180,8 +180,23 @@ GO:0030307	cancer	+	1	positive regulation of cell growth
 GO:0008285	cancer	-	1	negative regulation of cell population proliferation
 GO:0008284	cancer	+	1	positive regulation of cell population proliferation
 ```
+The main role of the researcher is to establish one or more custom states of interest (SOIs) and then attribute specific GO terms to the SOIs. Thus, SOIs and GO term attributions will be covered first.
 
+#### Creating SOIs (states_of_interest section)
+States of interest are created in the `states_of_interest` section. A SOI represents a name of a specific state of interest. Besides the name, either `+` or `-` is added in the line besides the SOI name in order to specify whether the researcher is interested to find genes responsible in the positive contribution (stimulation) of the SOI or negative contribution (inhibition) of the SOI.
 
+Example: A researcher observes increased capillary growth in a histological sample. An example SOI could be `angiogenesis    +` to discover genes involved in the stimulation of angiogenesis.
+
+#### Attributing GO terms to SOIs (GO_terms section)
+After SOIs have been created, they need attributed GO terms to specifically define them. GO terms are attributed to SOIs in the `GO_terms` section, by first naming a GO term id, followed by the SOI, the impact of the GO term on the SOI (+ or -), a weight (this is historical and is kept at 1) and a description of the GO term.
+
+Example: A researcher defined an `angiogenesis` SOI. Now, the researcher can assign GO terms that positively and negatively stimulate angiogenesis such as:
+```
+GO:0016525	angio	-	1	negative regulation of angiogenesis
+GO:0045766	angio	+	1 	positive regulation of angiogenesis
+GO:0043534	angio	+	1	blood vessel endothelial cell migration
+GO:0043532	angio	-	1	angiostatin binding
+```
 
 
 
