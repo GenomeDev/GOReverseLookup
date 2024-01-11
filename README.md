@@ -210,12 +210,14 @@ d. author statement evidence (TAS, NAS) [author_statement]
 e. curator statement evidence (IC, ND) [curator_statement]
 f. electronic annotation (IEA) [electronic]
 
+Of important notice is that approximately 95% of Gene Ontology annotations are electronically inferred (IEA) and these are not checked by a human examiner.
+
 This section exists to give user the option to add or exclude any evidence codes, should the GO evidence codes change in the future.
 Each line contains two tab-separated elements:
 - evidence code group name (e.g. author_statement)
 - evidence codes (e.g. TAS,NAS) belonging to the group, along with their ECO identifiers (evidence code and identifier separated by underscore) as comma-separated values (e.g. TAS_ECO:0000304,NAS_ECO:0000303)
 
-ECO evidence code identifiers can be found on https://wiki.geneontology.org/index.php/Guide_to_GO_Evidence_Codes and https://www.ebi.ac.uk/QuickGO/term/ECO:0000245
+ECO evidence code identifiers can be found on https://wiki.geneontology.org/index.php/Guide_to_GO_Evidence_Codes and https://www.ebi.ac.uk/QuickGO/term/ECO:0000245.
 
 WARNING: The evidence codes section MUST be specified before the settings section.
 
@@ -236,8 +238,29 @@ The settings section contains several settings, which are used to change the flo
 **evidence_codes** is used to determine which annotations between GO terms and respective genes the algorithm will accept. GOReverseLookup will only accept genes annotated to input GO terms with any of the user-accepted evidence codes. 
 - to accept all evidence codes belonging to a specific EGC, use a tilde operator in brackets `(~)`, e.g. `experimental(~)`
 - to accept specific evidence codes belonging to an evidence group, specify them between the parentheses. If specific evidence codes are specified among parantheses, all non-specified evidence codes will be excluded. For example, to take into account only IC, but not ND, from curator_statement, use the following: `curator_statement(IC)`
-- to exclude specific evidence codes, use an exclamation mark. All evidence not specified excluded evidence codes belonging to an EGC will still be included. To exclude only HEP and retain the rest of experimental evidence codes, use: `evidence_codes !experimental(HEP)`
-- to merge multiple evidence code groups, supply them as comma-separated values. E.g.: `evidence_codes experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),curator_statement(IC),!electronic(~)`
+- to exclude specific evidence codes, use an exclamation mark. All evidence not specified excluded evidence codes belonging to an EGC will still be included. To exclude only HEP and retain the rest of experimental evidence codes, use: `!experimental(HEP)`
+- to merge multiple evidence code groups, supply them as comma-separated values. E.g.: `experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),curator_statement(IC),!electronic(~)`
+
+Example evidence codes:
+```
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+```
+
+**pvalue** is the threshold _p_-value used to assess the statistical significance of a gene being involved in a target SOI. There are two possible cases of evaluation:
+
+a) The user has defined an SOI and has attributed GO terms that both positively and negatively regulate the SOI. A gene is statistically significant if its p-value for the defined SOI stimulation/inhibition is less than the defined p-value threshold AND its p-value for the opposite SOI (inhibition/stimulation) is greater than the defined p-value threshold. It is advisable to also attribute GO terms that are opposite regulators of the defined target SOI in order to increase the credibility of the results.
+
+b) The user has defined an SOI and has attributed GO terms only in one regulation direction (e.g. only stimulation or only inhibition). A gene is statistically significant if its p-value for the defined SOI is less than the defined p-value threshold.
+
+**target_organism** is the target organism for which the statistical analysis is being performed. Organisms are represented with three identifiers (separated by vertical bars), which MUST be supplied for the program to correctly parse organism data: (1) organism label in lowercase (2) organism database and (3) organism NCBI taxon. For example, to select _Homo sapiens_ as the target organism, a researcher would specify:
+```
+target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606
+```
+
+**ortholog_organisms** represent all homologous organisms, the genes of which are also taken into account during the scoring phase if they are found to have existing target organism orthologous genes. This feature has been enabled as a GO term can be associated with genes belonging to different organisms, which are indexed by various databases. The current model has been tested on the following orthologous organisms: _Rattus norvegicus_, _Mus musculus_, _Danio rerio_ and _Xenopus tropicalis_. Example:
+```
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
+```
 
 
 ### Dependencies
