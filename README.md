@@ -197,7 +197,47 @@ GO:0045766	angio	+	1 	positive regulation of angiogenesis
 GO:0043534	angio	+	1	blood vessel endothelial cell migration
 GO:0043532	angio	-	1	angiostatin binding
 ```
+With a defined SOI(s) and attributed GO terms, you can actually run the analysis and leave the other options at defaults. Other sections are explained in the following text.
 
+#### Evidence code groups section
+Evidence codes are three- or two-letter codes providing a specific level of proof for an annotation between a GO term and a specific gene. This section contains the whole hierarchy of possible evidence codes, grouped into several major evidence code groups (EGCs). This section only determines the possible EGCs and specific evidence codes, whereas the EGCs or specific evidence codes are selected in the _Settings_ section via the `evidence_codes` setting. 
+
+Based on https://geneontology.org/docs/guide-go-evidence-codes/, there are the following 6 EGCs (noted with belonging evidence codes):
+a. experimental evidence (EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, HEP) [experimental]
+b. phylogenetically inferred evidence (IBA, IBD, IKR, IRD) [phylogenetic]
+c. computational analysis evidence (ISS, ISO, ISA, ISM, IGC, RCA) [computational_analysis]
+d. author statement evidence (TAS, NAS) [author_statement]
+e. curator statement evidence (IC, ND) [curator_statement]
+f. electronic annotation (IEA) [electronic]
+
+This section exists to give user the option to add or exclude any evidence codes, should the GO evidence codes change in the future.
+Each line contains two tab-separated elements:
+- evidence code group name (e.g. author_statement)
+- evidence codes (e.g. TAS,NAS) belonging to the group, along with their ECO identifiers (evidence code and identifier separated by underscore) as comma-separated values (e.g. TAS_ECO:0000304,NAS_ECO:0000303)
+
+ECO evidence code identifiers can be found on https://wiki.geneontology.org/index.php/Guide_to_GO_Evidence_Codes and https://www.ebi.ac.uk/QuickGO/term/ECO:0000245
+
+WARNING: The evidence codes section MUST be specified before the settings section.
+
+Example:
+```
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+```
+
+#### Settings section
+The settings section contains several settings, which are used to change the flow of the algorithm. 
+
+**evidence_codes** is used to determine which annotations between GO terms and respective genes the algorithm will accept. GOReverseLookup will only accept genes annotated to input GO terms with any of the user-accepted evidence codes. 
+- to accept all evidence codes belonging to a specific EGC, use a tilde operator in brackets `(~)`, e.g. `experimental(~)`
+- to accept specific evidence codes belonging to an evidence group, specify them between the parentheses. If specific evidence codes are specified among parantheses, all non-specified evidence codes will be excluded. For example, to take into account only IC, but not ND, from curator_statement, use the following: `curator_statement(IC)`
+- to exclude specific evidence codes, use an exclamation mark. All evidence not specified excluded evidence codes belonging to an EGC will still be included. To exclude only HEP and retain the rest of experimental evidence codes, use: `evidence_codes !experimental(HEP)`
+- to merge multiple evidence code groups, supply them as comma-separated values. E.g.: `evidence_codes experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),curator_statement(IC),!electronic(~)`
 
 
 ### Dependencies
