@@ -262,16 +262,42 @@ target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
 ```
 
+**include_indirect_annotations**: if True, will increase the amount of annotations to a gene by the sum of all children GO terms of existing directly annotated GO terms to the gene. If False, will only count the direct annotations. This impacts the statistical relevance of genes during the scoring phase. Annotations from Gene Ontology between a GO term and a gene are directly annotated, but all children GO terms of the directly annotated term also infer the annotation. Consider the following tree:
+```
+GO:1901342 regulation of vasculature development
+    - GO:0045765 regulation of angiogenesis
+        - GO:0045766 positive regulation of angiogenesis <- gene Hipk2
+            - GO:1905555 positive regulation of blood vessel branching
+            - GO:1903672 positive regulation of sprouting angiogenesis
+            - GO:0035470 positive regulation of vascular wound healing
+```
+Gene Hipk2 is directly annotated to GO:0045766. The children annotations also infer the annotation (GO:1905555, GO:1903672, GO:0035470), but not the parent annotation (GO:1901342). 
 
-### Dependencies
+**goterm_gene_query_timeout** is the timeout it takes when querying genes annotated to GO terms. If specifying very vague GO terms (such as `regulation of gene expression`, which has ~25 million annotations, a query might fail due to a request taking too long to complete or, which is a more severe error due to its covertness, a query might return an incomplete list of genes associated with a GO term. As a rule of thumb, we discourage the usage of such vague GO terms. A default 240-second timeout ensures that all GO terms approximately with a few million annotations are fetched correctly from the GO servers.
 
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
-* ex. Windows 10
+**goterm_gene_query_max_retries** is the maximum number of retries sent to the GO servers before dropping a GO term and assigning it with an empty list of associated genes.
 
-### Installing
+**gorth_ortholog_refetch**
+We implemented a gOrth batch ortholog query (https://biit.cs.ut.ee/gprofiler/orth), which speeds up the total runtime of the program. The function attempts to find orthologs to genes in a single batch request. If 'gorth_ortholog_refetch' is True, then the genes for which orthologs were not found will be re-fetched using alternative Ensembl calls. If 'gorth_ortholog_refetch' is False, then the genes for which orthologs were not found will not be queried for orthologs again.
 
-* How/where to download your program
-* Any modifications needed to be made to files/folders
+**gorth_ortholog_fetch_for_indefinitive_orthologs**
+The gOrth batch query implementation can return the following options:
+- multiple orthologous genes (these are called "indefinitive orthologs")
+- a single orthologous gene (called a "definitive ortholog")
+- no orthologous genes.
+
+In our asynchronous Ensembl ortholog query pipeline implementation, when multiple orthologous genes are returned from Ensembl, the orthologous gene with the highest percentage identity (percentage identity of amino-acid sequence between the gene and the target organism orthologous gene) is selected as the best ortholog and is assigned as the true ortholog to the input gene. However, gOrth has currently (10_29_2023) no option to return the "best" orthologous gene, neither it has the option to exclude obsolete ortholog gene ids (confirmed by the gProfiler team via an email conversation). Therefore, it is advisable to keep the gorth_ortholog_fetch_for_indefinitive_orthologs to True, so that indefinitive orthologs are discarded from the gOrth ortholog query and are instead fetched by the asynchronos pipeline, which can select the best ortholog for the input gene. Having this setting set to False will choose, in the case of indefinitive orthologs, the first returned ortholog id from the gOrth query, but with no guarantees that this ortholog id is not obsolete.
+
+**fisher_test_use_online_query**
+It is highly advisable to leave this setting set to False, otherwise, the timing of the scoring phase might severely be extended (into days, if not weeks).
+
+**uniprotkb_genename_online_query**: When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD). During the algorithm, gene name has to be determined. It can be obtained via two pathways:
+
+- online pathway, using UniProtAPI
+- offline pathway, using the GO Annotations File
+
+During testing, it has been observed that the offline pathway usually results in more gene names found, besides being much faster. Thus, it is advisable to leave this setting set to False, both to increase speed and accuracy. If it is set to True, then gene names will be queried from the UniProtKB servers.
+
 
 ### Executing program
 
