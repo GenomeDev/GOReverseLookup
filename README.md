@@ -203,12 +203,12 @@ With a defined SOI(s) and attributed GO terms, you can actually run the analysis
 Evidence codes are three- or two-letter codes providing a specific level of proof for an annotation between a GO term and a specific gene. This section contains the whole hierarchy of possible evidence codes, grouped into several major evidence code groups (EGCs). This section only determines the possible EGCs and specific evidence codes, whereas the EGCs or specific evidence codes are selected in the _Settings_ section via the `evidence_codes` setting. 
 
 Based on https://geneontology.org/docs/guide-go-evidence-codes/, there are the following 6 EGCs (noted with belonging evidence codes):
-1. experimental evidence (EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, HEP) [experimental]
-1. phylogenetically inferred evidence (IBA, IBD, IKR, IRD) [phylogenetic]
-1. computational analysis evidence (ISS, ISO, ISA, ISM, IGC, RCA) [computational_analysis]
-1. author statement evidence (TAS, NAS) [author_statement]
-1. curator statement evidence (IC, ND) [curator_statement]
-1. electronic annotation (IEA) [electronic]
+1. experimental evidence (EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, HEP)
+1. phylogenetically inferred evidence (IBA, IBD, IKR, IRD)
+1. computational analysis evidence (ISS, ISO, ISA, ISM, IGC, RCA)
+1. author statement evidence (TAS, NAS)
+1. curator statement evidence (IC, ND)
+1. electronic annotation (IEA)
 
 Of important notice is that approximately 95% of Gene Ontology annotations are electronically inferred (IEA) and these are not checked by a human examiner.
 
