@@ -203,12 +203,12 @@ With a defined SOI(s) and attributed GO terms, you can actually run the analysis
 Evidence codes are three- or two-letter codes providing a specific level of proof for an annotation between a GO term and a specific gene. This section contains the whole hierarchy of possible evidence codes, grouped into several major evidence code groups (EGCs). This section only determines the possible EGCs and specific evidence codes, whereas the EGCs or specific evidence codes are selected in the _Settings_ section via the `evidence_codes` setting. 
 
 Based on https://geneontology.org/docs/guide-go-evidence-codes/, there are the following 6 EGCs (noted with belonging evidence codes):
-a. experimental evidence (EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, HEP) [experimental]
-b. phylogenetically inferred evidence (IBA, IBD, IKR, IRD) [phylogenetic]
-c. computational analysis evidence (ISS, ISO, ISA, ISM, IGC, RCA) [computational_analysis]
-d. author statement evidence (TAS, NAS) [author_statement]
-e. curator statement evidence (IC, ND) [curator_statement]
-f. electronic annotation (IEA) [electronic]
+1. experimental evidence (EXP, IDA, IPI, IMP, IGI, IEP, HTP, HDA, HMP, HGI, HEP) [experimental]
+1. phylogenetically inferred evidence (IBA, IBD, IKR, IRD) [phylogenetic]
+1. computational analysis evidence (ISS, ISO, ISA, ISM, IGC, RCA) [computational_analysis]
+1. author statement evidence (TAS, NAS) [author_statement]
+1. curator statement evidence (IC, ND) [curator_statement]
+1. electronic annotation (IEA) [electronic]
 
 Of important notice is that approximately 95% of Gene Ontology annotations are electronically inferred (IEA) and these are not checked by a human examiner.
 
@@ -301,6 +301,7 @@ During testing, it has been observed that the offline pathway usually results in
 #### Filepaths section
 The filepaths section specifies several files that will be used during the program's runtime. Each file is represented in a single line by four parameters: (1) the file label (e.g. `goa_human`), (2) relative path to the file (e.g. `data_files/goa_human.gaf`), (3) the file download url (e.g. `http://geneontology.org/gene-associations/goa_human.gaf.gz`) and (4) the organism label pertaining to the file (e.g. `homo_sapiens`). We suggest beginner users NOT to change anything in the filepaths section. An example filepaths section is:
 ```
+###filepaths
 go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
 goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
 ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
@@ -322,14 +323,35 @@ ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://downlo
 ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
 ```
 
+#### Categories section
+Gene Ontology provides three categories of annotations (as known as Gene Ontology Aspects):
+- molecular_activity
+- biological_process
+- cellular_component
 
-### Executing program
+The categories section allows you to determine which GO Terms will be queried either from online or from the GO Annotations File.
+For example, when a researcher is only interested in GO Terms related to molecular activity and biological processes, querying GO Terms
+related to a cellular component might result in an incorrect gene scoring process, resulting in some genes being scored as statistically insignificant, whereas they should be statistically significant. Thus, a researcher should turn off or on the GO categories according to the research goals. To turn on or off a specific GO category, provide a tab-delimited True or False value next to that category. Example:
+```
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+```
 
-* How to run the program
-* Step-by-step bullets
-```
-code blocks for commands
-```
+### Running the program
+Once the input file is complete, it is time to run the program using the following steps:
+1. activate the Python's virtual environment (as instructed in _Creating your GOReverseLookup workspace_). To recap: (1) open the command-prompt (2) pass the filepath to the `.../goreverselookup/Scripts/activate` to activate your virtual environment. By activating the virtual environment, the base working directory for the program will be set to `.../goreverselookup/`. A curious reader might have observed that in the input file, data file paths are specified in relative notation (e.g. `data_files/go.obo`) - they are relative to the base working directory. By activating the virtual environment, you ensure both that the GOReverseLookup is correctly installed and that all files in use or created by the GOReverseLookup program are saved to the `.../goreverselookup/` folder. The result of activation should look something like this:
+
+![goreverselookup venv activation](https://i.ibb.co/Gx7g8kF/github-venvactivation.png)
+   
+2. run GOReverseLookup with either of the commands: `goreverselookup PATH_TO_INPUT_FILE` or `goreverselookup PATH_TO_INPUT_FILE PATH_TO_OUTPUT_FOLDER` (e.g. `goreverselookup "research_models/input.txt"` or `goreverselookup "research_models/input.txt" "results"`). When supplying the `PATH_TO_OUTPUT_FOLDER` parameter, also create the output folder inside the `.../goreverselookup/` folder. When only the input file is specified, analysis results will be saved into the same base folder where the input file resides. Thus, if the input file resides in `...goreverselookup/research_models/input.txt`, results will be saved to `.../goreverselookup/research_models/` folder.
+
+3. wait for GOReverseLookup to complete the analysis
+
+   
+
+
 
 ## Help
 
