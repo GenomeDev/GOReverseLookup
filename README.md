@@ -353,3 +353,85 @@ Once the input file is complete, it is time to run the program using the followi
 
 **WARNING**: A sign of cache file corruptness are usually JSON errors that occur during the beginning of a GOReverseLookup anaylsis. You can fix this by manually deleting the cache folder located at `.../goreverselookup/cache/`.
 When using asynchronous querying for GO term products, if one of the requests inside a batch of requests exceeds the 'goterm_gene_query' timeout value (one of the settings), the entire batch of product queries will fail. This usually happens when the user attempts to collect products of GO terms with millions of more annotated genes. For us, an experimental 'goterm_gene_query' timeout value that successfully queris GO terms with ~1 million annotated genes is 240 seconds.
+
+### Analysing the program results
+When GOReverseLookup analysis is finished, two distinct JSON files will be saved:
+- `data.json`: This file represents the entire knowledge about the constructed research model, with all statistically significant and insignificant genes
+- `statistically_relevant_genes.json`: This file represents the discovered statistically significant genes.
+
+We suggest downloading a rich text editor, such as **Notepad++**, which uses syntax highlighting to make the JSON files more readable and also allows the user to collapse sections of the JSON file. Example result - a statistically significant gene named `IL6` was found to be statistically relevant in stimulating chronic inflammation and cancerous cell growth:
+```
+{
+    "chronic_inflammation+:cancer_growth+": [
+        {
+            "id_synonyms": [
+                "MGI:96559",
+                "ENSMUSG00000025746",
+                "ENSRNOG00000010278",
+                "UniProtKB:A0A803JUX3",
+                "ENSXETG00000049395",
+                "RGD:2901",
+                "UniProtKB:P05231",
+                "Xenbase:XB-GENE-480186"
+            ],
+            "taxon": "NCBITaxon:10090",
+            "target_taxon": null,
+            "genename": "IL6",
+            "description": "interleukin 6",
+            "uniprot_id": "UniProtKB:P05231",
+            "ensg_id": "ENSG00000136244",
+            "enst_id": "ENST00000258743",
+            "refseq_nt_id": null,
+            "mRNA": null,
+            "scores": {
+                "fisher_test": {
+                    "chronic_inflammation+": {
+                        "n_prod_SOI": 13,
+                        "n_all_SOI": 95,
+                        "n_prod_general": 90,
+                        "n_all_general": 30592,
+                        "expected": 0.2794848326359832,
+                        "fold_enrichment": 46.51415204678363,
+                        "pvalue": 1.4374380950725201e-18,
+                        "odds_ratio": 62.63224580297751,
+                        "pvalue_corr": 1.1302000766317196e-14
+                    },
+                    "chronic_inflammation-": {
+                        "n_prod_SOI": 1,
+                        "n_all_SOI": 62,
+                        "n_prod_general": 90,
+                        "n_all_general": 30592,
+                        "expected": 0.18240062761506276,
+                        "fold_enrichment": 5.482437275985663,
+                        "pvalue": 0.16710866475397615,
+                        "odds_ratio": 5.607109965002763,
+                        "pvalue_corr": 1.0
+                    },
+                    "cancer+": {
+                        "n_prod_SOI": 7,
+                        "n_all_SOI": 37,
+                        "n_prod_general": 90,
+                        "n_all_general": 30592,
+                        "expected": 0.10885198744769874,
+                        "fold_enrichment": 64.30750750750751,
+                        "pvalue": 1.4406227714406763e-11,
+                        "odds_ratio": 85.66425702811244,
+                        "pvalue_corr": 1.1104941767381825e-08
+                    },
+                    "cancer-": {
+                        "n_prod_SOI": 2,
+                        "n_all_SOI": 25,
+                        "n_prod_general": 90,
+                        "n_all_general": 30592,
+                        "expected": 0.07354864016736401,
+                        "fold_enrichment": 27.19288888888889,
+                        "pvalue": 0.0024570992466771188,
+                        "odds_ratio": 30.117588932806324,
+                        "pvalue_corr": 0.05485289192766472
+                    }
+                }
+            }
+        }
+    ]
+}
+```
