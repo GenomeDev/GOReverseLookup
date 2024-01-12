@@ -341,52 +341,15 @@ cellular_component	False
 
 ### Running the program
 Once the input file is complete, it is time to run the program using the following steps:
-1. activate the Python's virtual environment (as instructed in _Creating your GOReverseLookup workspace_). To recap: (1) open the command-prompt (2) pass the filepath to the `.../goreverselookup/Scripts/activate` to activate your virtual environment. By activating the virtual environment, the base working directory for the program will be set to `.../goreverselookup/`. A curious reader might have observed that in the input file, data file paths are specified in relative notation (e.g. `data_files/go.obo`) - they are relative to the base working directory. By activating the virtual environment, you ensure both that the GOReverseLookup is correctly installed and that all files in use or created by the GOReverseLookup program are saved to the `.../goreverselookup/` folder. The result of activation should look something like this:
+1. **activate the Python's virtual environment** (as instructed in _Creating your GOReverseLookup workspace_). To recap: (1) open the command-prompt (2) pass the filepath to the `.../goreverselookup/Scripts/activate` to activate your virtual environment. By activating the virtual environment, the base working directory for the program will be set to `.../goreverselookup/`. A curious reader might have observed that in the input file, data file paths are specified in relative notation (e.g. `data_files/go.obo`) - they are relative to the base working directory. By activating the virtual environment, you ensure both that the GOReverseLookup is correctly installed and that all files in use or created by the GOReverseLookup program are saved to the `.../goreverselookup/` folder. The result of activation should look something like this:
 
 ![goreverselookup venv activation](https://i.ibb.co/Gx7g8kF/github-venvactivation.png)
    
-2. run GOReverseLookup with either of the commands: `goreverselookup PATH_TO_INPUT_FILE` or `goreverselookup PATH_TO_INPUT_FILE PATH_TO_OUTPUT_FOLDER` (e.g. `goreverselookup "research_models/input.txt"` or `goreverselookup "research_models/input.txt" "results"`). When supplying the `PATH_TO_OUTPUT_FOLDER` parameter, also create the output folder inside the `.../goreverselookup/` folder. When only the input file is specified, analysis results will be saved into the same base folder where the input file resides. Thus, if the input file resides in `...goreverselookup/research_models/input.txt`, results will be saved to `.../goreverselookup/research_models/` folder.
+2. **run GOReverseLookup** with either of the commands: `goreverselookup PATH_TO_INPUT_FILE` or `goreverselookup PATH_TO_INPUT_FILE PATH_TO_OUTPUT_FOLDER` (e.g. `goreverselookup "research_models/input.txt"` or `goreverselookup "research_models/input.txt" "results"`). When supplying the `PATH_TO_OUTPUT_FOLDER` parameter, also create the output folder inside the `.../goreverselookup/` folder. When only the input file is specified, analysis results will be saved into the same base folder where the input file resides. Thus, if the input file resides in `...goreverselookup/research_models/input.txt`, results will be saved to `.../goreverselookup/research_models/` folder.
 
 3. wait for GOReverseLookup to complete the analysis
 
-   
+**WARNING**: When the scoring phase of the program is completed, 3-5 minutes will elapse for the saving of the cache files to complete. Do not close the command-prompt during this time, otherwise the cache files will be corrupt. Cache files are useful during recurrent runs of the program, as they prevent re-querying for the results of the same GO Terms or genes that have already been queried. 
 
-
-
-## Help
-
-Any advise for common problems or issues.
-```
-command to run if program contains helper info
-```
-
-## Authors
-
-Contributors names and contact info
-
-ex. Dominique Pizzie  
-ex. [@DomPizzie](https://twitter.com/dompizzie)
-
-## Version History
-
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
-* 0.1
-    * Initial Release
-
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
-
-## Acknowledgments
-
-Inspiration, code snippets, etc.
-* [awesome-readme](https://github.com/matiassingers/awesome-readme)
-* [PurpleBooth](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
-* [dbader](https://github.com/dbader/readme-template)
-* [zenorocha](https://gist.github.com/zenorocha/4526327)
-* [fvcproductions](https://gist.github.com/fvcproductions/1bfc2d4aecb01a834b46)
-
-Known limitations:
+**WARNING**: A sign of cache file corruptness are usually JSON errors that occur during the beginning of a GOReverseLookup anaylsis. You can fix this by manually deleting the cache folder located at `.../goreverselookup/cache/`.
 When using asynchronous querying for GO term products, if one of the requests inside a batch of requests exceeds the 'goterm_gene_query' timeout value (one of the settings), the entire batch of product queries will fail. This usually happens when the user attempts to collect products of GO terms with millions of more annotated genes. For us, an experimental 'goterm_gene_query' timeout value that successfully queris GO terms with ~1 million annotated genes is 240 seconds.
