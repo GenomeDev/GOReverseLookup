@@ -183,12 +183,12 @@ GO:0008284	cancer	+	1	positive regulation of cell population proliferation
 The main role of the researcher is to establish one or more custom states of interest (SOIs) and then attribute specific GO terms to the SOIs. Thus, SOIs and GO term attributions will be covered first.
 
 #### Creating SOIs (states_of_interest section)
-States of interest are created in the `states_of_interest` section. A SOI represents a name of a specific state of interest. Besides the name, either `+` or `-` is added in the line besides the SOI name in order to specify whether the researcher is interested to find genes responsible in the positive contribution (stimulation) of the SOI or negative contribution (inhibition) of the SOI.
+States of interest are created in the `states_of_interest` section. A SOI represents a name of a specific state of interest. Besides the name, either `+` or `-` is added in the line beside the SOI name in order to specify whether the researcher is interested in finding genes responsible for the positive contribution (stimulation) of the SOI or the negative contribution (inhibition) of the SOI.
 
-Example: A researcher observes increased capillary growth in a histological sample. An example SOI could be `angiogenesis    +` to discover genes involved in the stimulation of angiogenesis.
+For example, when a researcher observes increased capillary growth in a histological sample, an SOI could be `angiogenesis    +`. Strictly speaking, an SOI is only `angiogenesis`, whereas the `+` or `-` represents the stimulation or inhibition of the SOI. When both the SOI and the direction of regulation of that SOI are specified in the `states_of_interest`, this is termed a **target SOI**.
 
 #### Attributing GO terms to SOIs (GO_terms section)
-After SOIs have been created, they need attributed GO terms to specifically define them. GO terms are attributed to SOIs in the `GO_terms` section, by first naming a GO term id, followed by the SOI, the impact of the GO term on the SOI (+ or -), a weight (this is historical and is kept at 1) and a description of the GO term.
+After SOIs have been created, they need to be attributed with GO terms to specifically define them. SOIs can have GO terms attributed both for stimulation (`+`) or inhibition (`-`) of the SOI, irrespective of the defined target SOIs in the _states_of_interest section_. GO terms are attributed to SOIs in the `GO_terms` section, by first specifying a `GO term id`, followed by the `SOI`, the impact of the GO term on the SOI (`+ or -`), a `weight` (this is historical and is kept at 1) and a `description of the GO term`.
 
 Example: A researcher defined an `angiogenesis` SOI. Now, the researcher can assign GO terms that positively and negatively stimulate angiogenesis such as:
 ```
