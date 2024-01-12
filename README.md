@@ -298,6 +298,30 @@ It is highly advisable to leave this setting set to False, otherwise, the timing
 
 During testing, it has been observed that the offline pathway usually results in more gene names found, besides being much faster. Thus, it is advisable to leave this setting set to False, both to increase speed and accuracy. If it is set to True, then gene names will be queried from the UniProtKB servers.
 
+#### Filepaths section
+The filepaths section specifies several files that will be used during the program's runtime. Each file is represented in a single line by four parameters: (1) the file label (e.g. `goa_human`), (2) relative path to the file (e.g. `data_files/goa_human.gaf`), (3) the file download url (e.g. `http://geneontology.org/gene-associations/goa_human.gaf.gz`) and (4) the organism label pertaining to the file (e.g. `homo_sapiens`). We suggest beginner users NOT to change anything in the filepaths section. An example filepaths section is:
+```
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+```
+A brief explanation of the files:
+
+**go.obo** is a Gene Ontology file representing the entire GO term hierarchy tree. It is used in the scoring phase of the GOReverseLookup's algorithm in order to obtain indirectly annotated (children) GO terms of directly annotated GO terms to a specific gene.
+
+**goa_human.gaf** is a Gene Ontology Annotations file and represents the annotations between genes and GO terms for a specific organism. It is used during the scoring phase of the GOReverseLookup's algorithm to obtain the number of all GO terms from the entire Gene Ontology associated with a given gene for a given organism. The GAF file used in the scoring to obtain the aforementioned GO term count should be constructed for the organism, which the research investigates. Currently, only the human GAF can be used and thus GOReverseLookup is currently limited only to research for the _Homo sapiens_ species, but we plan to introduce full GAF modularity, so that the user will be able to supply a GAF file for any desired organism.
+
+**3rd party database files** are some non-UniProtKB files that are also used for faster orthologous gene queries. Currently supported organisms are _Danio rerio_, _Rattus norvegicus_, _Xenopus tropicalis_ and _Mus musculus_. The user should not change these. The support for these database files does not limit the amount of orthologous organisms a user can add via the `ortholog_organisms` setting. 
+```
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+```
+
 
 ### Executing program
 
