@@ -2506,7 +2506,8 @@ class ReverseLookup:
             all_evidence_codes = {}
             evidence_codes_to_ecoids = {} # maps evidence codes (e.g. EXP) to respective ECO ids (e.g. ECO:0000269)
             with open(filepath, "r") as read_content:
-                read_lines = read_content.read().splitlines()[2:]  # skip first 2 lines
+                # read_lines = read_content.read().splitlines()[2:]  # skip first 2 lines
+                read_lines = read_content.read().splitlines()
                 section = ""  # what is the current section i am reading
                 for line in read_lines:
                     line = process_comment(line)
