@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 #from goreverselookup import logger
 
 class GOTerm:
-    def __init__(self, id: str, processes: List[Dict] = None, name: Optional[str] = None, description: Optional[str] = None, category: Optional[str] = None, parent_term_ids: Optional[List[str]] = None, is_obsolete:bool = False, weight: float = 1.0, products: List[str] = [], http_error_codes:dict={}):
+    def __init__(self, id: str, SOIs: List[Dict] = None, name: Optional[str] = None, description: Optional[str] = None, category: Optional[str] = None, parent_term_ids: Optional[List[str]] = None, is_obsolete:bool = False, weight: float = 1.0, products: List[str] = [], http_error_codes:dict={}):
         """
         A class representing a Gene Ontology term.
 
         Args:
             id (str): The ID of the GO term.
-            processes (List[Dict]): [{"process" : "angio", "direction" : "+"}]
+            SOIs (List[Dict]): [{"SOI" : "angio", "direction" : "+"}]
             name (str): Name (optional).
             description (str): A description of the GO term (optional).
             weight (float): The weight of the GO term.
@@ -29,7 +29,7 @@ class GOTerm:
             is_obsolete (bool): if the term is labelled as obsolete in the .obo file
         """
         self.id = id
-        self.processes = processes if isinstance(processes, list) else [processes]
+        self.SOIs = SOIs if isinstance(SOIs, list) else [SOIs]
         self.name = name
         self.description = description
         if weight == None: #bugfix for any mistakes
@@ -84,7 +84,7 @@ class GOTerm:
             for goterm in (ReverseLookup).goterms:
                 goterm_copies.append(goterm.copy())
         """
-        return GOTerm(self.id, self.processes, self.name, self.description, self.weight, self.products, self.http_error_codes)
+        return GOTerm(self.id, self.SOIs, self.name, self.description, self.weight, self.products, self.http_error_codes)
     
     def fetch_name_description(self, api: GOApi):
         """
@@ -376,9 +376,9 @@ class GOTerm:
         if isinstance(goterm_comparison, GOTerm):
             return self.compare_products_to_list(products_comparison_list = goterm_comparison.products)
 
-    def add_process(self, process: Dict):
-        if not process['process'] in self.processes:
-            self.processes.append(process)
+    def add_SOI(self, SOI: Dict):
+        if not SOI['SOI'] in self.SOIs:
+            self.SOIs.append(SOI)
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -396,8 +396,7 @@ class GOTerm:
         goterm = GOTerm(id="")
         for attr_name,attr_value in d.items():
             if hasattr(goterm, attr_name):
-                # processes must be a list!
-                if attr_name == 'processes' and isinstance(attr_value,dict):
+                if attr_name == 'SOIs' and isinstance(attr_value,dict):
                     attr_value = [attr_value]
                 # check that weight is not passed as string
                 if attr_name == 'weight' and isinstance(attr_value,str):
@@ -407,17 +406,3 @@ class GOTerm:
             else:
                 logger.warning(f"GO Term class has no attribute name {attr_name}!")
         return goterm
-        # old:
-        #goterm = cls(
-        #    id=d['id'], 
-        #    processes=d['processes'], 
-        #    name=d.get('name'), 
-        #    description=d.get('description'), 
-        #    weight=d.get('weight', 1.0), 
-        #    products=d.get('products', []),
-        #    http_error_codes=d.get('http_error_codes', {}),
-        #    category=d.get('category',None),
-        #    parent_term_ids=d.get('parent_term_ids', None),
-        #    is_obsolete=d.get('is_obsolete', False)
-        #    )
-        #return goterm

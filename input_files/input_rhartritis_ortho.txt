@@ -1,11 +1,6 @@
 # --- Input file for GO Reverse Lookup --- #
 #
-# The input file contains the following sections: 
-#   - settings
-#   - processes
-#   - categories
-#   - GO_terms
-# Each section in this file is denoted by ### preceding the section name.
+# The input file contains several sections, each section in this file is denoted by ### preceding the section name.
 # The values in each section are TAB-delimited.
 #
 # *** Evidence code groups section ****
@@ -60,8 +55,8 @@
 #			When querying GO terms associated with genes, only specific directly annotated GO Terms are returned (this is a direct annotation).
 #			However, all of the children of a directly annotated GO Term are also indirectly connected to the gene in question (these are indirect annotations).
 #
-#			Likewise, when computing the number of GO Terms associated with a user-defined pathophysiological process, the GO Terms that the user defines count as direct annotations.
-#			However, all the children of the directly annotated GO Terms (indirect annotations) to a pathophysiological process should also count towards the modulation of that pathophysiological process.
+#			Likewise, when computing the number of GO Terms associated with a user-defined SOI , the GO Terms that the user defines count as direct annotations.
+#			However, all the children of the directly annotated GO Terms (indirect annotations) to a SOI should also count towards the modulation of that SOI.
 #
 #			If this setting is set to True, each each GO Term relevant to the analysis will have a list of it's child term ids computed (using go.obo). These ids will be taken
 #			into account when performing the fisher exact test. 
@@ -81,7 +76,7 @@
 #
 #	- pvalue:
 #			Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than
-#			the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes
+#			the set pvalue (default is 0.05) for all the SOIs of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite SOIs
 #			(eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
 #
 #	- gorth_ortholog_refetch:
@@ -114,19 +109,18 @@
 #
 #  - exclude_opposite_regulation_direction_check:
 #           Determines if, during the gene scoring, both regulation directions (positive or negative) or only a single regulation direction should be accounted for.
-#           If True, will check only the direction of regulation for a target process, without taking into account the opposite regulation.
-#           For example, if target process is 'angiogenesis+' (stimulation of angiogenesis), and this setting is True, then only the p-values related to
-#           'angiogenesis+' will be used (aim: p<0.05), whereas the p-values for the opposite process 'angiogenesis-' (inhibition of angiogenesis) will not be used.
-#           If the setting is False, then a product will be statistically significant only if its p-value is less than 0.05 for target process (e.g. 'angiogenesis+') and
-#           its p-value for the opposite process greater than 0.05 (e.g. 'angiogenesis-')
+#           If True, will check only the direction of regulation for a target SOI, without taking into account the opposite regulation.
+#           For example, if target SOI is 'angiogenesis+' (stimulation of angiogenesis), and this setting is True, then only the p-values related to
+#           'angiogenesis+' will be used (aim: p<0.05), whereas the p-values for the opposite SOI 'angiogenesis-' (inhibition of angiogenesis) will not be used.
+#           If the setting is False, then a product will be statistically significant only if its p-value is less than 0.05 for target SOI (e.g. 'angiogenesis+') and
+#           its p-value for the opposite SOI greater than 0.05 (e.g. 'angiogenesis-')
 #
-# *** Processes section ***
-# It contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if
-# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes
-# section as:
+# *** States of interest section ***
+# It contains the SOIs in question to the researcher and the direction of regulation of these SOIs. For example, if
+# a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct SOIs section as:
 # 	chronic_inflammation	+
 #	cancer	+
-# The processes are also used in the GO_terms section, to specify how a GO Term contributes to a given process.
+# The SOIs are also used in the GO_terms section, to specify how a GO Term contributes to a given SOI.
 #
 # *** Categories section ***
 # Gene Ontology provides three categories of annotations (as known as Gene Ontology Aspects):
@@ -143,9 +137,9 @@
 # It contains all of the GO Terms that will be used in the analysis. Each line in the section contains one GO Term,
 # with the following tab-delimited values:
 #	- [0]: GO Term identifier (eg. GO:0006954)
-#   - [1]: process, which the GO Term supposedly regulates (eg. chronic_inflammation)
-#   - [2]: positive or negative regulation direction of the process (+ or -)
-#   - [3]: weight: the presumed importance of a GO Term in regulating the process. It is used only in the adv_product_score statistical test (a custom implementation of gene importance). If you only intend on using the Fisher's test, the weights are insignificant, just set them to 1.
+#   - [1]: SOI, which the GO Term supposedly regulates (eg. chronic_inflammation)
+#   - [2]: positive or negative regulation direction of the SOI (+ or -)
+#   - [3]: weight: the presumed importance of a GO Term in regulating the SOI. It is used only in the adv_product_score statistical test (a custom implementation of gene importance). If you only intend on using the Fisher's test, the weights are insignificant, just set them to 1.
 #   - [4]: GO Term name: the name of the GO Term (optional)
 #   - [5]: GO Term description: the description of the GO Term (optional)
 # 
@@ -226,7 +220,7 @@ ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin
 ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
 ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
 ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
-###processes [proces name] [to be expressed + or suppressed -]
+###states_of_interest [SOI name] [positive contribution to SOI: +, or negative contribution to SOI: -]
 rheumatoid_arthritis	+
 ###categories [category] [True / False]
 biological_process	True

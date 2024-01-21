@@ -11,12 +11,13 @@ logger = logging.getLogger(__name__)
 
 # workaround class, as importing GOTerm would cause a circular import
 class GOTerm_placeholder:
-    def __init__(self, id: str, processes: List[Dict] = None, name: Optional[str] = None, description: Optional[str] = None, category: Optional[str] = None, parent_term_ids: Optional[List[str]] = None, is_obsolete:bool = False, weight: float = 1.0, products: List[str] = [], http_error_codes:dict={}):
+    def __init__(self, id: str, name: Optional[str] = None, description: Optional[str] = None, category: Optional[str] = None, parent_term_ids: Optional[List[str]] = None, is_obsolete:bool = False, weight: float = 1.0, products: List[str] = [], http_error_codes:dict={}):
         """
         A placeholder class to construct GO Terms
 
         Args:
             id (str): The ID of the GO term.
+            SOIs (List): The associated states of interest
             name (str): Name (optional).
             description (str): A description of the GO term (optional).
             products (list): Products associated with the term (optional).

@@ -36,10 +36,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class TargetProcess:
+class TargetSOI:
     def __init__(self, name: str, direction: str) -> None:
         """
-        A class representing a target process. NOT USED CURRENTLY
+        A class representing a target SOI. NOT USED CURRENTLY
 
         Args:
             name (str)
@@ -54,7 +54,7 @@ class ReverseLookup:
     def __init__(
         self,
         goterms: List[GOTerm],
-        target_processes: List[Dict[str, str]],
+        target_SOIs: List[Dict[str, str]],
         products: List[Product] = [],
         miRNAs: List[miRNA] = [],
         miRNA_overlap_treshold: float = 0.6,
@@ -75,7 +75,7 @@ class ReverseLookup:
 
         Args:
             goterms (set): A set of GOTerm objects.
-            target_processes (list): A list of dictionaries containing process names and directions.
+            target_SOIs (list): A list of dictionaries containing SOI names and directions.
             products (set, optional): A set of Product objects. Defaults to an empty set.
             miRNAs
             miRNA_overlap_threshold
@@ -90,7 +90,7 @@ class ReverseLookup:
         """
         self.goterms = goterms
         self.products = products
-        self.target_processes = target_processes
+        self.target_SOIs = target_SOIs
         self.miRNAs = miRNAs
         self.miRNA_overlap_treshold = miRNA_overlap_treshold
         self.model_settings = model_settings
@@ -1362,15 +1362,11 @@ class ReverseLookup:
                 or _score_class.name == "binomial_test"
             ):
                 for product in self.products:
-                    for process in self.target_processes:
+                    for SOI in self.target_SOIs:
                         for direction in ["+", "-"]:
-                            if "error" in product.scores[_score_class.name][f"{process['process']}{direction}"]:  # check if there is "error" key
+                            if "error" in product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]:  # check if there is "error" key
                                 continue
-                            p_values.append(
-                                product.scores[_score_class.name][
-                                    f"{process['process']}{direction}"
-                                ]["pvalue"]
-                            )
+                            p_values.append(product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]["pvalue"])
                 # apply Benjamini-Hochberg FDR correction
                 if len(p_values) > 0:
                     from statsmodels.stats.multitest import multipletests
@@ -1379,18 +1375,11 @@ class ReverseLookup:
                         p_values, alpha=0.05, method="fdr_bh"
                     )
                     for product in self.products:
-                        for process in self.target_processes:
+                        for SOI in self.target_SOIs:
                             for direction in ["+", "-"]:
-                                if (
-                                    "error"
-                                    in product.scores[_score_class.name][
-                                        f"{process['process']}{direction}"
-                                    ]
-                                ):  # check if there is "error" key
+                                if "error" in product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]:  # check if there is "error" key
                                     continue
-                                product.scores[_score_class.name][
-                                    f"{process['process']}{direction}"
-                                ]["pvalue_corr"] = p_corrected[i]
+                                product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]["pvalue_corr"] = p_corrected[i]
                                 i += 1
 
         if "score_products" not in self.execution_times:
@@ -1583,20 +1572,20 @@ class ReverseLookup:
                 goterms_list.append(goterm)
         return goterms_list
 
-    def get_all_goterms_for_process(self, process: str) -> List[GOTerm]:
+    def get_all_goterms_for_SOI(self, _SOI: str) -> List[GOTerm]:
         """
         Loops through all GO Term objects in self.goterms (initialised from input.txt or from load_model at object creation)
-        and adds each GO Term instance to a result list, if any of it's processes (goterm.processes) are involved in the parameter 'process'.
+        and adds each GO Term instance to a result list, if any of it's SOIs (goterm.SOIs) are involved in the parameter 'SOI'.
 
         Returns:
-          - List[GOTerm]: a list of all GO Term objects, which are associated with the 'process'.
+          - List[GOTerm]: a list of all GO Term objects, which are associated with the SOI.
 
-        Example: if process = "diabetes", then it will return a list of all the diabetes-associated GO Terms you specified
+        Example: if SOI = "diabetes", then it will return a list of all the diabetes-associated GO Terms you specified
         in input.txt file, irrespective of direction (either +, - or 0)
         """
         goterms_list = []
         for goterm in self.goterms:
-            if any(proc["process"] == process for proc in goterm.processes):
+            if any(SOI["SOI"] == _SOI for SOI in goterm.SOIs):
                 goterms_list.append(goterm)
         return goterms_list
 
@@ -1723,7 +1712,7 @@ class ReverseLookup:
         FileUtil.check_path(filepath)
             
         data = {}
-        data["target_processes"] = self.target_processes
+        data["target_SOIs"] = self.target_SOIs
         data["go_categories"] = self.go_categories
         data["model_settings"] = self.model_settings.to_json()
         data["miRNA_overlap_treshold"] = self.miRNA_overlap_treshold
@@ -2116,7 +2105,7 @@ class ReverseLookup:
 
         Returns a JSON with the following structure (example is also provided to the right):
             {                           {
-            PROCESS_PAIR_CODE: [        "diabetes+:angio+": [
+            SOI_PAIR_CODE: [        "diabetes+:angio+": [
                 PRODUCT1_DICT               { // product info: id_synonyms, genename, description, ...},
                 PRODUCT2_DICT               { // product info: id_synonyms, genename, description, ...},
                 ...                         ...
@@ -2125,7 +2114,7 @@ class ReverseLookup:
                                         "angio+:obesity+": [...]
             }                           }
 
-        The genes (products) for each process pair are sorted according to the sum of the p-values, with products with the lowest pvalues (highest
+        The genes (products) for each SOI pair are sorted according to the sum of the p-values, with products with the lowest pvalues (highest
         statistical probabilities) appearing first in the sorted dictionary.
 
         TODO: implement binomial score, maybe even adv_score and nterms for backwards compatibility
@@ -2137,33 +2126,33 @@ class ReverseLookup:
             Fisher test MUST be calculated for this to work.
             """
             pvalue_sum = 0
-            for process in self.target_processes:
-                pvalue_process = product["scores"][test_name][f"{process['process']}{process['direction']}"]["pvalue_corr"]
-                pvalue_sum += pvalue_process
+            for SOI in self.target_SOIs:
+                pvalue_SOI = product["scores"][test_name][f"{SOI['SOI']}{SOI['direction']}"]["pvalue_corr"]
+                pvalue_sum += pvalue_SOI
             return pvalue_sum
         
-        def determine_product_statistical_significance(product:Product, test_name, processes):
-            if self.model_settings.exclude_opposite_regulation_direction_check == False: # checks both target and the opposite processes
-                if all( # check target process < 0.05
-                    float(product.scores[test_name][f"{process['process']}{process['direction']}"].get("pvalue_corr", 1))
+        def determine_product_statistical_significance(product:Product, test_name, SOIs):
+            if self.model_settings.exclude_opposite_regulation_direction_check == False: # checks both target and the opposite SOIs
+                if all( # check target SOI < 0.05
+                    float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"].get("pvalue_corr", 1))
                     < self.model_settings.pvalue
-                    for process in processes
-                ) and all( # check opposite process > 0.05
-                    float(product.scores[test_name][f"{process['process']}{'+' if process['direction'] == '-' else '-'}"].get("pvalue_corr", 1))
+                    for SOI in SOIs
+                ) and all( # check opposite SOI > 0.05
+                    float(product.scores[test_name][f"{SOI['SOI']}{'+' if SOI['direction'] == '-' else '-'}"].get("pvalue_corr", 1))
                     >= self.model_settings.pvalue
-                    for process in processes
+                    for SOI in SOIs
                 ):
                     return True
-            else: # checks only target process
-                if all( # check target process < 0.05
-                    float(product.scores[test_name][f"{process['process']}{process['direction']}"].get("pvalue_corr", 1))
+            else: # checks only target SOI
+                if all( # check target SOI < 0.05
+                    float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"].get("pvalue_corr", 1))
                     < self.model_settings.pvalue
-                    for process in processes
+                    for SOI in SOIs
                 ):
                     return True
             return False
 
-        statistically_relevant_products = []  # a list of lists; each member is [product, "process1_name_direction:process2_name_direction"]
+        statistically_relevant_products = []  # a list of lists; each member is [product, "SOI1_name_direction:SOI2_name_direction"]
         
         if use_dest_dir:
             # use destination dir in project settings - this should be set to True for production-ready code
@@ -2173,9 +2162,9 @@ class ReverseLookup:
             filepath = filepath.replace("\\", "/")
 
         for product in self.products:
-            # example - given three process: diabetes, angio, obesity, this code iterates through each 2-member combination possible
+            # example - given three SOIs: diabetes, angio, obesity, this code iterates through each 2-member combination possible
             #
-            # loop iteration \ process      diabetes    angio   obesity
+            # loop iteration \ SOI           diabetes    angio   obesity
             # it. 0  (i=0,j=1)                  |         |
             # it. 1  (i=0,j=2)                  |                  |
             # it. 2  (i=1,j=2)                            |        |
@@ -2183,54 +2172,54 @@ class ReverseLookup:
             # i = 2 -> loop condition not met (i would start on 'obesity', wouldn't find matching pair with j)
             #
             # Each member pair is used to assess statistically relevant genes, which either positively or
-            # negatively regulate both of the processes in the pair.
+            # negatively regulate both of the SOIs in the pair.
 
-            if len(self.target_processes) == 1:
+            if len(self.target_SOIs) == 1:
                 if determine_product_statistical_significance(
                     product = product,
                     test_name = test_name,
-                    processes = self.target_processes
+                    SOIs = self.target_SOIs
                 ):
                     statistically_relevant_products.append(
                                 [
                                     product,
-                                    f"{self.target_processes[0]['process']}{self.target_processes[0]['direction']}"
+                                    f"{self.target_SOIs[0]['SOI']}{self.target_SOIs[0]['direction']}"
                                 ]
                             )
-                continue # do not advance to the multiple target process scoring phase
+                continue # do not advance to the multiple target SOI scoring phase
 
-            # multiple target process scoring phase
-            for i in range(len(self.target_processes) - 1): # if only 1 target process is specified, the whole loop skips because of this condition
-                for j in range(i + 1, len(self.target_processes)):
-                    process1 = self.target_processes[i]
-                    process2 = self.target_processes[j]
-                    pair = [process1, process2]
+            # multiple target SOIs scoring phase
+            for i in range(len(self.target_SOIs) - 1): # if only 1 target SOI is specified, the whole loop skips because of this condition
+                for j in range(i + 1, len(self.target_SOIs)):
+                    SOI1 = self.target_SOIs[i]
+                    SOI2 = self.target_SOIs[j]
+                    pair = [SOI1, SOI2]
 
                     if determine_product_statistical_significance(
                         product = product,
                         test_name = test_name,
-                        processes = pair
+                        SOIs = pair
                     ):
                         statistically_relevant_products.append(
                                 [
                                     product,
-                                    f"{process1['process']}{process1['direction']}:{process2['process']}{process2['direction']}"
+                                    f"{SOI1['SOI']}{SOI1['direction']}:{SOI2['SOI']}{SOI2['direction']}"
                                 ]
                             )
-        statistically_relevant_products_final = {} # dictionary between two processes (eg. angio+:diabetes+) and all statistically relevant products or a single target process (eg. angio+) and all statistically relevant products
-        if len(self.target_processes) == 1:
-            # do not advance to the multiple target process score analysis phase
-            target_process_code = ""
+        statistically_relevant_products_final = {} # dictionary between two SOIs (eg. angio+:diabetes+) and all statistically relevant products or a single target SOI (eg. angio+) and all statistically relevant products
+        if len(self.target_SOIs) == 1:
+            # do not advance to the multiple target SOI score analysis phase
+            target_SOI_code = ""
 
             for element in statistically_relevant_products:
                 prod = element[0]
-                target_process_code = element[1]
-                if target_process_code not in statistically_relevant_products_final:
-                    statistically_relevant_products_final[target_process_code] = []
-                statistically_relevant_products_final[target_process_code].append(prod.__dict__)
+                target_SOI_code = element[1]
+                if target_SOI_code not in statistically_relevant_products_final:
+                    statistically_relevant_products_final[target_SOI_code] = []
+                statistically_relevant_products_final[target_SOI_code].append(prod.__dict__)
             # sort
-            statistically_relevant_products_final[target_process_code] = sorted(
-                statistically_relevant_products_final[target_process_code],
+            statistically_relevant_products_final[target_SOI_code] = sorted(
+                statistically_relevant_products_final[target_SOI_code],
                 key=lambda gene: sorting_key(gene)
             )
             logger.info(f"Finished with product statistical analysis. Found {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}")
@@ -2242,38 +2231,38 @@ class ReverseLookup:
             )
             return statistically_relevant_products_final
 
-        # * multiple target process score analysis phase *
+        # * multiple target SOIs score analysis phase *
         # statistically_relevant_products stores a list of lists, each member list is a Product object bound to a specific pair code (e.g. angio+:diabetes+).
-        # statistically_relevant_products_final is a dictionary. It's keys are process pair codes (e.g. angio+:diabetes+), each key holds a list of all statistically relevant products for the process pair
+        # statistically_relevant_products_final is a dictionary. It's keys are SOIs pair codes (e.g. angio+:diabetes+), each key holds a list of all statistically relevant products for the SOI pair
         # (eg. if angio+:diabetes+ it holds all products, which positively regulate both angiogenesis and diabetes)
-        process_pairs = [] # each element is a code binding two processes and their direction, eg. angio+:diabetes+
-        for i in range(len(self.target_processes) - 1):
-            for j in range(i + 1, len(self.target_processes)):
-                process1 = self.target_processes[i]
-                process2 = self.target_processes[j]
-                pair_code = f"{process1['process']}{process1['direction']}:{process2['process']}{process2['direction']}"
-                process_pairs.append(pair_code)
+        SOI_pairs = [] # each element is a code binding two SOIs and their direction, eg. angio+:diabetes+
+        for i in range(len(self.target_SOIs) - 1):
+            for j in range(i + 1, len(self.target_SOIs)):
+                SOI1 = self.target_SOIs[i]
+                SOI2 = self.target_SOIs[j]
+                pair_code = f"{SOI1['SOI']}{SOI1['direction']}:{SOI2['SOI']}{SOI2['direction']}"
+                SOI_pairs.append(pair_code)
                 statistically_relevant_products_final[pair_code] = []  # initialise to empty list
 
         for element in statistically_relevant_products:
-            # each element is a list [product, "process1_name_direction:process2_name_direction"]
+            # each element is a list [product, "SOI1_name_direction:SOI2_name_direction"]
             prod = element[0]
-            process_pair_code = element[1]
-            statistically_relevant_products_final[process_pair_code].append(prod.__dict__)
+            SOI_pair_code = element[1]
+            statistically_relevant_products_final[SOI_pair_code].append(prod.__dict__)
 
         # sort the genes based on the ascending sum of pvalues (lowest pvalues first)
         statistically_relevant_products_final_sorted = {}
-        for i in range(len(self.target_processes) - 1):
-            for j in range(i + 1, len(self.target_processes)):
-                process1 = self.target_processes[i]
-                process2 = self.target_processes[j]
-                pair_code = f"{process1['process']}{process1['direction']}:{process2['process']}{process2['direction']}"
-                statistically_relevant_products_for_process_pair = (statistically_relevant_products_final[pair_code])
-                statistically_relevant_products_for_process_pair_sorted = sorted(
-                    statistically_relevant_products_for_process_pair,
+        for i in range(len(self.target_SOIs) - 1):
+            for j in range(i + 1, len(self.target_SOIs)):
+                SOI1 = self.target_SOIs[i]
+                SOI2 = self.target_SOIs[j]
+                pair_code = f"{SOI1['SOI']}{SOI1['direction']}:{SOI2['SOI']}{SOI2['direction']}"
+                statistically_relevant_products_for_SOI_pair = statistically_relevant_products_final[pair_code]
+                statistically_relevant_products_for_SOI_pair_sorted = sorted(
+                    statistically_relevant_products_for_SOI_pair,
                     key=lambda gene: sorting_key(gene)
                 )
-                statistically_relevant_products_final_sorted[pair_code] = statistically_relevant_products_for_process_pair_sorted
+                statistically_relevant_products_final_sorted[pair_code] = statistically_relevant_products_for_SOI_pair_sorted
 
         # TODO: save statistical analysis as a part of the model's json and load it up on startup
         self.statistically_relevant_products = statistically_relevant_products_final_sorted
@@ -2319,7 +2308,7 @@ class ReverseLookup:
         if data == {}:
             logger.warning(f"Data is EMPTY!")
             
-        target_processes = data["target_processes"]
+        target_SOIs = data["target_SOIs"]
         miRNA_overlap_treshold = data["miRNA_overlap_treshold"]
         
         input_filepath = data.get("input_filepath", None)
@@ -2382,7 +2371,7 @@ class ReverseLookup:
 
         return cls(
             goterms,
-            target_processes,
+            target_SOIs,
             products,
             miRNAs,
             miRNA_overlap_treshold,
@@ -2412,7 +2401,7 @@ class ReverseLookup:
         COMMENT_DELIMITER = "#"  # Character used to denote a comment
         LOGIC_LINE_DELIMITER = "###" # Special set of characters to denote a "logic line"
 
-        target_processes = []
+        target_SOIs = []
         go_categories = []
         go_terms = []
         settings = ModelSettings()
@@ -2420,7 +2409,7 @@ class ReverseLookup:
         def process_comment(line):
             """
             Processes a comment in the line: returns the part of the line before the comment. The input file should be structured to contain
-            three sections - 'settings', 'processes' and 'GO_terms', annotated using the LOGIC_LINE_DELIMITER.
+            three sections - 'settings', 'states_of_interest' and 'GO_terms', annotated using the LOGIC_LINE_DELIMITER.
 
             For the construction of input.txt, please refer to the Readme file. [TODO]
 
@@ -2520,8 +2509,8 @@ class ReverseLookup:
                     elif "filepaths" in line:
                         section = "filepaths"
                         continue
-                    elif "processes" in line:
-                        section = "process"
+                    elif "states_of_interest" in line:
+                        section = "states_of_interest"
                         continue
                     elif "categories" in line:
                         section = "categories"
@@ -2624,9 +2613,9 @@ class ReverseLookup:
                             'download_url': datafile_download_url
                         }
                     
-                    elif section == "process":
+                    elif section == "states_of_interest":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
-                        target_processes.append({"process": chunks[0], "direction": chunks[1]})
+                        target_SOIs.append({"SOI": chunks[0], "direction": chunks[1]})
                     
                     elif section == "categories":
                         chunks = line.split(LINE_ELEMENT_DELIMITER)
@@ -2640,8 +2629,8 @@ class ReverseLookup:
                         if len(chunks) == 5:
                             d = {
                                 "id": chunks[0],
-                                "processes": {
-                                    "process": chunks[1],
+                                "SOIs": {
+                                    "SOI": chunks[1],
                                     "direction": chunks[2],
                                 },
                                 "weight": int(chunks[3]),
@@ -2650,21 +2639,17 @@ class ReverseLookup:
                         else:
                             d = {
                                 "id": chunks[0],
-                                "processes": {
-                                    "process": chunks[1],
+                                "SOIs": {
+                                    "SOI": chunks[1],
                                     "direction": chunks[2],
                                 },
                                 "weight": int(chunks[3]),
                             }
-                        if not any(
-                            d["id"] == goterm.id for goterm in go_terms
-                        ):  # TODO: check this !!!!!
+                        if not any(d["id"] == goterm.id for goterm in go_terms):  # TODO: check this !!!!!
                             go_terms.append(GOTerm.from_dict(d))
                         else:  # TODO: check this !!!!!
-                            next(
-                                goterm for goterm in go_terms if d["id"] == goterm.id
-                            ).add_process(
-                                {"process": chunks[1], "direction": chunks[2]}
+                            next(goterm for goterm in go_terms if d["id"] == goterm.id).add_SOI(
+                                {"SOI": chunks[1], "direction": chunks[2]}
                             )
 
         try:
@@ -2672,28 +2657,7 @@ class ReverseLookup:
         except OSError:
             logger.error(f"ERROR while processing input file at filepath {filepath}")
             return
-
-        # PROCESS INPUT FILE
-        """
-        if not os.path.isabs(filepath): # this process with traceback.extract_stack works correctly on mac, but not on windows.
-            current_dir = os.path.dirname(os.path.abspath(traceback.extract_stack()[0].filename))
-            mac_filepath = os.path.join(current_dir, filepath) 
-        try:
-            os.makedirs(os.path.dirname(mac_filepath), exist_ok=True) # this approach works on a mac computer
-            process_file(mac_filepath)
-        except OSError:
-            # # first pass is allowed, on Windows 10 this tries to create a file at 
-            # 'C:\\Program Files\\Python310\\lib\\diabetes_angio_1/general.txt'
-            # which raises a permission error.
-            # fallback if the above fails
-            try:
-                win_filepath = FileUtil.find_win_abs_filepath(filepath)
-                os.makedirs(os.path.dirname(win_filepath), exist_ok=True)
-                process_file(win_filepath)
-            except OSError:
-                logger.error(f"ERROR while opening win filepath {win_filepath}")
-                return
-        """
+        
         obo_parser = None
         if settings.include_indirect_annotations:
             if settings.datafile_paths != {} and "go_obo" in settings.datafile_paths:
@@ -2738,13 +2702,13 @@ class ReverseLookup:
         logger.info(f"  - destination dir: {destination_dir}")
         logger.info(f"  - input file line count: {filepath_readlines}")
         logger.info(f"  - count GO Terms: {len(go_terms)} ")
-        logger.info(f"  - target_processes: {target_processes}")
+        logger.info(f"  - target_SOIs: {target_SOIs}")
         logger.info(f"  - GO categories: {go_categories}")
         logger.info(f"  - model settings: {settings.to_json()}")
         logger.info(f"  - obo_parser: {obo_parser}")
         return cls(
             go_terms,
-            target_processes=target_processes,
+            target_SOIs=target_SOIs,
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,
@@ -2758,13 +2722,13 @@ class ReverseLookup:
         Creates a ReverseLookup object from a dictionary.
 
         Args:
-            data (dict): A dictionary containing lists of GOTerm and target_processes.
+            data (dict): A dictionary containing a representation of a ReverseLookup instance
 
         Returns:
             ReverseLookup: A ReverseLookup object.
         """
         goterms = [GOTerm.from_dict(d) for d in data["goterms"]]
-        target_processes = data["target_processes"]
+        target_SOIs = data["target_SOIs"]
         if "go_categories" in data:
             go_categories = data["go_categories"]
         else:
@@ -2784,7 +2748,7 @@ class ReverseLookup:
         logger.info("Model creation from dict complete.")
         return cls(
             goterms,
-            target_processes,
+            target_SOIs,
             go_categories=go_categories,
             model_settings=settings,
             destination_dir=destination_dir,

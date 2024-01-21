@@ -25,7 +25,8 @@ Cacher.init(cache_dir="cache")
 ModelStats.init()
 WebsiteParser.init()
 
-input_file = "input_files/input.txt"
+# input_file = "input_files/input.txt"
+input_file = "input_files/input_rhartritis_ortho.txt"
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file(input_file)

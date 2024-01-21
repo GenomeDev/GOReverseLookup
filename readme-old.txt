@@ -4,7 +4,7 @@
 
 **GOReverseLookup** is a Python package designed for Gene Ontology Reverse Lookup. It serves the purpose of identifying statistically significant genes within a set of selected Gene Ontology Terms.
 
-While Gene Ontology offers valuable insights through gene annotations associated with individual terms, the biological reality often involves the complex interaction of multiple terms that either promote or inhibit a specific pathophysiological process. Unfortunately, Gene Ontology does not provide a built-in mechanism for computing statistically significant genes that are shared across multiple terms.
+While Gene Ontology offers valuable insights through gene annotations associated with individual terms, the biological reality often involves the complex interaction of multiple terms that either promote or inhibit a specific SOI. Unfortunately, Gene Ontology does not provide a built-in mechanism for computing statistically significant genes that are shared across multiple terms.
 
 GOReverseLookup steps in to bridge this gap. It empowers researchers to uncover genes of statistical significance that participate in various interconnected Gene Ontology Terms, shedding light on intricate biological processes.
 
@@ -33,7 +33,7 @@ pip install goreverselookup
 
 # Usage
 ## Creating the input.txt file
-**input.txt** is the entry to the program. It contains all the relevant data for the program to successfully complete the analysis of statistically important genes that positively or negatively contribute to one or more pathophysiological processes.
+**input.txt** is the entry to the program. It contains all the relevant data for the program to successfully complete the analysis of statistically important genes that positively or negatively contribute to one or more states of interest.
 
 An example input.txt file to discover the genes that positively contribute to both the development of chronic inflammation and cancer is:
 ```
@@ -46,14 +46,14 @@ fisher_test_use_online_query	False
 include_all_goterm_parents	True
 uniprotkb_genename_online_query	False
 p_value	0.05
-###processes [proces name] [to be expressed + or suppressed -]
+###states_of_interest [SOI name] [positive contribution to SOI: +, or negative contribution to SOI: -]
 chronic_inflammation	+
 cancer	+
 ###categories [category] [True / False]
 biological_process	True
 molecular_activity	True
 cellular_component	False
-###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+###GO_terms [GO id] [SOI] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
 GO:0006954	chronic_inflammation	+	1	inflammatory response
 GO:1900408	chronic_inflammation	-	1	negative regulation of cellular response to oxidative stress
 GO:1900409	chronic_inflammation	+	1	positive regulation of cellular response to oxidative stress
@@ -94,7 +94,7 @@ The available settings are the following:
 * `fisher_test_use_online_query`: When performing the Fisher's test, the GO Terms (eg. GO:0008284) associated to a gene can be parsed either from the GO Annotations File (`goa_human.gaf`) or they can be queried by submitting a request to the Gene Ontology servers (via `http://api.geneontology.org/api/bioentity/gene/{gene_id}/function`). If this setting is true, then an online query will be used, otherwise the GO Annotations File will be used to deduce terms associated to genes.
 * `include_all_goterm_parents`: In Gene Ontology, genes are annotated only to very specific GO Terms, which might be nested very deep in the GO Terms hierarchy tree. If this setting is true, all indirectly annotated terms (aka parent terms) are also accounted for, besides directly annotated GO Terms. If this setting is false, only directly annotated GO Terms are accounted for.
 * `uniprotkb_genename_online_query`: When querying all genes associated to a GO Term, Gene Ontology returns UniProtKB identified genes (amongst others, such as ZFIN, Xenbase, MGI, RGD). During the algorithm, gene name has to be determined from the UniProtKB id, which is done in (Product).fetch_ortholog_async function. The gene name can be obtained either online via UniProtApi or offline via GO Annotations File. If True, will query genename from a UniProtKB id via an online server request. If False, will query genename from a UniProtKB id via the GO Annotations File.
-* `pvalue`: Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than the set pvalue (default is 0.05) for all the processes of interest of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite processes (eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
+* `pvalue`: Represents the p-value against which the genes will be scored to determine if they are statistically significant. For example, if the VEGFA gene has pvalues smaller than the set pvalue (default is 0.05) for all the SOIs (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite SOIs (eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
 
 The **filepaths** section contains the relative or absolute filepaths to the 3rd party database files. Each line in the filepaths section has the following tab-delimited structure:
 ```
@@ -138,13 +138,13 @@ rgd_human_ortho_mapping_filepath	data_files/rgd_human_ortholog_mapping.txt
 xenbase_human_ortho_mapping_filepath	data_files/xenbase_human_ortholog_mapping.txt
 ```
 
-The **processes** section contains the pathophysiological processes in question to the researcher and the direction of regulation of these processes. For example, if a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct processes section as:
+The **states_of_interest** section contains the SOIs in question to the researcher and the direction of regulation of these SOIs. For example, if a researcher is interested in the genes that positively contribute to both chronic inflammation and cancer, the researcher would construct states_of_interest section as:
 ```
-###processes
+###states_of_interest
 chronic_inflammation	+
 cancer	+
 ```
-The processes defined in the processes section are used in the GO_terms section, to specify how a GO Term contributes to a given process.
+The SOIs defined in the states_of_interest section are used in the GO_terms section, to specify how a given GO Term contributes to a given SOI.
 
 The **categories** section enables the researcher to choose which Gene Ontology Categories (also known as Gene Ontology Aspects) are important to the researcher. It determines which GO Terms will be queried either from online or from the GO Annotations File.
 
@@ -170,9 +170,9 @@ cellular_component	False
 
 The **GO_terms** section contains all of the GO Terms that will be used in the analysis. Each line in the section contains one GO Term, with the following tab-delimited values:
 - [0]: GO Term identifier (eg. GO:0006954)
-- [1]: process, which the GO Term supposedly regulates (eg. chronic_inflammation)
-- [2]: positive or negative regulation direction of the process (+ or -)
-- [3]: weight: the presumed importance of a GO Term in regulating the process. It is used only in the adv_product_score statistical test (a custom implementation of gene importance). If you only intend on using the Fisher's test, the weights are insignificant, just set them to 1.
+- [1]: SOI, which the GO Term supposedly regulates (eg. chronic_inflammation)
+- [2]: positive or negative regulation direction of the SOI (+ or -)
+- [3]: weight: the presumed importance of a GO Term in regulating the SOI. It is used only in the adv_product_score statistical test (a custom implementation of gene importance). If you only intend on using the Fisher's test, the weights are insignificant, just set them to 1.
 - [4]: GO Term name: the name of the GO Term (optional)
 - [5]: GO Term description: the description of the GO Term (optional)
 
@@ -180,10 +180,10 @@ An example line in a GO_terms section is:
 ```
 GO:0006954	chronic_inflammation	+	1	inflammatory response
 ```
-which reads as "GO term with id `GO:0006954` and name `inflammatory response` positively (`+`) contributes to pathophysiological process `chronic_inflammation` and should have a weight of `1`.
+which reads as "GO term with id `GO:0006954` and name `inflammatory response` positively (`+`) contributes to SOI `chronic_inflammation` and should have a weight of `1`.
 
 ## Running GOReverseLookup from an executable (.exe) file
-This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" pathophysiological processes. 
+This section shows you how to start the GOReverseLookup by downloading and (if needed) modifying an existing project template. **This is strongly recommended for beginners** or for those without programming knowledge. The example project demonstrates a research attempt to find statistically significant genes, which stimulate the "chronic inflammation" and "cancer" SOIs. 
 
 Instructions:
 1. The 3.10.0 version or later of the Python programming language is required for the program to run. If you haven't installed it yet, you need to install it. See the **Python installation** appendix chapter at the end of this Readme.
@@ -270,7 +270,7 @@ PrimaryWorkflow expects two parameters: the first is `input_file_fpath`, which s
 
 If the workflow executes successfully, two files should be saved into `save_folder_dir`:
     - `data.json` contains the representation of the entire research workflow (model) and can be later used to load the model instead of recomputing it from input.txt again
-    - `statistically_significant_genes.json` contains the genes which were found to statistically significantly contribute to the processes the researcher is interested in
+    - `statistically_significant_genes.json` contains the genes which were found to statistically significantly contribute to the SOIs the researcher is interested in
 
 **Logger** is set up in order to log the current algorithm steps to the console of your IDE (e.g., VSCode). By setting up the logger, you can monitor which commands the program is currently executing.
 
