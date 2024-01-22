@@ -321,6 +321,8 @@ class EnsemblApi:
             if ":" in id:
                 id_url = id.split(":")[1]
         
+        if source_taxon is None or target_taxon is None:
+            return
         source_species_label = EnsemblUtil.taxon_to_ensembl_label(source_taxon)
         target_species_label = EnsemblUtil.taxon_to_ensembl_label(target_taxon)
 

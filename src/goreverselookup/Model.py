@@ -67,7 +67,6 @@ class ReverseLookup:
         ],
         model_settings: ModelSettings = None,
         obo_parser: OboParser = None,
-        destination_dir:str = None,
         input_filepath:str = None
     ):
         """
@@ -86,7 +85,6 @@ class ReverseLookup:
                         when researching only GO Terms connected to biological processes and/or molecular activities helps to produce more accurate statistical scores.
             model_settings: used for saving and loading model settings
             obo_parser: Used for parsing the Gene Ontology's .obo file. If it isn't supplied, it will be automatically created
-            destination_dir: The directory where the output and intermediate files (such as data_files) are stored.
         """
         self.goterms = goterms
         self.products = products
@@ -97,13 +95,20 @@ class ReverseLookup:
         self.execution_times = execution_times  # dict of execution times, logs of runtime for functions
         self.timer = Timer()
         
+        if input_filepath is not None:
+            self.input_filepath = input_filepath
+            if self.model_settings.destination_dir is None:
+                self.model_settings.destination_dir = os.path.dirname(os.path.realpath(input_filepath))
+        
+        """
         if destination_dir is not None:
             self.destination_dir = destination_dir
         
-        if input_filepath is not None:
-            self.input_filepath = input_filepath
-            if destination_dir is None:
-                self.destination_dir = os.path.dirname(os.path.realpath(input_filepath))
+        if destination_dir is None:
+            appdata_dir = os.path.join(os.getenv("APPDATA"), "goreverselookup")
+            appdata_dir.replace("\\", "/")
+            self.destination_dir = appdata_dir
+        """
                 
         # placeholder to populate after perform_statistical_analysis is called
         self.statistically_relevant_products = statistically_relevant_products
@@ -501,13 +506,6 @@ class ReverseLookup:
                     else:
                         product_object = Product.from_dict({"id_synonyms": [product], "genename": product, "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
                     self.products.append(product_object)
-        
-        logger.info(f"Created {len(self.products)} Product objects from GOTerm object definitions")
-        ModelStats.product_count = len(self.products)
-
-        if "create_products_from_goterms" not in self.execution_times:
-            self.execution_times["create_products_from_goterms"] = self.timer.get_elapsed_formatted()
-        self.timer.print_elapsed_time()
 
         def check_exists(product_id: str) -> bool:
             """
@@ -521,12 +519,6 @@ class ReverseLookup:
                     return True
             return False
 
-        logger.info("Creating products from GO Terms")
-        self.timer.set_start_time()
-
-        # Create an empty set to store unique products
-        products_set = set()
-
         # Iterate over each GOTerm object in the go_term set and retrieve the set of products associated with that GOTerm
         # object. Add these products to the products_set.
         for term in self.goterms:
@@ -535,9 +527,7 @@ class ReverseLookup:
         # Iterate over each product in the products_set and create a new Product object from the product ID using the
         # Product.from_dict() classmethod. Add the resulting Product objects to the ReverseLookup object's products list.
         i = 0
-        for (
-            product
-        ) in products_set:  # here, each product is a product id, eg. 'MGI:1343124'
+        for product in products_set:  # here, each product is a product id, eg. 'MGI:1343124'
             if check_exists(product) is True:
                 continue
             if ":" in product:
@@ -546,7 +536,9 @@ class ReverseLookup:
                 self.products.append(Product.from_dict({"id_synonyms": [product], "genename": product}))
             i += 1
 
+        ModelStats.product_count = len(self.products)
         logger.info(f"Created {i} Product objects from GOTerm object definitions")
+        logger.info(f"Total Product objects in ReverseLookup model: {len(self.products)}")
 
         if "create_products_from_goterms" not in self.execution_times:
             self.execution_times[
@@ -635,7 +627,10 @@ class ReverseLookup:
                 continue # don't perform uniprotkb-uniprotkb mappings
             p_id = product.id_synonyms[0] # ZFIN:XXXX
             p_id_db = p_id.split(":")[0] # ZFIN
-            non_uniprot_dbs_product_dict[p_id_db].update([p_id])
+            try:
+                non_uniprot_dbs_product_dict[p_id_db].update([p_id])
+            except KeyError:
+                logger.debug(f"KeyError when trying to search for {p_id_db} in non_uniprot_dbs_product_dict. This is benign.")
         
         # convert sets to lists
         for db, db_set in non_uniprot_dbs_product_dict.items():
@@ -776,7 +771,10 @@ class ReverseLookup:
             ortholog_query_dict[taxon_number] = []
         
         # iterate over products, construct ortholog_query_dict with id synonyms, uniprot ids and ensembl ids
-        for product in self.products:
+        for product in self.products:  
+            if product.taxon is None:
+                continue
+            
             product_taxon_number = product.taxon.split(":")[1] if ":" in product.taxon else product.taxon
 
             if int(product_taxon_number) == self.model_settings.target_organism.ncbi_id: # don't query orthologs if product taxon is the same as target organism taxon
@@ -1705,7 +1703,7 @@ class ReverseLookup:
         if use_dest_dir:
             # use destination dir in project settings - this should be set to True for production-ready code
             # for development, set 'use_dest_dir' to False, so files are saved relatively to filepath branching out from project root directory.
-            dest_dir = f"{self.destination_dir}"
+            dest_dir = f"{self.model_settings.destination_dir}"
             filepath = os.path.join(dest_dir, filepath)
             filepath = filepath.replace("\\", "/")
         
@@ -2131,25 +2129,33 @@ class ReverseLookup:
                 pvalue_sum += pvalue_SOI
             return pvalue_sum
         
-        def determine_product_statistical_significance(product:Product, test_name, SOIs):
+        def determine_product_statistical_significance(product:Product, test_name, SOIs):              
             if self.model_settings.exclude_opposite_regulation_direction_check == False: # checks both target and the opposite SOIs
-                if all( # check target SOI < 0.05
-                    float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"].get("pvalue_corr", 1))
-                    < self.model_settings.pvalue
-                    for SOI in SOIs
-                ) and all( # check opposite SOI > 0.05
-                    float(product.scores[test_name][f"{SOI['SOI']}{'+' if SOI['direction'] == '-' else '-'}"].get("pvalue_corr", 1))
-                    >= self.model_settings.pvalue
-                    for SOI in SOIs
-                ):
-                    return True
+                try:
+                    if all( # check target SOI < 0.05
+                        float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"]["pvalue_corr"])
+                        < self.model_settings.pvalue
+                        for SOI in SOIs
+                    ) and all( # check opposite SOI > 0.05
+                        float(product.scores[test_name][f"{SOI['SOI']}{'+' if SOI['direction'] == '-' else '-'}"]["pvalue_corr"])
+                        >= self.model_settings.pvalue
+                        for SOI in SOIs
+                    ):
+                        return True
+                except KeyError:
+                    # most possibly pvalue_corr is missing (can happen if element in contingency table is negative)
+                    return False
             else: # checks only target SOI
-                if all( # check target SOI < 0.05
-                    float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"].get("pvalue_corr", 1))
-                    < self.model_settings.pvalue
-                    for SOI in SOIs
-                ):
-                    return True
+                try:
+                    if all( # check target SOI < 0.05
+                        float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"].get("pvalue_corr", 1))
+                        < self.model_settings.pvalue
+                        for SOI in SOIs
+                    ):
+                        return True
+                except KeyError:
+                    # most possibly pvalue_corr is missing (can happen if element in contingency table is negative)
+                    return False
             return False
 
         statistically_relevant_products = []  # a list of lists; each member is [product, "SOI1_name_direction:SOI2_name_direction"]
@@ -2157,7 +2163,7 @@ class ReverseLookup:
         if use_dest_dir:
             # use destination dir in project settings - this should be set to True for production-ready code
             # for development, set 'use_dest_dir' to False, so files are saved relatively to filepath branching out from project root directory.
-            dest_dir = f"{self.destination_dir}"
+            dest_dir = f"{self.model_settings.destination_dir}"
             filepath = os.path.join(dest_dir, filepath)
             filepath = filepath.replace("\\", "/")
 
@@ -2312,8 +2318,6 @@ class ReverseLookup:
         miRNA_overlap_treshold = data["miRNA_overlap_treshold"]
         
         input_filepath = data.get("input_filepath", None)
-        if destination_dir is None:
-            destination_dir = data.get("destination_dir", None)
 
         execution_times = {}
         if "execution_times" in data:
@@ -2337,6 +2341,8 @@ class ReverseLookup:
             settings = ModelSettings.from_json(data["model_settings"])
         else:
             settings = ModelSettings()
+        if destination_dir is not None:
+            settings.destination_dir = destination_dir
 
         goterms = []
         for goterm_dict in data["goterms"]:
@@ -2368,6 +2374,14 @@ class ReverseLookup:
         miRNAs = []
         for miRNAs_dict in data.get("miRNAs", []):
             miRNAs.append(miRNA.from_dict(miRNAs_dict))
+            
+        logger.info(f"Loaded ReverseLookup model from {os.path.abspath(filepath)}")
+        logger.info(f"  - num goterms: {len(goterms)}")
+        logger.info(f"  - num products: {len(products)}")
+        logger.info(f"  - num miRNAs: {len(miRNAs)}")
+        logger.info(f"  - model_settings: {settings.to_json()}")
+        logger.info(f"  - input_filepath: {input_filepath}")
+        logger.info(f"  - example goterm (0): {goterms[0].to_json()}")
 
         return cls(
             goterms,
@@ -2380,7 +2394,6 @@ class ReverseLookup:
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,
-            destination_dir=destination_dir,
             input_filepath=input_filepath
         )
 
@@ -2405,6 +2418,7 @@ class ReverseLookup:
         go_categories = []
         go_terms = []
         settings = ModelSettings()
+        settings.destination_dir = destination_dir
         
         def process_comment(line):
             """
@@ -2712,7 +2726,6 @@ class ReverseLookup:
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,
-            destination_dir=destination_dir,
             input_filepath=filepath
         )
 
@@ -2742,7 +2755,6 @@ class ReverseLookup:
         else:
             settings = ModelSettings()
         
-        destination_dir = data.get("destination_dir", None)
         input_filepath = data.get("input_filepath", None)
 
         logger.info("Model creation from dict complete.")
@@ -2751,7 +2763,6 @@ class ReverseLookup:
             target_SOIs,
             go_categories=go_categories,
             model_settings=settings,
-            destination_dir=destination_dir,
             input_filepath=input_filepath
         )
 

@@ -181,6 +181,7 @@ class ModelSettings:
         self.goterm_gene_query_timeout = 20 
         self.goterm_gene_query_max_retries = 3
         self.exclude_opposite_regulation_direction_check = False
+        self.destination_dir = None
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:

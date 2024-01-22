@@ -72,8 +72,11 @@ def generate_report(results_file, model_data):
         pvalues = []
         for SOI in SOIs:
             if SOI in sr_gene['scores']['fisher_test']:
-                pvalue = sr_gene['scores']['fisher_test'][SOI]['pvalue_corr']
-                pvalue_form = "{:.4e}".format(pvalue)
+                if 'pvalue_corr' in sr_gene['scores']['fisher_test'][SOI]:
+                    pvalue = sr_gene['scores']['fisher_test'][SOI]['pvalue_corr']
+                    pvalue_form = "{:.4e}".format(pvalue)
+                else:
+                    pvalue_form = "/"
             else:
                 pvalue_form = "/"
             pvalues.append(pvalue_form)
@@ -92,6 +95,7 @@ def generate_report(results_file, model_data):
     sys.exit(0)
 
 def main(input_file:str, destination_dir:str = None, report:bool = False, model_data_filepath:str = None):
+    model_data = None
     if model_data_filepath is not None:
         model_data = JsonUtil.load_json(model_data_filepath)
     
@@ -113,8 +117,11 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     # load the model from input file and query relevant data from the web
     if model_data is None:
         model = ReverseLookup.from_input_file(filepath=input_file, destination_dir=destination_dir)
+        print(f"Model was created from input file: {input_file}")
     else:
-        model = ReverseLookup.from_dict(model_data)
+        # model_data[''] # TODO ADD DESTINATION DIR HERE !!!!!
+        model = ReverseLookup.load_model(model_data_filepath, destination_dir=destination_dir)
+        print(f"Model was created from a previous model_data dictionary: {model_data_filepath}")
     model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20)  # TODO: reenable this
     model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=10)
     Cacher.save_data()
@@ -171,23 +178,22 @@ input_file = args.input_file
 destination_dir = args.destination_dir
 
 report = args.report
-if report.upper() == "TRUE":
+if report is not None and report.upper() == "TRUE":
     report = True
 else:
     report = False
     
-model_data = args.model_datafile
-if model_data is None:
-    print("No model data was specified, auto-inferring model data.")
+model_data_filepath = args.model_datafile
+if model_data_filepath is None:
+    print("No model data filepath was specified, auto-inferring model data.")
     root = FileUtil.backtrace(input_file, 1) # move 1 file up to root dir
     model_data_filepath = os.path.join(root, "data.json")
     model_data_filepath = model_data_filepath.replace("\\", "/")
     if FileUtil.check_path(model_data_filepath, auto_create=False):
-        model_data = model_data_filepath
-        print(f"Model data found: {model_data}")
+        print(f"Model data filepath found: {model_data_filepath}")
     else:
         print(f"Model data not found. Attempted file search at {model_data_filepath}")
 
-main(input_file=input_file, destination_dir=destination_dir, report=report, model_data_filepath=model_data)
+main(input_file=input_file, destination_dir=destination_dir, report=report, model_data_filepath=model_data_filepath)
 
 

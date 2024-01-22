@@ -80,6 +80,18 @@ class JsonUtil:
         except OSError:
             logger.info(f"ERROR creating filepath {filepath} at {os.getcwd()}")
         """
+    @classmethod
+    def class_to_json(cls, var):
+        json_data = {}
+        for attr_name, attr_value in vars(var).items():
+            if attr_value is None:
+                # this happens for example when only attr_name is defined without a value; e.g. "ortholog_organisms" without any following ortholog organisms.
+                continue
+            # custom handling for target_organism and ortholog_organisms, as they are code objects -> convert them to json
+            if not callable(attr_value) and not attr_name.startswith("__"):
+                # append to json_data result dict
+                json_data[attr_name] = attr_value
+        return json_data
 
 
 class JsonToClass:
