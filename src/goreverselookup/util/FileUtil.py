@@ -300,3 +300,35 @@ class FileUtil:
 
         # delete the temporary file
         os.remove(temp_file)
+    
+    @classmethod
+    def backtrace(cls, filepath:str, backtrace:int, file_separator:str="/"):
+        """
+        Traverses 'backtrace' amount upwards in filepath. Example usage:
+        
+        backtrace("C:\\User\\Documents\\Personal", 2)
+        -> return: "C:\\User\\"
+        
+        If backtrace is greater than the maximum possible file depth, "" is returned.
+        """
+        # [0] C:
+        # [1]: User
+        # [2]: Documents
+        # [3]: Personal
+        # backtrace 2 -> return up to 1
+        if "\\" in filepath:
+            filepath = filepath.replace("\\", "/")
+        elements = filepath.split("/")
+        final_element_index = len(elements)-1
+        if backtrace > final_element_index:
+            logger.warning(f"Backtrace {backtrace} is greater than final element index {final_element_index} for filepath {filepath}! Returning ''.")
+            return ""
+        res_elements = elements[0:final_element_index-backtrace+1]
+        final_path = ""
+        for e in res_elements:
+            final_path = os.path.join(final_path, e)
+        final_path = final_path.replace("\\", "/")
+        final_path = final_path.replace(":", ":/")
+        return final_path
+        
+        

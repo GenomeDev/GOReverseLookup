@@ -35,9 +35,11 @@ dependencies = [
     "networkx",
     "tabulate",
     "statsmodels",
-    "beautifulsoup4"
+    "beautifulsoup4",
+    "pandas",
+    "openpyxl"
 ]
-version = "1.0.35"
+version = "1.0.36"
 #dynamic = ["version"]
 
 [project.optional-dependencies]
@@ -53,7 +55,7 @@ dev = [
 
 [tool.poetry]
 name = "goreverselookup"
-version = "1.0.35"
+version = "1.0.36"
 description = "Python library for Gene Ontology Reverse Lookup"
 readme = "README.md"
 authors = ["Aljoša Škorjanc", "Vladimir Smrkolj"]
@@ -72,6 +74,8 @@ tabulate = "^0.9.0"
 statsmodels = "^0.13.4"
 beautifulsoup4 = "^4.12.1"
 pytest = "^7.4.1"
+pandas = "^2.2.0"
+openpyxl = "^3.1.2"
 
 [tool.poetry.scripts]
 goreverselookup = "goreverselookup.main_cli:main"
