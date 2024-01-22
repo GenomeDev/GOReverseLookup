@@ -459,7 +459,9 @@ Therefore:
                 - statistically_relevant_genes.json
 ```
 To view the discovered statistically relevant genes, run the command `goreverselookup PATH_TO_STAT_RELEVANT_GENES --report True`, e.g. `goreverselookup research_models/test_model/results/statistically_relevant_genes.json --report True`. This will first print out a report of tab-separated-values to the console, such as:
+
 <img src="https://i.ibb.co/6RG0GWW/greadme-tabsepvalues-results.png" width="450">
 
 Additionally, an Excel file will be generated inside `results`:
+
 <img src="https://i.ibb.co/HgM1FBj/greadme-excel.png" width="450">
