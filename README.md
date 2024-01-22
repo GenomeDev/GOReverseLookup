@@ -435,3 +435,31 @@ We suggest downloading a rich text editor, such as **Notepad++**, which uses syn
     ]
 }
 ```
+
+### Viewing analysis results
+Suppose the aforementioned file structure:
+```
+- goreverselookup/
+    - research_models/
+        - test_model/
+            - input.txt
+```
+After analysis is ran by activating the `goreverselookup` virtual environment and running the command `goreverselookup "research_models/test_model/input.txt"`, a `results` folder will be saved into `test_model`, containing two files: 
+- `data.json`: represents the entire research model
+- `statistically_relevant_genes.json`: represents the discovered statistically significant genes (which align with the defined target SOIs specified by the research model)
+
+Therefore:
+```
+- goreverselookup/
+    - research_models/
+        - test_model/
+            - input.txt
+            - results/
+                - data.json
+                - statistically_relevant_genes.json
+```
+To view the discovered statistically relevant genes, run the command `goreverselookup PATH_TO_STAT_RELEVANT_GENES --report True`, e.g. `goreverselookup research_models/test_model/results/statistically_relevant_genes.json --report True`. This will first print out a report of tab-separated-values to the console, such as:
+![tabsepresults](https://i.ibb.co/6RG0GWW/greadme-tabsepvalues-results.png)
+
+Additionally, an Excel file will be generated inside `results`:
+![greadme-excel-results](https://i.ibb.co/HgM1FBj/greadme-excel.png)
