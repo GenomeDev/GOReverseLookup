@@ -354,7 +354,7 @@ Once the input file is complete, it is time to run the program using the followi
 **WARNING**: A sign of cache file corruptness are usually JSON errors that occur during the beginning of a GOReverseLookup anaylsis. You can fix this by manually deleting the cache folder located at `.../goreverselookup/cache/`.
 When using asynchronous querying for GO term products, if one of the requests inside a batch of requests exceeds the 'goterm_gene_query' timeout value (one of the settings), the entire batch of product queries will fail. This usually happens when the user attempts to collect products of GO terms with millions of more annotated genes. For us, an experimental 'goterm_gene_query' timeout value that successfully queris GO terms with ~1 million annotated genes is 240 seconds.
 
-### Analysing the program results
+### Analysing the program results in a text editor
 When GOReverseLookup analysis is finished, two distinct JSON files will be saved:
 - `data.json`: This file represents the entire knowledge about the constructed research model, with all statistically significant and insignificant genes
 - `statistically_relevant_genes.json`: This file represents the discovered statistically significant genes.
@@ -436,7 +436,7 @@ We suggest downloading a rich text editor, such as **Notepad++**, which uses syn
 }
 ```
 
-### Viewing analysis results
+### Generating an Excel file from the program results
 Suppose the aforementioned file structure:
 ```
 - goreverselookup/
@@ -459,7 +459,7 @@ Therefore:
                 - statistically_relevant_genes.json
 ```
 To view the discovered statistically relevant genes, run the command `goreverselookup PATH_TO_STAT_RELEVANT_GENES --report True`, e.g. `goreverselookup research_models/test_model/results/statistically_relevant_genes.json --report True`. This will first print out a report of tab-separated-values to the console, such as:
-![tabsepresults](https://i.ibb.co/6RG0GWW/greadme-tabsepvalues-results.png)
+<img src="https://i.ibb.co/6RG0GWW/greadme-tabsepvalues-results.png" width="450">
 
 Additionally, an Excel file will be generated inside `results`:
-![greadme-excel-results](https://i.ibb.co/HgM1FBj/greadme-excel.png)
+<img src="https://i.ibb.co/HgM1FBj/greadme-excel.png" width="450">
