@@ -330,5 +330,19 @@ class FileUtil:
         final_path = final_path.replace("\\", "/")
         final_path = final_path.replace(":", ":/")
         return final_path
+    
+    @classmethod
+    def get_file_size(cls, filepath:str, size_delimiter:str):
+        size_delimiter = size_delimiter.lower()
+        if size_delimiter not in ["kb", "mb", "gb"]:
+            raise Exception(f"Size delimiter {size_delimiter} is not one of 'kb', 'mb' or 'gb'!")
+        if not os.path.isfile(filepath):
+            raise FileNotFoundError(f"File at {filepath} does not exist!")
+        
+        size_multipliers = {"kb":1, "mb":1024, "gb":1024*1024}
+
+        fsize_bytes = os.path.getsize(filepath)
+        fsize = fsize_bytes / size_multipliers[size_delimiter] # calculate file size based on the size delimiter
+        return fsize
         
         
