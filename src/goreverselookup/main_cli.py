@@ -122,8 +122,8 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
         # model_data[''] # TODO ADD DESTINATION DIR HERE !!!!!
         model = ReverseLookup.load_model(model_data_filepath, destination_dir=destination_dir)
         print(f"Model was created from a previous model_data dictionary: {model_data_filepath}")
-    model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20)  # TODO: reenable this
-    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=10)
+    model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) 
+    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=7)
     Cacher.save_data()
     model.create_products_from_goterms()
     model.products_perform_idmapping()
