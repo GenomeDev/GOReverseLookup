@@ -33,6 +33,17 @@ class GOApi:
         session.mount("http://", adapter)
         session.mount("https://", adapter)
         self.s = session
+        self.api_version = None
+    
+    def get_GO_version(self):
+        """
+        Returns the GO version. This sets the self.api_version parameter.
+        """
+        url = "https://www.ebi.ac.uk/QuickGO/services/ontology/go/about"
+        r = self.s.get(url, headers={ "Accept" : "application/json"})
+        response_json = r.json()
+        return response_json['go']['timestamp']
+            
 
     def get_data(self, term_id, get_url_only=False):
         """

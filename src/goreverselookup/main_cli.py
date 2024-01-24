@@ -29,6 +29,11 @@ logger.info(f"os.getcwd() =  {os.getcwd()}")
 
 def generate_report(results_file, model_data):
     # TODO: more refined reporting functionality
+
+    if isinstance(results_file, str):
+        results_file = JsonUtil.load_json(results_file)
+    if isinstance(model_data, str):
+        model_data = JsonUtil.load_json(model_data)
         
     print(f"p-value: {model_data['model_settings']['pvalue']}")
     print(f"include indirect annotations: {model_data['model_settings']['include_indirect_annotations']}")
@@ -74,7 +79,7 @@ def generate_report(results_file, model_data):
             if SOI in sr_gene['scores']['fisher_test']:
                 if 'pvalue_corr' in sr_gene['scores']['fisher_test'][SOI]:
                     pvalue = sr_gene['scores']['fisher_test'][SOI]['pvalue_corr']
-                    pvalue_form = "{:.4e}".format(pvalue)
+                    pvalue_form = "{:.2e}".format(pvalue)
                 else:
                     pvalue_form = "/"
             else:
@@ -95,6 +100,12 @@ def generate_report(results_file, model_data):
     sys.exit(0)
 
 def main(input_file:str, destination_dir:str = None, report:bool = False, model_data_filepath:str = None):
+    logger.info(f"Starting GOReverseLookup analysis with input params:")
+    logger.info(f"  - input_file: {input_file}")
+    logger.info(f"  - destination_dir: {destination_dir}")
+    logger.info(f"  - report: {report}")
+    logger.info(f"  - model_data_filepath: {model_data_filepath}")
+
     model_data = None
     if model_data_filepath is not None:
         model_data = JsonUtil.load_json(model_data_filepath)
@@ -102,8 +113,6 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     if report is True and model_data is not None: # should generate report only
         results_file = JsonUtil.load_json(input_file)
         generate_report(results_file, model_data)
-
-    print(f"Starting GOReverseLookup analysis.")
          
     # Runs the GOReverseLookup analysis
     if destination_dir is None:
@@ -159,11 +168,15 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     # TODO: fetch info for stat relevant genes here
     model.save_model("results/data.json", use_dest_dir=True)
 
+    generate_report("results/statistically_relevant_genes.json", "results/data.json")
+
 #if len(sys.argv) != 2:
 #    print("Usage: goreverselookup <input_file>")
 #    sys.exit(1)
 #input_file = sys.argv[1]
 #logger.info(f"input_file = {input_file}")
+
+# UNCOMMENT THIS SECTION FOR PRODUCTION CODE !!!
 
 parser = argparse.ArgumentParser(description="Usage: goreverselookup <input_file_path> --<destination_directory> ('--' denotes an optional parameter)")
 parser.add_argument('input_file', help="The absolute path to the input file for GOReverseLookup analysis or to the resulting file if used with the --report optional parameter.")
@@ -187,12 +200,21 @@ model_data_filepath = args.model_datafile
 if model_data_filepath is None:
     print("No model data filepath was specified, auto-inferring model data.")
     root = FileUtil.backtrace(input_file, 1) # move 1 file up to root dir
-    model_data_filepath = os.path.join(root, "data.json")
-    model_data_filepath = model_data_filepath.replace("\\", "/")
-    if FileUtil.check_path(model_data_filepath, auto_create=False):
-        print(f"Model data filepath found: {model_data_filepath}")
+    m_data_filepath = os.path.join(root, "data.json")
+    m_data_filepath = m_data_filepath.replace("\\", "/")
+    if FileUtil.check_path(m_data_filepath, auto_create=False):
+        if FileUtil.get_file_size(m_data_filepath, "kb") > 5: # if ReverseLookup data file is greater than 5kb then assign, otherwise it's most likely an error
+            print(f"Model data filepath found: {m_data_filepath}")
+            model_data_filepath = m_data_filepath
     else:
         print(f"Model data not found. Attempted file search at {model_data_filepath}")
+
+
+# test arguments for debugging, remove these
+#input_file = "F:\\Development\\python_environments\\goreverselookup\\research_models\\chr_infl_cancer\\ind_ann,p=5e-8,IEA+\\input.txt"
+#destination_dir = None
+#report = False
+#model_data_filepath = None
 
 main(input_file=input_file, destination_dir=destination_dir, report=report, model_data_filepath=model_data_filepath)
 
