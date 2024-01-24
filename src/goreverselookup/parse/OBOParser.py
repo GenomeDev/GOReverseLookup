@@ -42,6 +42,10 @@ class OboParser:
         Params:
           - (str) obo_filepath: the filepath to the obo file
         """
+        self.format_version = None
+        self.data_version = None
+        self.ontology = None
+
         FileUtil.download_file(filepath=obo_filepath, download_url=obo_download_url)
         dag = (
             nx.MultiDiGraph()
@@ -86,14 +90,16 @@ class OboParser:
                 line = line.strip()
                 if line == "":
                     continue
-                if (
-                    "[Typedef]" in line
-                ):  # typedefs are at the end of the file, no more go term data is expected
+                if "[Typedef]" in line:  # typedefs are at the end of the file, no more go term data is expected
                     break
+                if "format-version" in line:
+                    self.format_version = line.split(" ")[1]
+                if "data-version" in line:
+                    self.data_version = line.split(" ")[1]
+                if "ontology" in line:
+                    self.ontology = line.split(" ")[1]
                 if "[Term]" in line:
-                    if (
-                        term_data["id"] is not None
-                    ):  # term_data != _reset_term_data check is used so that if all values in JSON are none, the goterm creation block isn't executed
+                    if term_data["id"] is not None:  # term_data != _reset_term_data check is used so that if all values in JSON are none, the goterm creation block isn't executed
                         # 'is_obsolete' is not present in all GO Terms. If it isn't present, set 'is_obsolete' to false
                         if "is_obsolete" not in term_data:
                             term_data["is_obsolete"] = False

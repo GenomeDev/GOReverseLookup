@@ -29,6 +29,11 @@ logger.info(f"os.getcwd() =  {os.getcwd()}")
 
 def generate_report(results_file, model_data):
     # TODO: more refined reporting functionality
+
+    if isinstance(results_file, str):
+        results_file = JsonUtil.load_json(results_file)
+    if isinstance(model_data, str):
+        model_data = JsonUtil.load_json(model_data)
         
     print(f"p-value: {model_data['model_settings']['pvalue']}")
     print(f"include indirect annotations: {model_data['model_settings']['include_indirect_annotations']}")
@@ -74,7 +79,7 @@ def generate_report(results_file, model_data):
             if SOI in sr_gene['scores']['fisher_test']:
                 if 'pvalue_corr' in sr_gene['scores']['fisher_test'][SOI]:
                     pvalue = sr_gene['scores']['fisher_test'][SOI]['pvalue_corr']
-                    pvalue_form = "{:.4e}".format(pvalue)
+                    pvalue_form = "{:.2e}".format(pvalue)
                 else:
                     pvalue_form = "/"
             else:
@@ -162,6 +167,8 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     model.perform_statistical_analysis(test_name="fisher_test", filepath="results/statistically_relevant_genes.json", use_dest_dir=True)
     # TODO: fetch info for stat relevant genes here
     model.save_model("results/data.json", use_dest_dir=True)
+
+    generate_report("results/statistically_relevant_genes.json", "results/data.json")
 
 #if len(sys.argv) != 2:
 #    print("Usage: goreverselookup <input_file>")

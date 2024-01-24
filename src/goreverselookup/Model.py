@@ -67,7 +67,9 @@ class ReverseLookup:
         ],
         model_settings: ModelSettings = None,
         obo_parser: OboParser = None,
-        input_filepath:str = None
+        input_filepath:str = None,
+        GO_api_version:str = None,
+        OBO_version_info:dict = None
     ):
         """
         A class representing a reverse lookup for gene products and their associated Gene Ontology terms.
@@ -94,6 +96,7 @@ class ReverseLookup:
         self.model_settings = model_settings
         self.execution_times = execution_times  # dict of execution times, logs of runtime for functions
         self.timer = Timer()
+        self.GO_api_version = GO_api_version
         
         if input_filepath is not None:
             self.input_filepath = input_filepath
@@ -129,6 +132,9 @@ class ReverseLookup:
 
         self.go_api = GOApi() # this enables us to use go_api inside Metrics.py, as importing GOApi inside Metrics.py creates circular imports.
 
+        if self.GO_api_version is None:
+            self.GO_api_version = self.go_api.get_GO_version()
+
         if obo_parser is not None:
             self.obo_parser = obo_parser
         else:
@@ -140,6 +146,14 @@ class ReverseLookup:
                 self.obo_parser = OboParser(obo_filepath=self.model_settings.get_datafile_path('go_obo'), obo_download_url=self.model_settings.get_datafile_url('go_obo'))
             else:
                 self.obo_parser = OboParser()
+        
+        if OBO_version_info is None:
+            OBO_version_info = {
+                'format-version': self.obo_parser.format_version,
+                'data-version': self.obo_parser.data_version,
+                'ontology': self.obo_parser.ontology
+            }
+        self.OBO_version_info = OBO_version_info
         
         ModelStats.goterm_count = len(self.goterms)
         ModelStats.product_count = len(self.products)
@@ -1666,27 +1680,6 @@ class ReverseLookup:
         logger.debug(f"Couldn't find product for {identifier}")
         return None
 
-        """
-        product = next(
-            obj
-            for obj in self.products
-            if any(
-                identifier in getattr(obj, attr)
-                for attr in [
-                    "genename",
-                    "description",
-                    "uniprot_id",
-                    "ensg_id",
-                    "enst_id",
-                    "refseq_nt_id",
-                    "mRNA",
-                ] if getattr(obj,attr) is not None
-            )
-            or any(identifier in id for id in obj.id_synonyms)
-        )
-        return product
-        """
-
     def save_model(self, filepath:str, use_dest_dir:bool=False) -> None:
         """
         Saves the model.
@@ -1710,12 +1703,14 @@ class ReverseLookup:
         FileUtil.check_path(filepath)
             
         data = {}
+        data["input_filepath"] = self.input_filepath
+        data["GO_api_version"] = self.GO_api_version
+        data["OBO_version_info"] = self.OBO_version_info
         data["target_SOIs"] = self.target_SOIs
         data["go_categories"] = self.go_categories
         data["model_settings"] = self.model_settings.to_json()
         data["miRNA_overlap_treshold"] = self.miRNA_overlap_treshold
         data["execution_times"] = self.execution_times
-        data["statistically_relevant_products"] = self.statistically_relevant_products
 
         # save goterms
         for goterm in self.goterms:
@@ -1723,6 +1718,8 @@ class ReverseLookup:
         # save products
         for product in self.products:
             data.setdefault("products", []).append(product.__dict__)
+        # save stat relevant products
+        data["statistically_relevant_products"] = self.statistically_relevant_products
         # save miRNAs
         for mirna in self.miRNAs:
             data.setdefault("miRNAs", []).append(mirna.__dict__)
@@ -2318,6 +2315,8 @@ class ReverseLookup:
         miRNA_overlap_treshold = data["miRNA_overlap_treshold"]
         
         input_filepath = data.get("input_filepath", None)
+        GO_api_version = data.get("GO_api_version", None)
+        OBO_version_info = data.get("OBO_version_info", None)
 
         execution_times = {}
         if "execution_times" in data:
@@ -2394,7 +2393,9 @@ class ReverseLookup:
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,
-            input_filepath=input_filepath
+            input_filepath=input_filepath,
+            GO_api_version=GO_api_version,
+            OBO_version_info=OBO_version_info
         )
 
     @classmethod
