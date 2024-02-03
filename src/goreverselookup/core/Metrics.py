@@ -521,7 +521,6 @@ class fisher_exact_test(Metrics):
         However, if you wish to use a GO Annotations File for a specific species (e.g. ZFIN), then set use_goaf to True, so a ZFIN.gaf file will be used to
         calculate all GO Terms in existence for the zebrafish. You must construct the binomial_test instance in this case with the ZFIN.gaf!!!
         """
-        D_DEBUG_CALCULATE_DESIRED_N_PROD_SOI = False  # TODO: delete this # calculates num_goterms_product_SOI which would be sufficient for the product's statistical importance (p < 0.05)
         D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_SOI_ALL = False # TODO: remove/integrate this
 
         if self._num_all_goterms == 0:
@@ -529,13 +528,13 @@ class fisher_exact_test(Metrics):
 
         results_dict = {}
 
-        for SOI in self.reverse_lookup.target_SOIs:  # example self.reverse_lookup.target_SOIs: [0]: {'SOI': 'chronic_inflammation', 'direction': '+'}, [1]: {{'SOI': 'cancer', 'direction': '+'}}
+        for SOI in self.reverse_lookup.target_SOIs:  # self.reverse_lookup.target_SOIs: [0]: {'SOI': 'chronic_inflammation', 'direction': '+'}, [1]: {{'SOI': 'cancer', 'direction': '+'}}
             SOI_goterms_list = self.reverse_lookup.get_all_goterms_for_SOI(SOI["SOI"])  # all GO Term ids associated with a specific SOI (eg. angio, diabetes, obesity) for the current MODEL
             num_goterms_all_general = self._num_all_goterms  # number of all GO Terms from the GO Annotations File (current total: 18880)
 
             # num_goterms_product_general ... # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
             #   - can be queried either via online or offline pathway (determined by model_settings.fisher_test_use_online_query)
-            #   - can have all child terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_indirect_annotations
+            #   - can have all parnet or child terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_indirect_annotations and it's optional sub-setting 'p' or 'c', which determinds model_settings.indirect_annotations_direction
             if self.reverse_lookup.model_settings.fisher_test_use_online_query is True:  # online pathway: get goterms associated with this product via a web query
                 goterms_product_general = self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories, model_settings=self.reverse_lookup.model_settings)
                 if goterms_product_general is not None:
@@ -548,19 +547,24 @@ class fisher_exact_test(Metrics):
                 logger.debug(f"Fisher test online num_goterms_product_general query: {num_goterms_product_general}")
             else:  # offline pathway: get goterms from GOAF
                 if self.reverse_lookup.model_settings.include_indirect_annotations == True:
-                    goterms_product_general = self.goaf.get_all_terms_for_product(product.genename, indirect_annotations=True, obo_parser=self.reverse_lookup.obo_parser)
+                    goterms_product_general = self.goaf.get_all_terms_for_product(product.genename, model_settings=self.reverse_lookup.model_settings, indirect_annotations=True, obo_parser=self.reverse_lookup.obo_parser)
                 else:
                     goterms_product_general = self.goaf.get_all_terms_for_product(product.genename)
                 num_goterms_product_general = len(goterms_product_general)  # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
 
-            # find the number of child indirect annotations for num_goterms_product_general
+            # find the number of indirect annotations for num_goterms_product_general
             if self.reverse_lookup.model_settings.include_indirect_annotations is True:
                 # include all indirect annotations for num_goterms_product_general
                 directly_associated_goterms = list(goterms_product_general) # calling list constructor creates two separate entities, which prevents infinite looping !
                 for directly_associated_goterm in directly_associated_goterms:  # WARNING: don't iterate over goterms_product_general, since this list is being updated in the for loop !!
-                    child_goterms = self.reverse_lookup.obo_parser.get_child_terms(directly_associated_goterm)  # indirectly associated goterms
-                    goterms_product_general += child_goterms  # expand goterms_product_general by the child goterms
-                # delete duplicate children by converting a list to set
+                    # obtain either child or parent goterms based on model_settings.indirect_annotations_direction (this is autoset from include_indirect_annotation optionals)
+                    indirect_annotation_goterms = self.reverse_lookup.obo_parser.get_indirect_annotations(
+                        term_id = directly_associated_goterm, 
+                        indirect_annotations_direction=self.reverse_lookup.model_settings.indirect_annotations_direction,
+                        max_depth = self.reverse_lookup.model_settings.indirect_annotations_max_depth
+                    )
+                    goterms_product_general += indirect_annotation_goterms  # expand goterms_product_general by the child goterms
+                # delete duplicate indirect annotations by converting a list to set
                 goterms_product_general = set(goterms_product_general)
                 num_goterms_product_general = len(goterms_product_general)  # calculate new num_goterms_product_general
     
@@ -569,7 +573,7 @@ class fisher_exact_test(Metrics):
                 # the above line is a single-line implementation of the below nested for loops
                 num_goterms_product_SOI = 0  # all GO Terms which are associated with the current 'SOI' and the current 'direction' of regulation and are also associated with the current gene (product)
                 goterms_product_SOI = [] # used for the results dict to be readable by the user
-                goterms_product_SOI_ids = []  # used for calculation of child terms
+                goterms_product_SOI_ids = []  # used for calculation of indirectly annotated terms
                 for goterm in SOI_goterms_list:  # iterate through each GO Term associated with the current SOI
                     for goterm_SOI in goterm.SOIs:  # goterm.SOIs holds which states of interest (eg. {'SOI': "cancer", 'direction': "-"}) the GO Term is associated with (this is determined by the user in the input.txt file)
                         if goterm_SOI["direction"] == direction:
@@ -585,20 +589,24 @@ class fisher_exact_test(Metrics):
                                     goterms_product_SOI_ids.append(goterm.id)
                                     break
 
-                # find all go term children of num_goterms_product_SOI here
-                num_indirect_children = 0
+                # find all go term indirect annotations of num_goterms_product_SOI here
+                num_indirect_annotations = 0
                 if self.reverse_lookup.model_settings.include_indirect_annotations is True:
-                    all_indirect_children = []  # list of ids
+                    all_indirect_annotations = [] # list of ids
                     for id in goterms_product_SOI_ids: # goterms_products_SOI_ids are all goterms from input.txt that are involved in the specific direction of regulation of a SOI (eg. cancer+)
-                        child_goterms = self.reverse_lookup.obo_parser.get_child_terms(id)
-                        all_indirect_children += child_goterms
-                    all_indirect_children = set(all_indirect_children)  # to remove duplicates
+                        indirect_annotation_goterms = self.reverse_lookup.obo_parser.get_indirect_annotations(
+                            term_id=id, 
+                            indirect_annotations_direction=self.reverse_lookup.model_settings.indirect_annotations_direction,
+                            max_depth=self.reverse_lookup.model_settings.indirect_annotations_max_depth
+                        )
+                        all_indirect_annotations += indirect_annotation_goterms
+                    all_indirect_annotations = set(all_indirect_annotations)  # to remove duplicates
                     # append to goterms product SOI so the user can see the results in data.json
-                    for child_id in all_indirect_children:
-                        goterms_product_SOI.append(f"indirect: {child_id}")
+                    for indirect_goterm_id in all_indirect_annotations:
+                        goterms_product_SOI.append(f"indirect: {indirect_goterm_id}")
                     # update num_goterms_product_SOI
-                    num_goterms_product_SOI += len(all_indirect_children)
-                    num_indirect_children += len(all_indirect_children)
+                    num_goterms_product_SOI += len(all_indirect_annotations)
+                    num_indirect_annotations += len(all_indirect_annotations)
 
                 # first, compute the sum of direct annotations
                 goterms_all_SOI = []
@@ -619,20 +627,24 @@ class fisher_exact_test(Metrics):
                     )
                 )  # all of the GO Terms from input.txt file associated with the current SOI (and the SOI's regulation direction)
                 
-                # TODO: MAKE A SETTING FOR THIS !!!
+                # TODO: MAKE A SETTING FOR THIS
                 # compute indirectly annotated goterms of goterms_all_SOI
                 # this can be dangerous - a user can associate a GO term "positive regulation of interleukin productin" as a positive regulator of a state of interest (SOI),
                 # however, some interleukins are pro- and some are antiinflammatory. Not computing this is the safest way.
                 if D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_SOI_ALL == True:
                     goterms_all_SOI_indirect = set()
                     for goterm in goterms_all_SOI:
-                        children = self.reverse_lookup.obo_parser.get_child_terms(goterm.id)
-                        goterms_all_SOI_indirect.update(children)
+                        indirect_annotation_goterms = self.reverse_lookup.obo_parser.get_indirect_annotations(
+                            id=goterm.id, 
+                            indirect_annotations_direction=self.reverse_lookup.model_settings.indirect_annotations_direction,
+                            max_depth=self.reverse_lookup.model_settings.indirect_annotations_max_depth
+                        )
+                        goterms_all_SOI_indirect.update(indirect_annotation_goterms)
                     num_goterms_all_SOI += len(goterms_all_SOI_indirect)
-                else: # THIS STATEMENT MUST ALWAYS RUN IF CHILDREN ARE BEING COMPUTED ABOVE!
+                else: # THIS STATEMENT MUST ALWAYS RUN IF indirect annotations ARE BEING COMPUTED ABOVE!
                     # if children are computed for goterms, then also increase num_goterms_all_SOI, to prevent negative values in the contingency table (specifically upper-right quadrant: num_goterms_all_SOI-num_goterms_product_SOI) 
                     # don't run this if indirect annotations are already computed for num_goterms_all_proces
-                    num_goterms_all_SOI += num_indirect_children 
+                    num_goterms_all_SOI += num_indirect_annotations
 
                 # time for Binomial test and "risk ratio"
                 cont_table = [
@@ -646,11 +658,12 @@ class fisher_exact_test(Metrics):
                     ],
                 ]
 
-                # check that any contingency table element is non-negative
+                # check if any contingency table element is non-negative
                 should_continue_current_loop = False
                 for x in cont_table:
                     for y in x:
                         if y < 0:
+                            should_continue_current_loop = True
                             stat_error = (
                                 "Element of contingency table in class"
                                 " fisher_exact_test is negative. All elements must be"
@@ -668,10 +681,7 @@ class fisher_exact_test(Metrics):
                                 "pvalue": None,
                                 "odds_ratio": None,
                             }
-                            should_continue_current_loop = True
-                if (
-                    should_continue_current_loop
-                ):  # TODO: check the logic of should_continue_current_loop
+                if should_continue_current_loop: # to prevent non-negative values from being scored
                     continue
 
                 fisher = fisher_exact(cont_table, alternative="greater")

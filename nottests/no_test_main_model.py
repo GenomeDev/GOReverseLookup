@@ -25,13 +25,14 @@ Cacher.init(cache_dir="cache")
 ModelStats.init()
 WebsiteParser.init()
 
-# input_file = "input_files/input.txt"
-input_file = "input_files/input_rhartritis_ortho.txt"
+input_file = "input_files/input.txt"
+# input_file = "input_files/input_rhartritis_ortho.txt"
+# input_file = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer\\ind_ann,p=0.05,IEA-\\input.txt"
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file(input_file)
-# model.goterms = model.goterms[0:20]     # TODO: comment out
-model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20)  # TODO: reenable this
+# model.goterms = model.goterms[0:20]
+model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) 
 model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=5)
 model.create_products_from_goterms()
 model.products_perform_idmapping()

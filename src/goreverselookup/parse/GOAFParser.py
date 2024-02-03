@@ -3,6 +3,7 @@ import os
 import gzip
 import urllib
 
+from ..core.ModelSettings import ModelSettings
 from .OBOParser import OboParser
 from ..util.FileUtil import FileUtil
 from ..util.DictUtil import DictUtil
@@ -355,14 +356,15 @@ class GOAnnotationsFile:
             return evidence_code
         return None
 
-    def get_all_products_for_goterm(self, goterm_id: str, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
+    def get_all_products_for_goterm(self, goterm_id: str, model_settings:ModelSettings=None,indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
         """
         This method returns all unique products associated with the GO term id.
         The return of this function is influenced by the go_categories supplied to the constructor of the GOAF!
 
         Args:
           - (str) goterm_id: a GO Term identifier, eg. GO:0003723
-          - (bool) indirect_annotations: if True, will return a list of unique products for the specified goterm_id and for all of the children goterms of the 'goterm_id'
+          - (ModelSettings) model_settings: must be passed if using indirect annotations to determine indirect annotations direction (ie children / parents) and the max indirect annotations depth
+          - (bool) indirect_annotations: if True, will return a list of unique products for the specified goterm_id and for all of the indirect goterms of the 'goterm_id'
           - (OboParser) obo_parser: an OboParser instance, to prevent recalculations. If no OboParser is passed, then this function will attempt to call OboParser() to create an OboParser instance.
 
         Returns:
@@ -382,10 +384,14 @@ class GOAnnotationsFile:
                 obo_parser = OboParser()
 
             indirect_products = []
-            child_goterm_ids = obo_parser.get_child_terms(goterm_id)
-            for child_goterm_id in child_goterm_ids:
-                child_products = self.terms_dict.get(child_goterm_id, [])
-                indirect_products += child_products
+            indirect_ids = obo_parser.get_indirect_annotations(
+                term_id=goterm_id,
+                indirect_annotations_direction=model_settings.indirect_annotations_direction,
+                max_depth=model_settings.indirect_annotations_max_depth             
+            )
+            for indirect_id in indirect_ids:
+                indirect_products = self.terms_dict.get(indirect_id, [])
+                indirect_products += indirect_products
             
             return set(direct_products + indirect_products)
             
@@ -418,14 +424,15 @@ class GOAnnotationsFile:
         for key,values in self.terms_dict.items():  # the previous set() prevents the value elements (product gene names) in dictionary to be repeated
             self.terms_dict[key] = list(values)  # converts the set to a List, eg. {'NUDT4B': ['GO:0003723']}
 
-    def get_all_terms_for_product(self, product: str, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
+    def get_all_terms_for_product(self, product: str, model_settings:ModelSettings=None, indirect_annotations:bool=False, obo_parser:OboParser=None) -> List[str]:
         """
         Gets all GO Terms associated to a product gene name.
         The return of this function is influenced by the go_categories supplied to the constructor of the GOAF!
 
         Args:
           - (str) product: must be a gene name corresponding to a specific gene/gene product, eg. NUDT4B
-          - (bool) indirect_annotations: if True, will also return all indirectly annotated terms for product (ie. all children of directly annotated terms in the GOAF)
+          - (ModelSettings) model_settings: must be passed if using indirect annotations to determine indirect annotations direction (ie children / parents) and the max indirect annotations depth
+          - (bool) indirect_annotations: if True, will also return all indirectly annotated terms for product (ie. all sub-terms of directly annotated terms in the GOAF)
           - (OboParser) obo_parser: an OboParser instance, to prevent recalculations. If no OboParser is passed, then this function will attempt to call OboParser() to create an OboParser instance.
 
         Returns:
@@ -445,8 +452,11 @@ class GOAnnotationsFile:
 
             indirect_annotations = []
             for goterm_id in direct_annotations:
-                children = obo_parser.get_child_terms(goterm_id)
-                indirect_annotations += children
+                indirect_annotations += obo_parser.get_indirect_annotations(
+                    term_id=goterm_id,
+                    indirect_annotations_direction=model_settings.indirect_annotations_direction,
+                    max_depth=model_settings.indirect_annotations_max_depth
+                )
             
             return (direct_annotations + indirect_annotations)
 

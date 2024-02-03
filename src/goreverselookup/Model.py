@@ -2544,6 +2544,10 @@ class ReverseLookup:
                             continue
                         setting_name = chunks[0]
                         setting_value = chunks[1]  # is string now
+                        setting_optionals = None
+                        if len(chunks) > 2: # this means that an optional setting value was specified eg. 'include_indirect_annotations   True    c'
+                            setting_optionals = chunks[2]
+                            
                         if setting_value == "True" or setting_value == "true":
                             setting_value = True
                         if setting_value == "False" or setting_value == "false":
@@ -2551,6 +2555,14 @@ class ReverseLookup:
                         if setting_name == "pvalue":
                             setting_value = float(chunks[1])
 
+                        if setting_name == "include_indirect_annotations" and setting_optionals is not None:
+                            # this means that a setting optional of either parent or children direction of indirect annotations was specified
+                            # eg. 'include_indirect_annotations   True    c'
+                            if len(setting_optionals) == 1:
+                                settings.indirect_annotations_direction = setting_optionals
+                            else:
+                                raise Exception(f"Setting optionals value for include_indirect_annotations is not specified correctly. It must be either 'c' or 'p'.")
+                                
                         if setting_name == "goterms_set":
                             if setting_value != 'all':
                                 if ',' in setting_value:
@@ -2574,6 +2586,8 @@ class ReverseLookup:
                                 if organism_info.ncbi_id_full != "":
                                     organism_info_dict[organism_info.ncbi_id_full] = organism_info
                             setting_value = organism_info_dict
+                        
+                        # finally, set the setting
                         settings.set_setting(setting_name=setting_name, setting_value=setting_value)
 
                         if setting_name == "evidence_codes":
@@ -2698,19 +2712,6 @@ class ReverseLookup:
                         goterm.parent_term_ids = goterm_parent_ids  # update parent term ids
                         # goterm.child_term_ids = goterm_children_ids  # update child term ids
             logger.info("Indirect annotations have been computed.")
-
-            """      
-            for goterm in go_terms:
-                assert isinstance(goterm, GOTerm)
-                if goterm.parent_term_ids == [] or goterm.parent_term_ids == None:
-                    goterm_obo = obo_parser.all_goterms[goterm.id] # obo representation of this goterm
-                    goterm.update(goterm_obo) # update current goterm with information from .obo file
-
-                    goterm_parent_ids = obo_parser.get_parent_terms(goterm.id) # calculate parent term ids for this goterm
-                    goterm_children_ids = obo_parser.get_child_terms(goterm.id) # calculdate child term ids for this goterm
-                    goterm.parent_term_ids = goterm_parent_ids # update parent term ids
-                    # goterm.child_term_ids = goterm_children_ids # update child term ids
-            """
 
         logger.info("Creating model from input file with:")
         logger.info(f"  - input file filepath: {filepath}")

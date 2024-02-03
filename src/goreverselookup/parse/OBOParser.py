@@ -169,6 +169,40 @@ class OboParser:
         self.previously_computed_parents_cache = {}  # cache dictionary between already computed goterms and their parents
         self.previously_computed_children_cache = {} # cache dictionary between already computed goterms and their children
         logger.info("Obo parser init completed.")
+    
+    def get_indirect_annotations(self, term_id:str, indirect_annotations_direction:str, max_depth:int, return_as_json:bool=False, ordered:bool=True):
+        """
+        Returns indirect annotations to the GO term specified by 'term_id'. 'indirect_annotations_direction' must be either "p" or "c", to specify whether
+        this function returns parent or child GO terms, respectively, of the 'term_id'.
+        
+        Parameters:
+          - (str) term_id: The GO Term whose parents you wish to obtain
+          - (str) indirect_annotations_direction: Either "p" to obtain the parents or "c" to obtain the children. If None is passed (if 'p' or 'c' was not set as an optional setting to include_indirect_annotations),
+                                                  then this function will default to using parents as indirect annotations
+          - (int) max_depth: The maximum depth of indirect annotations. Indirect annotations beyond max depth will not be returned. If max depth isn't specified, or if max depth is set to -1, then full depth (the full tree) will be returned.
+          - (bool) ordered: If True,  parents will be returned topologically (closest parents will be listed first in the returned list)
+          - (bool) return_as_json
+        """
+        if not isinstance(max_depth, int):
+            max_depth = int(max_depth)
+            
+        if indirect_annotations_direction == None:
+            indirect_annotations_direction = "p"
+            
+        if indirect_annotations_direction != "p" and indirect_annotations_direction != "c":
+            raise Exception(f"OboParser error: get_indirect_annotations only accepts 'p' or 'c' for indirect_annotations_direction. Passed indirect_annotations_direction: '{indirect_annotations_direction}'")
+        
+        indirects = None
+        if indirect_annotations_direction == "p":
+            indirects = self.get_parent_terms(term_id=term_id, return_as_json=return_as_json, ordered=ordered)
+        if indirect_annotations_direction == "c":
+            indirects = self.get_child_terms(term_id=term_id, return_as_json=return_as_json, ordered=ordered)
+        
+        # apply max depth
+        if max_depth != -1 and max_depth is not None:
+            indirects = indirects[:max_depth] # return 'up to max depth' elements
+        
+        return indirects
 
     def get_parent_terms(
         self, term_id: str, return_as_json:bool = False, ordered: bool = True

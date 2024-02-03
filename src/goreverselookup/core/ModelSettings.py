@@ -112,6 +112,8 @@ class ModelSettings:
                                     scoring for that gene - specifically, it will increate num_goterms_product_general.
                                     If False, each GO Term relevant to the analysis won't have it's parents/children computed. During fisher analysis of genes, genes will be scored only using the GO Terms that are
                                     directly annotated to the gene and not all of the indirectly associated parent GO terms.
+      - indirect_annotations_direction: Possible values are 'p' for parents or 'c' for children. If 'p' is specified, then GO term parents of the indirect annotation will be used as indirect annotations. If 'c' is used, then GO term children of the
+                                        directly annotated GO term (to a gene) will be used as indirect annotations.
       - datafile_paths: a dictionary that includes information about several data files used for the analysis. It has the following format:
             FILE_TYPE: {
                 'organism':
@@ -166,6 +168,8 @@ class ModelSettings:
     def __init__(self) -> ModelSettings:
         self.fisher_test_use_online_query = False
         self.include_indirect_annotations = False  # previously: include_all_goterm_parents
+        self.indirect_annotations_direction = None # determine whether to take parents or children goterms
+        self.indirect_annotations_max_depth = None
         self.uniprotkb_genename_online_query = False
         self.pvalue = 0.05
         self.goterms_set = []

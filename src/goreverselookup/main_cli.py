@@ -168,7 +168,8 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     # TODO: fetch info for stat relevant genes here
     model.save_model("results/data.json", use_dest_dir=True)
 
-    generate_report("results/statistically_relevant_genes.json", "results/data.json")
+    # TODO
+    # generate_report("results/statistically_relevant_genes.json", "results/data.json")
 
 #if len(sys.argv) != 2:
 #    print("Usage: goreverselookup <input_file>")
