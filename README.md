@@ -123,7 +123,8 @@ evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_
 gorth_ortholog_fetch_for_indefinitive_orthologs	True
 gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
-include_indirect_annotations	False
+include_indirect_annotations	False    p
+indirect_annotations_max_depth    -1
 uniprotkb_genename_online_query	False
 goterm_gene_query_timeout	240
 goterm_gene_query_max_retries	3
@@ -262,16 +263,38 @@ target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
 ```
 
-**include_indirect_annotations**: if True, will increase the amount of annotations to a gene by the sum of all children GO terms of existing directly annotated GO terms to the gene. If False, will only count the direct annotations. This impacts the statistical relevance of genes during the scoring phase. Annotations from Gene Ontology between a GO term and a gene are directly annotated, but all children GO terms of the directly annotated term also infer the annotation. Consider the following tree:
+**include_indirect_annotations**: The first parameter (True or False) determines whether to enable this setting. Enabling indirect annotations means increasing the amount of annotations to a gene by the sum of all indirectly annotated GO terms (obtained by traversing the GO term hierarchy tree using the directly annotated GO terms to the gene in question). The second parameter (`p` or `c`) determines whether to obtain indirect annotations as parents (`p`) or as children (`c`) of the directly annotated GO terms. 
+
+As defined in GO, the "true" indirect annotations between a gene and a directly annotated GO term are the parents of the directly annotated GO term, whereas the children GO terms of the directly annotated GO term are not necessarily regulated by the gene in question. However, when studying the impact of a gene on the regulation of a given SOI, the reverse holds true - the children of the directly annotated GO term are the ones that also regulate an SOI, whereas it cannot be claimed so for the parent GO terms.
+
+Consider the following tree:
 ```
-GO:1901342 regulation of vasculature development
+GO:2000026 regulation of multicellular organismal development
+  - GO:1901342 regulation of vasculature development
     - GO:0045765 regulation of angiogenesis
         - GO:0045766 positive regulation of angiogenesis <- gene Hipk2
             - GO:1905555 positive regulation of blood vessel branching
             - GO:1903672 positive regulation of sprouting angiogenesis
             - GO:0035470 positive regulation of vascular wound healing
+        - GO:0016525 negative regulation of angiogenesis
 ```
-Gene Hipk2 is directly annotated to GO:0045766. The children annotations also infer the annotation (GO:1905555, GO:1903672, GO:0035470), but not the parent annotation (GO:1901342). 
+Gene Hipk2 is directly annotated to GO:0045766. All the parent GO terms also infer the annotation to the gene Hipk2 (GO:0045765, GO:1901342, GO:2000026), but not the child terms (GO:1905555, ...). However, if the defined target SOI by the researcher is 'stimulated angiogenesis', then the GO terms responsible for the upregulation of angiogenesis are actually the children terms of GO:0045766, rather than the more non-specific parent terms. For example, the term "regulation of angiogenesis" would be faultily counted as stimulatory to angiogenesis during the gene scoring process, as it also encompasses a "negative regulation of angiogenesis" child term (among others).
+
+The predicament in "gene influence studies" is thus whether to use parent or child terms as indirect annotations. Parent terms definitely hold the annotation to a gene of a directly annotated GO term, but are less specific in regulating a given target SOI. Child terms are more specific in regulating a given target SOI (which is desired in gene influence studies), however the connection between the child terms and the directly annotated GO term is made based on the assumption that all child terms regulate the same SOI as the directly annotated term (which the parents term might not, or might be too vaguely defined). Still, the gene in question might not be associated with any of the child terms.
+
+Due to the aforementioned dilemma, a researcher can choose whether to count parents or children as indirect annotations.
+
+**indirect_annotations_max_depth** takes an integer value as a parameter, with the value of `-1` meaning "infinite depth". When querying indirect annotations, specifically parent annotations, the GO terms very high in the hierarchy tree are shared across all genes in a research model (e.g. "biological regulation", "biological process", ...). To prevent such vague terms from faultily influencing the scoring process of genes, a user can set a fixed maximum depth of indirect annotations that are used for the scoring process. Consider the following example:
+```
+GO:0008150 biological_process
+  - GO:0048731 system_development
+    - GO:0001944 vasculature_development
+      - GO:1901342 regulation_of_vasculature_development
+        - GO:0022603 regulation_of_anatomical_structure_morphogenesis
+          - GO:0045764 regulation_of_angiogenesis
+            - GO:0045766 positive_regulation_of_angiogenesis
+```
+If the user were querying parents as indirect annotations without a maximum depth limit, all indirect annotations up to the root term would have influenced the gene statistical relevance. However, if a user set the maximum depth limit to 3 (via `indirect_annotations_max_depth    3`), then only the closest three indirect annotations would have been considered (e.g. GO:0045764, GO:0022603 and GO:1901342).
 
 **goterm_gene_query_timeout** is the timeout it takes when querying genes annotated to GO terms. If specifying very vague GO terms (such as `regulation of gene expression`, which has ~25 million annotations, a query might fail due to a request taking too long to complete or, which is a more severe error due to its covertness, a query might return an incomplete list of genes associated with a GO term. As a rule of thumb, we discourage the usage of such vague GO terms. A default 240-second timeout ensures that all GO terms approximately with a few million annotations are fetched correctly from the GO servers.
 
