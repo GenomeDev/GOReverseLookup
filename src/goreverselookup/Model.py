@@ -584,9 +584,13 @@ class ReverseLookup:
         
         logger.info(f"Performing batch UniProtKB id to Ensembl gene id mapping for {len(uniprot_product_ids)} genes.")
         uniprot_to_ensembl_idmap = uniprot_api.idmapping_ensembl_batch(uniprot_ids=uniprot_product_ids)
-        successful_conversions = uniprot_to_ensembl_idmap['results']
-        failed_conversions = uniprot_to_ensembl_idmap['failedIds']
-        logger.info(f"UniProtKB->Ensembl id mapping results: successful = {len(successful_conversions)}, failed = {len(failed_conversions)}")
+        if uniprot_to_ensembl_idmap is not None:
+            successful_conversions = uniprot_to_ensembl_idmap['results']
+            failed_conversions = uniprot_to_ensembl_idmap['failedIds']
+            logger.info(f"UniProtKB->Ensembl id mapping results: successful = {len(successful_conversions)}, failed = {len(failed_conversions)}")
+        else:
+            logger.error(f"UniProtKB->Ensembl id mapping wasn't performed due to an error.")
+            return
 
         target_organism_stable_id_prefix = EnsemblUtil.taxon_to_ensembl_stable_id_prefix(self.model_settings.target_organism.ncbi_id_full)
 
