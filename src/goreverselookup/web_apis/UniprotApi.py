@@ -765,8 +765,13 @@ class UniProtApi:
             return True
 
         def check_idmapping_results_ready(
-            job_id, session: requests.Session, api_url="https://rest.uniprot.org"
+            job_id, 
+            session: requests.Session, 
+            api_url="https://rest.uniprot.org"
         ):
+            if job_id is None:
+                return False
+            
             while True:
                 request_job = session.get(f"{api_url}/idmapping/status/{job_id}")
                 request_job = request_job.json()
@@ -945,16 +950,22 @@ class UniProtApi:
         session = requests.Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
 
-        # ",".join(ids) because the request requires identifiers as comma-serparated values
-        request = requests.post(
-            f"{api_url}/idmapping/run",
-            data={"from": from_db, "to": to_db, "ids": ",".join(new_ids)},
-        )
-        logger.info(
-            f"Attempting batch idmapping from {from_db} to {to_db}. Url = {request.url}"
-        )
+        try:
 
-        request_job_id = request.json()["jobId"]
+            # ",".join(ids) because the request requires identifiers as comma-serparated values
+            request = requests.post(
+                f"{api_url}/idmapping/run",
+                data={"from": from_db, "to": to_db, "ids": ",".join(new_ids)},
+            )
+            logger.info(f"Attempting batch idmapping from {from_db} to {to_db}. Url = {request.url}")
+
+            request.raise_for_status()
+
+            request_job_id = request.json()["jobId"]
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error during batch uniprot mapping: {e}")
+            request_job_id = None
+
 
         # check idmapping results ready
         if check_idmapping_results_ready(request_job_id, session):
@@ -1006,6 +1017,7 @@ class UniProtApi:
                 return_value["failedIds"].append(id)
             """
             return return_value
+        return None
 
     def idmapping_ensembl_batch(self, uniprot_ids: list):
         """
