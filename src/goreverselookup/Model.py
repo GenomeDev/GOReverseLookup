@@ -158,10 +158,12 @@ class ReverseLookup:
         ModelStats.goterm_count = len(self.goterms)
         ModelStats.product_count = len(self.products)
 
+        self.total_goterms = len(self.goterms)
+        self.total_products = len(self.products)
+
         WebsiteParser.init()
 
 
-        
     def set_model_settings(self, model_settings: ModelSettings):
         """
         Sets self.model_settings to the model settings supplied in the parameter.
@@ -1694,6 +1696,9 @@ class ReverseLookup:
                                  Production code should set 'use_dest_dir' to True, so that output files will be saved relatively to the specified destination directory.
                                  Developers should set 'use_dest_dir' to False, so that the output files are saved relatively to the development directory
         """
+        self.total_goterms = len(self.goterms)
+        self.total_products = len(self.products)
+        
         if ".json" not in filepath:
             filepath = f"{filepath}.json"
             

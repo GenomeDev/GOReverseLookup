@@ -155,7 +155,7 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
         model = ReverseLookup.load_model(model_data_filepath, destination_dir=destination_dir)
         print(f"Model was created from a previous model_data dictionary: {model_data_filepath}")
     model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) 
-    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=7)
+    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=7, request_params = {"rows": 10000000})
     Cacher.save_data()
     model.create_products_from_goterms()
     # model.products_perform_idmapping() # TODO: re-enable this !!! resolve the bug here !!!

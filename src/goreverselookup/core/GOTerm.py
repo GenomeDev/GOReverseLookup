@@ -35,6 +35,7 @@ class GOTerm:
         if weight == None: #bugfix for any mistakes
             weight = 1.0
         self.weight = float(weight)
+        self.num_products = 0
         self.products = products
         self.products_taxa_dict = {} # a link between a gene id and a belonging taxon
         self.http_error_codes = {} # used for errors happening during server querying; for example, a dict pair 'products': "HTTP Error ..." signifies an http error when querying for GO Term's products
@@ -240,6 +241,8 @@ class GOTerm:
             logger.debug(f"Cached previous product fetch data for {self.id}")
             ModelStats.goterm_product_query_results[self.id] = previous_data
             self.products = previous_data
+            self.products.sort()
+            self.num_products = len(self.products)
             return previous_data
 
         approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
@@ -337,6 +340,8 @@ class GOTerm:
             #    logger.debug(f"Response json: {data}")
 
         self.products = products
+        self.products.sort() # alphabetically order
+        self.num_products = len(products)
         self.products_taxa_dict = products_taxa_dict
         # logger.debug(f"Active session connections: {len(session.connector._conns)}")
         logger.info(f"Fetched {len(self.products)} products for GO term {self.id} from {len(_d_unique_dbs)} unique databases ({_d_unique_dbs})")
