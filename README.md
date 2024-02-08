@@ -377,6 +377,11 @@ If you have created multiple input.txt files in your directory structure (e.g. y
 goreverselookup "input.txt" --full_directory_op "C:/.../goreverselookup/"
 ```
 
+If different research models share the same GO terms to SOI mappings and the same evidence codes, and the difference between them is only in the desired _p_-values or the inclusion/exclusion of indirect annotations, then you can use `--rescore True` to only use the first analyzed research model as the base model, which is scored against different scoring criteria (p-value, indirect annotations) of other research models under the same root directory. This significantly reduces runtime, since it avoids research model reanalysing. Example:
+```
+goreverselookup "input.txt" --full_directory_op "C:/.../goreverselookup/" --rescore True
+```
+
 5. wait for GOReverseLookup to complete the analysis
 
 **WARNING**: When the scoring phase of the program is completed, 3-5 minutes will elapse for the saving of the cache files to complete. Do not close the command-prompt during this time, otherwise the cache files will be corrupt. Cache files are useful during recurrent runs of the program, as they prevent re-querying for the results of the same GO Terms or genes that have already been queried. 
