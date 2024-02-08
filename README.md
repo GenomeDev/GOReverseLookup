@@ -372,7 +372,12 @@ Once the input file is complete, it is time to run the program using the followi
    
 3. **run GOReverseLookup** with either of the commands: `goreverselookup PATH_TO_INPUT_FILE` or `goreverselookup PATH_TO_INPUT_FILE PATH_TO_OUTPUT_FOLDER` (e.g. `goreverselookup "research_models/input.txt"` or `goreverselookup "research_models/input.txt" "results"`). When supplying the `PATH_TO_OUTPUT_FOLDER` parameter, also create the output folder inside the `.../goreverselookup/` folder. When only the input file is specified, analysis results will be saved into the same base folder where the input file resides. Thus, if the input file resides in `...goreverselookup/research_models/input.txt`, results will be saved to `.../goreverselookup/research_models/` folder.
 
-4. wait for GOReverseLookup to complete the analysis
+If you have created multiple input.txt files in your directory structure (e.g. you want to analyze multiple research models), then use the _full directory operation_ parameter, to which you pass the absolute path to the root directory, where the program should start searching for all the input.txt files:
+```
+goreverselookup "input.txt" --full_directory_op "C:/.../goreverselookup/"
+```
+
+5. wait for GOReverseLookup to complete the analysis
 
 **WARNING**: When the scoring phase of the program is completed, 3-5 minutes will elapse for the saving of the cache files to complete. Do not close the command-prompt during this time, otherwise the cache files will be corrupt. Cache files are useful during recurrent runs of the program, as they prevent re-querying for the results of the same GO Terms or genes that have already been queried. 
 
@@ -486,6 +491,11 @@ Therefore:
 To view the discovered statistically relevant genes, run the command `goreverselookup PATH_TO_STAT_RELEVANT_GENES --report True`, e.g. `goreverselookup research_models/test_model/results/statistically_relevant_genes.json --report True`. This will first print out a report of tab-separated-values to the console, such as:
 
 <img src="https://i.ibb.co/6RG0GWW/greadme-tabsepvalues-results.png" width="450">
+
+If you want to analyze all statistically relevant genes files in a given directory (and all subfolders), then use the _full directory operation_ command, after which you specify the root directory (the absolute path to the starting directory where the program should start traversing the file structure and thus searching for the statistically relevant genes files):
+```
+goreverselookup "statistically_relevant_genes.json" --report True --full_directory_op <ROOT_DIR>
+```
 
 Additionally, an Excel file will be generated inside `results`:
 
