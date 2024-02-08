@@ -158,7 +158,7 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=7)
     Cacher.save_data()
     model.create_products_from_goterms()
-    # model.products_perform_idmapping() # TODO: re-enable this !!!
+    # model.products_perform_idmapping() # TODO: re-enable this !!! resolve the bug here !!!
     Cacher.save_data()
     model.fetch_orthologs_products_batch_gOrth(target_taxon_number=f"{model.model_settings.target_organism.ncbi_id}") # TODO: change!
     model.fetch_ortholog_products(run_async=True, max_connections=15, semaphore_connections=7, req_delay=0.1)
