@@ -317,8 +317,8 @@ class FileUtil:
         # [3]: Personal
         # backtrace 2 -> return up to 1
         if "\\" in filepath:
-            filepath = filepath.replace("\\", "/")
-        elements = filepath.split("/")
+            filepath = filepath.replace("\\", file_separator)
+        elements = filepath.split(file_separator)
         final_element_index = len(elements)-1
         if backtrace > final_element_index:
             logger.warning(f"Backtrace {backtrace} is greater than final element index {final_element_index} for filepath {filepath}! Returning ''.")
@@ -327,9 +327,25 @@ class FileUtil:
         final_path = ""
         for e in res_elements:
             final_path = os.path.join(final_path, e)
-        final_path = final_path.replace("\\", "/")
-        final_path = final_path.replace(":", ":/")
+        final_path = final_path.replace("\\", f"{file_separator}")
+        final_path = final_path.replace(":", f":{file_separator}")
         return final_path
+    
+    @classmethod
+    def get_filename(cls, filepath:str, file_separator:str="/"):
+        """
+        Gets the filename of the filepath.
+
+        Example usage:
+        FileUtil.get_filename("C:/User/input.txt")
+        -> "input.txt"
+        """
+        if "\\" in filepath:
+            filepath = filepath.replace("\\", file_separator)
+        if "/" in filepath:
+            filepath = filepath.replace("/", file_separator)
+        elements = filepath.split(file_separator)
+        return elements[-1]   
     
     @classmethod
     def get_file_size(cls, filepath:str, size_delimiter:str):
@@ -344,5 +360,37 @@ class FileUtil:
         fsize_bytes = os.path.getsize(filepath)
         fsize = fsize_bytes / size_multipliers[size_delimiter] # calculate file size based on the size delimiter
         return fsize
+    
+    @classmethod
+    def get_directory_files(cls, root_dir:str, file_name:str=None):
+        """
+        Traverse the directory starting from 'root_dir' and return all of the files of each directory. If 'file_name' is specified,
+        it will return a list of absolute filepaths with a matching filename to the specified 'file_name'.
+
+        Args:
+          - root_dir (str): The root directory to start the search
+          - (optional) file_name (str): The target file name to search for
+        
+        Returns:
+          - list: A list of absolute file paths (matching file_name, if specified) in the traversed directory structure
+        """
+        matching_files = []
+
+        if not os.path.exists(root_dir) or not os.path.isdir(root_dir):
+            print(f"Error: The specified root directory '{root_dir}' does not exist or is not a directory.")
+            return []
+
+        for root, dirs, files in os.walk(root_dir):
+            for file in files:
+                if file_name is not None:
+                    # add only matching files
+                    if file == file_name:
+                        file_path = os.path.abspath(os.path.join(root, file)).replace("\\", "/")
+                        matching_files.append(file_path)
+                else:
+                    # add all files, irrespective of matching
+                    file_path = os.path.abspath(os.path.join(root, file)).replace("\\", "/")
+                    matching_files.append(file_path)
+        return matching_files
         
         

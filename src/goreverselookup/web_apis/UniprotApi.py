@@ -36,6 +36,7 @@ class UniProtApi:
         self.s = session
         self.uniprot_query_exceptions = []
         self.async_request_sleep_delay = 0.5
+        self.idmapping_max_retries = 30
 
     def get_uniprot_id(self, gene_name, taxon, get_url_only=False):
         """
@@ -767,27 +768,26 @@ class UniProtApi:
         def check_idmapping_results_ready(
             job_id, 
             session: requests.Session, 
-            api_url="https://rest.uniprot.org"
-        ):
-            if job_id is None:
-                return False
-            
-            while True:
+            api_url="https://rest.uniprot.org",
+            max_retries:int = 30
+        ):    
+            i = 0
+            while True and i < max_retries:
+                i+=1
                 request_job = session.get(f"{api_url}/idmapping/status/{job_id}")
                 request_job = request_job.json()
                 if "jobStatus" in request_job:
                     if request_job["jobStatus"] == "RUNNING":
-                        logger.info(
-                            f"idmapping in progress, retrying in {polling_interval}s..."
-                        )
+                        logger.info(f"idmapping for job id {job_id} in progress (retry {i}/{max_retries}), retrying in {polling_interval}s")
                         time.sleep(polling_interval)
                     else:
-                        raise Exception(request_job["jobStatus"])
+                        raise Exception(f"Error during uniprot idmapping. Error status (from uniprot servers): {request_job['jobStatus']}")
                 else:
                     if "results" in request_job and "failedIds" in request_job:
                         return bool(request_job["results"] or request_job["failedIds"])
                     elif "results" in request_job:
                         return bool(request_job["results"])
+            return False
 
         def get_idmapping_results_link(
             job_id, session: requests.Session, api_url="https://rest.uniprot.org"
@@ -813,7 +813,11 @@ class UniProtApi:
             parsed = parsed._replace(query=urlencode(query, doseq=True))
             url = parsed.geturl()
             request = session.get(url)
-            results = decode_results(request, file_format, compressed)
+            try:
+                results = decode_results(request, file_format, compressed)
+            except requests.exceptions.JSONDecodeError as e:
+                logger.error(f"JSONDecode error during uniprot batch request: {e}")
+                return None
             total = int(request.headers["x-total-results"])
             print_progress_batches(0, size, total)
             for i, batch in enumerate(
@@ -965,10 +969,10 @@ class UniProtApi:
         except requests.exceptions.HTTPError as e:
             logger.error(f"HTTP error during batch uniprot mapping: {e}")
             request_job_id = None
-
+            return None
 
         # check idmapping results ready
-        if check_idmapping_results_ready(request_job_id, session):
+        if check_idmapping_results_ready(request_job_id, session, max_retries=self.idmapping_max_retries):
             try:
                 link = get_idmapping_results_link(request_job_id, session)
                 results = get_idmapping_results_search(link, session)
@@ -980,6 +984,8 @@ class UniProtApi:
                         sys.exit("Application closed by user.")
                     return None
 
+            if results is None:
+                return None
             
             # cache results
             successful = results.get("results", [])

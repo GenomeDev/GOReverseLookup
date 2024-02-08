@@ -1701,8 +1701,7 @@ class ReverseLookup:
             # use destination dir in project settings - this should be set to True for production-ready code
             # for development, set 'use_dest_dir' to False, so files are saved relatively to filepath branching out from project root directory.
             dest_dir = f"{self.model_settings.destination_dir}"
-            filepath = os.path.join(dest_dir, filepath)
-            filepath = filepath.replace("\\", "/")
+            filepath = os.path.join(dest_dir, filepath).replace("\\","/")
         
         FileUtil.check_path(filepath)
             

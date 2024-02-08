@@ -27,11 +27,10 @@ os.chdir(prev_cwd)
 logger.info("Starting GOReverseLookup analysis!")
 logger.info(f"os.getcwd() =  {os.getcwd()}")
 
-def generate_report(results_file, model_data):
+def generate_report(results_file:str, model_data):
     # TODO: more refined reporting functionality
 
-    if isinstance(results_file, str):
-        results_file = JsonUtil.load_json(results_file)
+    results = JsonUtil.load_json(results_file)
     if isinstance(model_data, str):
         model_data = JsonUtil.load_json(model_data)
         
@@ -54,7 +53,7 @@ def generate_report(results_file, model_data):
             SOIs.append(f"{tSOI['SOI']}-")
             stat_rev_key = intermediate_stat_rev_key if stat_rev_key == "" else f"{stat_rev_key}:{intermediate_stat_rev_key}"
         
-    stat_rev_genes = results_file[stat_rev_key]
+    stat_rev_genes = results[stat_rev_key]
         
     #separator = " "
     separator = "\t"
@@ -92,12 +91,13 @@ def generate_report(results_file, model_data):
         print(rowtext)
         
     # to excel
-    root = FileUtil.backtrace(input_file, 1)
+    root = FileUtil.backtrace(results_file, 1)
     stat_rev_genes_xlsx_path = f"{root}/stat_rev_genes.xlsx"
     df = pd.DataFrame(pdata)
     df.to_excel(stat_rev_genes_xlsx_path, index=True, header=True)
+    print(f"Results saved to: {stat_rev_genes_xlsx_path}")
 
-    sys.exit(0)
+    # sys.exit(0)
 
 def main(input_file:str, destination_dir:str = None, report:bool = False, model_data_filepath:str = None):
     logger.info(f"Starting GOReverseLookup analysis with input params:")
@@ -109,10 +109,21 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     model_data = None
     if model_data_filepath is not None:
         model_data = JsonUtil.load_json(model_data_filepath)
+    else:
+        # attempt auto-infer from input_file
+        root = FileUtil.backtrace(input_file, 1) # move 1 file up to root dir
+        m_data_filepath = os.path.join(root, "data.json").replace("\\", "/")
+        if FileUtil.check_path(m_data_filepath, auto_create=False):
+            if FileUtil.get_file_size(m_data_filepath, "kb") > 5: # if ReverseLookup data file is greater than 5kb then assign, otherwise it's most likely an error
+                print(f"Model data filepath was found by auto infer: {m_data_filepath}")
+                model_data_filepath = m_data_filepath
+                model_data = JsonUtil.load_json(model_data_filepath)
+        else:
+            print(f"Model data was not found by auto-infer.")
     
     if report is True and model_data is not None: # should generate report only
-        results_file = JsonUtil.load_json(input_file)
-        generate_report(results_file, model_data)
+        generate_report(results_file=input_file, model_data=model_data)
+        return
          
     # Runs the GOReverseLookup analysis
     if destination_dir is None:
@@ -184,6 +195,7 @@ parser.add_argument('input_file', help="The absolute path to the input file for 
 parser.add_argument('--destination_dir', help="The directory where output and intermediate files will be saved. If unspecified, output directory will be selected as the root directory of the supplied input file.")
 parser.add_argument('--report', help="Values: True or False. Specify this optional parameter to generate a report of statistically significant genes (the input file must point to a statistically_significant_genes.json)")
 parser.add_argument('--model_datafile', help="The main research model data file path (usually generated as data.json). If specifying model_datafile, it will create the research model from the supplied model datafile (precedence over the input file). If left unspecified and using '--report True', then an attempt is made to infer model_datafile from the root directory of input_filepath. Thus, if statistically_significant_genes.json and data.json are saved in the same directory, --report True can be ran without the model_datafile parameter.")
+parser.add_argument("--full_directory_op", help="Specify the root directory, all subdirectories will be scanned for a file named as 'input_file' and the operation will be performed on all these files.")
 # TODO: debug arguments
 
 # parse the command-line arguments
@@ -196,6 +208,8 @@ if report is not None and report.upper() == "TRUE":
     report = True
 else:
     report = False
+
+full_directory_op = args.full_directory_op
     
 model_data_filepath = args.model_datafile
 if model_data_filepath is None:
@@ -216,7 +230,22 @@ if model_data_filepath is None:
 #destination_dir = None
 #report = False
 #model_data_filepath = None
+        
+input_files = []
+if full_directory_op is None:
+    input_files = [input_file]
+else:
+    # infer all input files from the specified input file and the root directory provided in full_directory_op
+    input_file_name = FileUtil.get_filename(input_file)
+    input_files = FileUtil.get_directory_files(full_directory_op, input_file_name)
 
-main(input_file=input_file, destination_dir=destination_dir, report=report, model_data_filepath=model_data_filepath)
+print(f"Found the following input files:")
+i = 0
+for f in input_files:
+    print(f"  - [{i}]: {f}")
+    i+=1
+
+for f in input_files:
+    main(input_file=f, destination_dir=destination_dir, report=report, model_data_filepath=model_data_filepath)
 
 
