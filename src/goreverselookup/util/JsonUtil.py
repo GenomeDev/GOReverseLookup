@@ -55,6 +55,8 @@ class JsonUtil:
         """
         if ".json" not in filepath:
             filepath = f"{filepath}.json"
+        
+        FileUtil.check_path(filepath)
 
         logger.info(f"Saving json to: {filepath}")
         with open(filepath, "w") as f:

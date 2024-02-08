@@ -2,7 +2,7 @@
 
 import argparse
 import os
-import sys
+import copy
 from goreverselookup import Cacher, ModelStats
 from goreverselookup import ReverseLookup
 from goreverselookup import nterms, adv_product_score, binomial_test, fisher_exact_test
@@ -99,7 +99,7 @@ def generate_report(results_file:str, model_data):
 
     # sys.exit(0)
 
-def main(input_file:str, destination_dir:str = None, report:bool = False, model_data_filepath:str = None):
+def main(input_file:str, destination_dir:str = None, report:bool = False, model_data_filepath:str = None, rescore_model:ReverseLookup = None):
     logger.info(f"Starting GOReverseLookup analysis with input params:")
     logger.info(f"  - input_file: {input_file}")
     logger.info(f"  - destination_dir: {destination_dir}")
@@ -118,6 +118,7 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
                 print(f"Model data filepath was found by auto infer: {m_data_filepath}")
                 model_data_filepath = m_data_filepath
                 model_data = JsonUtil.load_json(model_data_filepath)
+                fisher_score = fisher_exact_test(model)
         else:
             print(f"Model data was not found by auto-infer.")
     
@@ -128,6 +129,18 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     # Runs the GOReverseLookup analysis
     if destination_dir is None:
         destination_dir = os.path.dirname(os.path.realpath(input_file))
+    
+    # if True, only perform rescoring with new values
+    if isinstance(rescore_model, ReverseLookup):
+        new_model = ReverseLookup.from_input_file(filepath=input_file, destination_dir=destination_dir) if model_data is None else ReverseLookup.load_model(model_data_filepath, destination_dir=destination_dir)
+        rescore_model_copy = copy.deepcopy(rescore_model)
+        rescore_model_copy.model_settings = new_model.model_settings
+        rescore_model_copy.statistically_relevant_products = {} # reset
+        fisher_score = fisher_exact_test(rescore_model_copy)
+        rescore_model_copy.score_products(score_classes=[fisher_score])
+        rescore_model_copy.perform_statistical_analysis(test_name="fisher_test", filepath="results/statistically_relevant_genes.json", use_dest_dir=True)
+        rescore_model_copy.save_model("results/data.json", use_dest_dir=True)
+        return
 
     # setup
     Cacher.init(cache_dir="cache")
@@ -146,7 +159,7 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=7)
     Cacher.save_data()
     model.create_products_from_goterms()
-    model.products_perform_idmapping()
+    # model.products_perform_idmapping() # TODO: re-enable this !!!
     Cacher.save_data()
     model.fetch_orthologs_products_batch_gOrth(target_taxon_number=f"{model.model_settings.target_organism.ncbi_id}") # TODO: change!
     model.fetch_ortholog_products(run_async=True, max_connections=15, semaphore_connections=7, req_delay=0.1)
@@ -170,17 +183,20 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
 
     # test model load from existing json, perform model scoring
     model = ReverseLookup.load_model("results/data.json", destination_dir=destination_dir)
-    nterms_score = nterms(model)
-    adv_prod_score = adv_product_score(model)
-    binom_score = binomial_test(model)
+    #nterms_score = nterms(model)
+    #adv_prod_score = adv_product_score(model)
+    #binom_score = binomial_test(model)
     fisher_score = fisher_exact_test(model)
-    model.score_products(score_classes=[nterms_score, adv_prod_score, binom_score, fisher_score])
+    # model.score_products(score_classes=[nterms_score, adv_prod_score, binom_score, fisher_score])
+    model.score_products(score_classes=[fisher_score])
     model.perform_statistical_analysis(test_name="fisher_test", filepath="results/statistically_relevant_genes.json", use_dest_dir=True)
     # TODO: fetch info for stat relevant genes here
     model.save_model("results/data.json", use_dest_dir=True)
 
     # TODO
     # generate_report("results/statistically_relevant_genes.json", "results/data.json")
+
+    return model
 
 #if len(sys.argv) != 2:
 #    print("Usage: goreverselookup <input_file>")
@@ -196,6 +212,7 @@ parser.add_argument('--destination_dir', help="The directory where output and in
 parser.add_argument('--report', help="Values: True or False. Specify this optional parameter to generate a report of statistically significant genes (the input file must point to a statistically_significant_genes.json)")
 parser.add_argument('--model_datafile', help="The main research model data file path (usually generated as data.json). If specifying model_datafile, it will create the research model from the supplied model datafile (precedence over the input file). If left unspecified and using '--report True', then an attempt is made to infer model_datafile from the root directory of input_filepath. Thus, if statistically_significant_genes.json and data.json are saved in the same directory, --report True can be ran without the model_datafile parameter.")
 parser.add_argument("--full_directory_op", help="Specify the root directory, all subdirectories will be scanned for a file named as 'input_file' and the operation will be performed on all these files.")
+parser.add_argument("--rescore", help="Used in conjunction with full_directory_op. If True, will preserve the initially computed research model, but will only update the p-value, indirect annotations. WARNING: if using this setting with models with different evidence code settings, there will be errors!")
 # TODO: debug arguments
 
 # parse the command-line arguments
@@ -203,11 +220,13 @@ args = parser.parse_args()
 input_file = args.input_file
 destination_dir = args.destination_dir
 
-report = args.report
-if report is not None and report.upper() == "TRUE":
-    report = True
-else:
-    report = False
+report = False
+rescore = False
+if args.report is not None:
+    report = True if args.report.upper() == "TRUE" else False
+if args.rescore is not None:
+    rescore = True if args.rescore.upper() == "TRUE" else False
+static_rescore_model = None # model used for re-scoring
 
 full_directory_op = args.full_directory_op
     
@@ -245,7 +264,11 @@ for f in input_files:
     print(f"  - [{i}]: {f}")
     i+=1
 
+i = 0
 for f in input_files:
-    main(input_file=f, destination_dir=destination_dir, report=report, model_data_filepath=model_data_filepath)
+    model = main(input_file=f, destination_dir=destination_dir, report=report, model_data_filepath=model_data_filepath, rescore_model=static_rescore_model)
+    if rescore and i == 0:
+        static_rescore_model = model
+    i += 1
 
 
