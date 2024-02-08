@@ -118,7 +118,6 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
                 print(f"Model data filepath was found by auto infer: {m_data_filepath}")
                 model_data_filepath = m_data_filepath
                 model_data = JsonUtil.load_json(model_data_filepath)
-                fisher_score = fisher_exact_test(model)
         else:
             print(f"Model data was not found by auto-infer.")
     
