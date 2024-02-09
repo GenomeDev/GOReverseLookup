@@ -1136,16 +1136,20 @@ class ReverseLookup:
         # and remove the individual products from the list
         for genename, product_list in reverse_genename_products.items():
             if len(product_list) > 1:
+                combined_product = Product(id_synonyms=[])
                 id_synonyms = []
                 for product in product_list:
-                    self.products.remove(product)
+                    combined_product.update(product)
                     id_synonyms.extend(product.id_synonyms)
+                    self.products.remove(product)
                 
                 # prevent duplicates
                 id_synonyms = set(id_synonyms)
                 id_synonyms = list(id_synonyms)
 
                 # Create a new product with the collected information and add it to the product list
+                self.products.append(combined_product)
+                """
                 self.products.append(
                     Product(
                         id_synonyms=id_synonyms,
@@ -1163,6 +1167,7 @@ class ReverseLookup:
                         gorth_ortholog_exists=product_list[0].gorth_ortholog_exists
                     )
                 )
+                """
         
         end_prod_count = len(self.products)
         logger.info(f"Completed product prune operation. Pruned {end_prod_count - start_prod_count} products. Start product count: {start_prod_count} -> End product count: {end_prod_count}")
@@ -1698,7 +1703,7 @@ class ReverseLookup:
         """
         self.total_goterms = len(self.goterms)
         self.total_products = len(self.products)
-        
+
         if ".json" not in filepath:
             filepath = f"{filepath}.json"
             

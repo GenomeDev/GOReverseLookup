@@ -79,6 +79,21 @@ class Product:
             if "UniProt" in id_syn:
                 self.uniprot_id = id_syn
 
+    def update(self, other_product):
+        """
+        Updates this instance with new values.
+          - id synonyms are appended
+          - other values are updated if not None
+        """
+        assert(isinstance(other_product, Product))
+        for attr_name in dir(self):
+            if not callable(getattr(self, attr_name)) and not attr_name.startswith("__"):
+                if attr_name == "id_synonyms": # extend and skip loop to prevent resetting previous values
+                    self.id_synonyms.extend(other_product.id_synonyms)
+                    continue
+                if getattr(self, attr_name) is None:
+                    setattr(self, attr_name, getattr(other_product, attr_name))
+
     def fetch_ortholog(
         self,
         human_ortholog_finder: Optional[HumanOrthologFinder] = None,
