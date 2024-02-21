@@ -147,7 +147,11 @@ class GOTerm:
                 self.description = data['definition']
             # logger.info(f"Fetched name and description for GO term {self.id}")
             # print out only 15 desc chars not to clutter console
-            logger.info(f"{self.id}: name = {self.name}, description = {self.description[:15]}...")
+            if self.description is not None:
+                if len(self.description) > 15:
+                    logger.info(f"{self.id}: name = {self.name}, description = {self.description[:15]}...")
+            elif self.id is not None and self.name is not None:
+                logger.info(f"{self.id}: name = {self.name}, description = None ...")
         else:
             logger.info(f"Query for url {url} failed with response code {response.status}")
     
