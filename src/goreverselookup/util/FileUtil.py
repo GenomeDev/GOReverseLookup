@@ -271,6 +271,7 @@ class FileUtil:
 
         Downloads 'download_url' and saves it into 'filepath'
         """
+        logger.info(f"Downloading: {download_url} to destionation {filepath}.")
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         if not os.path.exists(filepath):
             url = download_url
