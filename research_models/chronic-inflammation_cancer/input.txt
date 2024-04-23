@@ -7,11 +7,12 @@ curator_statement	IC_ECO:0000305,ND_ECO:0000307
 electronic	IEA_ECO:0000501
 ###settings
 pvalue	0.05
-include_indirect_annotations	False
+include_indirect_annotations	True	p
+indirect_annotations_max_depth	-1
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
-evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
-#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
 gorth_ortholog_fetch_for_indefinitive_orthologs	True
 gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
@@ -37,7 +38,7 @@ cancer	+
 biological_process	True
 molecular_activity	True
 cellular_component	False
-###GO_terms [GO id] [SOI] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
 GO:0006954	chronic_inflammation	+	1	inflammatory response
 GO:0160006	chronic_inflammation	+	1	Fc receptor-mediated immune complex endocytosis
 GO:0050866	chronic_inflammation	-	1	negative regulation of cell activation
@@ -62,8 +63,8 @@ GO:0050857	chronic_inflammation	+	1	positive regulation of antigen receptor-medi
 GO:1903028	chronic_inflammation	+	1	positive regulation of opsonization
 GO:1900017	chronic_inflammation	+	1	positive regulation of cytokine production involved in inflammatory response
 GO:1900016	chronic_inflammation	-	1	negative regulation of cytokine production involved in inflammatory response
-GO:0001819	chronic_inflammation	+	1	positive regulation of cytokine production
-GO:0001818	chronic_inflammation	-	1	negative regulation of cytokine production
+# GO:0001819	chronic_inflammation	+	1	positive regulation of cytokine production
+# GO:0001818	chronic_inflammation	-	1	negative regulation of cytokine production
 GO:0032731	chronic_inflammation	+	1	positive regulation of interleukin-1 beta production
 GO:0032691	chronic_inflammation	-	1	negative regulation of interleukin-1 beta production
 GO:0032743	chronic_inflammation	+	1	positive regulation of interleukin-2 production
@@ -101,7 +102,7 @@ GO:1905604	chronic_inflammation	+	1	negative regulation of blood-brain barrier p
 GO:0071456	chronic_inflammation	+	1	cellular response to hypoxia
 GO:1903141	chronic_inflammation	+	1	negative regulation of establishment of endothelial barrier
 GO:1903142	chronic_inflammation	-	1	positive regulation of establishment of endothelial barrier
-GO:0006508	chronic_inflammation	+	1	proteolysis
+# 	chronic_inflammation	+	1	proteolysis
 GO:0071492	chronic_inflammation	+	1	cellular response to UV-A
 GO:0070141	chronic_inflammation	+	1	response to UV-A
 GO:0034614	chronic_inflammation	+	1	cellular response to reactive oxygen species
@@ -113,7 +114,7 @@ GO:1904645	chronic_inflammation	+	1	response to amyloid-beta
 GO:0002407	chronic_inflammation	+	1	dendritic cell chemotaxis
 GO:2000510	chronic_inflammation	+	1	positive regulation of dendritic cell chemotaxis
 GO:2000509	chronic_inflammation	-	1	negative regulation of dendritic cell chemotaxis
-GO:0005125	chronic_inflammation	+	1	cytokine activity
+# GO:0005125	chronic_inflammation	+	1	cytokine activity
 GO:0001618	chronic_inflammation	+	1	virus receptor activity
 GO:0038146	chronic_inflammation	+	1	chemokine (C-X-C motif) ligand 12 signaling pathway
 GO:0070098	chronic_inflammation	+	1	chemokine-mediated signaling pathway
@@ -280,14 +281,4 @@ GO:0060397	cancer	+	1	growth hormone receptor signaling pathway via JAK-STAT #  
 GO:0045596	cancer	+	1	negative regulation of cell differentiation
 GO:0045597	cancer	-	1	positive regulation of cell differentiation
 
-# JNK cascade:  evidence indicates that this Janus signaling promotes cancer cell survival. JNK acts synergistically with NF-κB, JAK/STAT, and other signaling molecules to exert a survival function (https://onlinelibrary.wiley.com/doi/abs/10.1002/med.21574#:~:text=c%2DJun%20N%2Dterminal%20kinase,to%20exert%20a%20survival%20function)
-GO:0007254	cancer	+	1	JNK cascade
-GO:0004705	cancer	+	1	JUN kinase activity # 10.1002/med.21574 - JNK signaling in cancer cell survival
-GO:0046330	cancer	+	1	positive regulation of JNK cascade
-GO:0046329	cancer	-	1	negative regulation of JNK cascade
-GO:0043507	cancer	+	1	positive regulation of JUN kinase activity
-GO:0043508	cancer	-	1	negative regulation of JUN kinase activity
 
-# Wnt cascade; # ... leading to actin cytoskeleton rearrangement. In addition, Dvl activates Rac and finally JNK (c-Jun-N-terminal-kinase) thereby modulating cell migration. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5853106/; doi: 10.1016/j.critrevonc.2015.12.005)
-GO:0090263	cancer	+	1	positive regulation of canonical Wnt signaling pathway	
-GO:0090090	cancer	-	1	negative regulation of canonical Wnt signaling pathway

@@ -127,6 +127,7 @@ class gProfiler:
                 ...
             }
         """
+        logger.info(f"[gProfiler::find_orthologs]: len source_ids = {len(source_ids)}, source_taxon = {source_taxon}, target_taxon = {target_taxon}")
         if source_ids == [] or source_ids == "":
             return None
 
@@ -163,9 +164,20 @@ class gProfiler:
             else:
                 new_input_ids.append(source_id)
 
+        logger.info(f"Number of ids to be queried: {len(new_input_ids)}, source_taxon = {source_taxon}, target_taxon = {target_taxon}")
         if new_input_ids != []:
+            """ # old link - problems?
             r = self.s.post(
                 url="https://biit.cs.ut.ee/gprofiler_archive3/e108_eg55_p17/api/orth/orth/",
+                json={
+                    "organism": source_taxon,
+                    "target": target_taxon,
+                    "query": new_input_ids,
+                },
+            )
+            """ 
+            r = self.s.post(
+                url="https://biit.cs.ut.ee/gprofiler/api/orth/orth/",
                 json={
                     "organism": source_taxon,
                     "target": target_taxon,

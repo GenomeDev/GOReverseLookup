@@ -130,7 +130,7 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
         destination_dir = os.path.dirname(os.path.realpath(input_file))
     
     # if True, only perform rescoring with new values
-    if isinstance(rescore_model, ReverseLookup):
+    if rescore_model is not None:
         new_model = ReverseLookup.from_input_file(filepath=input_file, destination_dir=destination_dir) if model_data is None else ReverseLookup.load_model(model_data_filepath, destination_dir=destination_dir)
         rescore_model_copy = copy.deepcopy(rescore_model)
         rescore_model_copy.model_settings = new_model.model_settings
@@ -197,13 +197,6 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
 
     return model
 
-#if len(sys.argv) != 2:
-#    print("Usage: goreverselookup <input_file>")
-#    sys.exit(1)
-#input_file = sys.argv[1]
-#logger.info(f"input_file = {input_file}")
-
-# UNCOMMENT THIS SECTION FOR PRODUCTION CODE !!!
 
 parser = argparse.ArgumentParser(description="Usage: goreverselookup <input_file_path> --<destination_directory> ('--' denotes an optional parameter)")
 parser.add_argument('input_file', help="The absolute path to the input file for GOReverseLookup analysis or to the resulting file if used with the --report optional parameter.")
