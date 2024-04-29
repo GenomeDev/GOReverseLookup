@@ -1,0 +1,278 @@
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+include_indirect_annotations	False	p
+indirect_annotations_max_depth	-1
+target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	False
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
+chronic_inflammation	+
+cancer	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+GO:0006954	chronic_inflammation	+	1	inflammatory response
+GO:0160006	chronic_inflammation	+	1	Fc receptor-mediated immune complex endocytosis
+GO:0050866	chronic_inflammation	-	1	negative regulation of cell activation
+GO:0050867	chronic_inflammation	+	1	positive regulation of cell activation
+GO:0031342	chronic_inflammation	-	1	negative regulation of cell killing
+GO:0031343	chronic_inflammation	+	1	positive regulation of cell killing
+GO:2000146	chronic_inflammation	-	1	negative regulation of cell motility
+GO:2000147	chronic_inflammation	+	1	positive regulation of cell motility
+GO:1900038	chronic_inflammation	-	1	negative regulation of cellular response to hypoxia
+GO:1900039	chronic_inflammation	+	1	positive regulation of cellular response to hypoxia
+GO:1903973	chronic_inflammation	-	1	negative regulation of cellular response to macrophage colony-stimulating factor stimulus
+GO:1903974	chronic_inflammation	+	1	positive regulation of cellular response to macrophage colony-stimulating factor stimulus
+GO:1900408	chronic_inflammation	-	1	negative regulation of cellular response to oxidative stress
+GO:1900409	chronic_inflammation	+	1	positive regulation of cellular response to oxidative stress
+GO:2000524	chronic_inflammation	-	1	negative regulation of T cell costimulation
+GO:2000525	chronic_inflammation	+	1	positive regulation of T cell costimulation
+GO:0002578	chronic_inflammation	-	1	negative regulation of antigen processing and presentation
+GO:0002579	chronic_inflammation	+	1	positive regulation of antigen processing and presentation
+GO:0050858	chronic_inflammation	-	1	negative regulation of antigen receptor-mediated signaling pathway
+GO:0050857	chronic_inflammation	+	1	positive regulation of antigen receptor-mediated signaling pathway
+# missing GO Term for "negative regulation of opsonization"
+GO:1903028	chronic_inflammation	+	1	positive regulation of opsonization
+GO:1900017	chronic_inflammation	+	1	positive regulation of cytokine production involved in inflammatory response
+GO:1900016	chronic_inflammation	-	1	negative regulation of cytokine production involved in inflammatory response
+# GO:0001819	chronic_inflammation	+	1	positive regulation of cytokine production
+# GO:0001818	chronic_inflammation	-	1	negative regulation of cytokine production
+GO:0032731	chronic_inflammation	+	1	positive regulation of interleukin-1 beta production
+GO:0032691	chronic_inflammation	-	1	negative regulation of interleukin-1 beta production
+GO:0032743	chronic_inflammation	+	1	positive regulation of interleukin-2 production
+GO:0032703	chronic_inflammation	-	1	negative regulation of interleukin-2 production
+GO:0032753	chronic_inflammation	+	1	positive regulation of interleukin-4 production
+GO:0032713	chronic_inflammation	-	1	negative regulation of interleukin-4 production
+GO:0032755	chronic_inflammation	+	1	positive regulation of interleukin-6 production
+GO:0032715	chronic_inflammation	-	1	negative regulation of interleukin-6 production
+GO:0032757	chronic_inflammation	+	1	positive regulation of interleukin-8 production
+GO:0032717	chronic_inflammation	-	1	negative regulation of interleukin-8 production
+GO:0032758	chronic_inflammation	+	1	positive regulation of interleukin-9 production
+GO:0032718	chronic_inflammation	-	1	negative regulation of interleukin-9 production
+GO:0032733	chronic_inflammation	-	1	positive regulation of interleukin-10 production
+GO:0032693	chronic_inflammation	+	1	negative regulation of interleukin-10 production
+GO:0032734	chronic_inflammation	+	1	positive regulation of interleukin-11 production
+GO:0032694	chronic_inflammation	-	1	negative regulation of interleukin-11 production
+GO:0032735	chronic_inflammation	+	1	positive regulation of interleukin-12 production
+GO:0032695	chronic_inflammation	-	1	negative regulation of interleukin-12 production
+GO:0032740	chronic_inflammation	+	1	positive regulation of interleukin-17 production
+GO:0032700	chronic_inflammation	-	1	negative regulation of interleukin-17 production
+GO:0032741	chronic_inflammation	+	1	positive regulation of interleukin-18 production
+GO:0032701	chronic_inflammation	-	1	negative regulation of interleukin-18 production
+GO:0150191	chronic_inflammation	+	1	positive regulation of interleukin-32 production
+GO:0150190	chronic_inflammation	-	1	negative regulation of interleukin-32 production
+GO:0051092	chronic_inflammation	+	1	positive regulation of NF-kappaB transcription factor activity
+GO:0032088	chronic_inflammation	-	1	negative regulation of NF-kappaB transcription factor activity
+GO:0001774	chronic_inflammation	+	1	microglial cell activation
+GO:1903980	chronic_inflammation	+	1	positive regulation of microglial cell activation
+GO:1903979	chronic_inflammation	-	1	negative regulation of microglial cell activation
+GO:0002281	chronic_inflammation	+	1	macrophage activation involved in immune response
+GO:1904999	chronic_inflammation	+	1	positive regulation of leukocyte adhesion to arterial endothelial cell
+GO:1904998	chronic_inflammation	-	1	negative regulation of leukocyte adhesion to arterial endothelial cell
+GO:1905605	chronic_inflammation	-	1	positive regulation of blood-brain barrier permeability
+GO:1905604	chronic_inflammation	+	1	negative regulation of blood-brain barrier permeability
+GO:0071456	chronic_inflammation	+	1	cellular response to hypoxia
+GO:1903141	chronic_inflammation	+	1	negative regulation of establishment of endothelial barrier
+GO:1903142	chronic_inflammation	-	1	positive regulation of establishment of endothelial barrier
+# 	chronic_inflammation	+	1	proteolysis
+GO:0071492	chronic_inflammation	+	1	cellular response to UV-A
+GO:0070141	chronic_inflammation	+	1	response to UV-A
+GO:0034614	chronic_inflammation	+	1	cellular response to reactive oxygen species
+GO:0071222	chronic_inflammation	+	1	cellular response to lipopolysaccharide
+GO:0032496	chronic_inflammation	+	1	response to lipopolysaccharide
+GO:0002467	chronic_inflammation	+	1	germinal center formation
+GO:0034097	chronic_inflammation	+	1	response to cytokine
+GO:1904645	chronic_inflammation	+	1	response to amyloid-beta
+GO:0002407	chronic_inflammation	+	1	dendritic cell chemotaxis
+GO:2000510	chronic_inflammation	+	1	positive regulation of dendritic cell chemotaxis
+GO:2000509	chronic_inflammation	-	1	negative regulation of dendritic cell chemotaxis
+# GO:0005125	chronic_inflammation	+	1	cytokine activity
+GO:0001618	chronic_inflammation	+	1	virus receptor activity
+GO:0070101	chronic_inflammation	+	1	positive regulation of chemokine-mediated signaling pathway
+GO:0070100	chronic_inflammation	-	1	negative regulation of chemokine-mediated signaling pathway
+
+# immune effector process parent node
+GO:0002698	chronic_inflammation	-	1	negative regulation of immune effector process
+GO:0002699	chronic_inflammation	+	1	positive regulation of immune effector process
+    GO:0032833	chronic_inflammation	-	1	negative regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
+	GO:0032834	chronic_inflammation	+	1	positive regulation of CD4-positive, CD25-positive, alpha-beta regulatory T cell differentiation involved in immune response
+	GO:1905450	chronic_inflammation	-	1	negative regulation of Fc-gamma receptor signaling pathway involved in phagocytosis
+	GO:1905451	chronic_inflammation	+	1	positive regulation of Fc-gamma receptor signaling pathway involved in phagocytosis
+	GO:2001189	chronic_inflammation	-	1	negative regulation of T cell activation via T cell receptor contact with antigen bound to MHC molecule on antigen presenting cell
+	GO:2001190	chronic_inflammation	+	1	positive regulation of T cell activation via T cell receptor contact with antigen bound to MHC molecule on antigen presenting cell
+	GO:0045623	chronic_inflammation	-	1	negative regulation of T-helper cell differentiation
+	GO:0045624	chronic_inflammation	+	1	positive regulation of T-helper cell differentiation
+	GO:0045916	chronic_inflammation	-	1	negative regulation of complement activation
+	GO:0045917	chronic_inflammation	+	1	positive regulation of complement activation
+	GO:2001192	chronic_inflammation	-	1	negative regulation of gamma-delta T cell activation involved in immune response
+	GO:2001193	chronic_inflammation	+	1	positive regulation of gamma-delta T cell activation involved in immune response
+	GO:0002632	chronic_inflammation	-	1	negative regulation of granuloma formation
+	GO:0002633	chronic_inflammation	+	1	positive regulation of granuloma formation
+	GO:0043301	chronic_inflammation	-	1	negative regulation of leukocyte degranulation
+	GO:0043302	chronic_inflammation	+	1	positive regulation of leukocyte degranulation
+	GO:0002704	chronic_inflammation	-	1	negative regulation of leukocyte mediated immunity
+	GO:0002705	chronic_inflammation	+	1	positive regulation of leukocyte mediated immunity
+	GO:0033007	chronic_inflammation	-	1	negative regulation of mast cell activation involved in immune response
+	GO:0033008	chronic_inflammation	+	1	positive regulation of mast cell activation involved in immune response
+	GO:0043381	chronic_inflammation	-	1	negative regulation of memory T cell differentiation
+	GO:0043382	chronic_inflammation	+	1	positive regulation of memory T cell differentiation
+	GO:0032827	chronic_inflammation	-	1	negative regulation of natural killer cell differentiation involved in immune response
+	GO:0032828	chronic_inflammation	+	1	positive regulation of natural killer cell differentiation involved in immune response
+	GO:0032821	chronic_inflammation	-	1	negative regulation of natural killer cell proliferation involved in immune response
+	GO:0032822	chronic_inflammation	+	1	positive regulation of natural killer cell proliferation involved in immune response
+	GO:0002701	chronic_inflammation	-	1	negative regulation of production of molecular mediator of immune response
+	GO:0002702	chronic_inflammation	+	1	positive regulation of production of molecular mediator of immune response
+
+GO:0050777	chronic_inflammation	-	1	negative regulation of immune response
+GO:0050778	chronic_inflammation	+	1	positive regulation of immune response
+    # check children nodes
+
+GO:0002695	chronic_inflammation	-	1	negative regulation of leukocyte activation
+GO:0002696	chronic_inflammation	+	1	positive regulation of leukocyte activation
+    # check children nodes
+
+GO:0002523	chronic_inflammation	+	1	leukocyte migration involved in inflammatory response
+GO:0002686	chronic_inflammation	-	1	negative regulation of leukocyte migration
+GO:0002687	chronic_inflammation	+	1	positive regulation of leukocyte migration
+    # check children nodes
+
+GO:0002578	chronic_inflammation	-	1	negative regulation of antigen processing and presentation
+GO:0002579	chronic_inflammation	+	1	positive regulation of antigen processing and presentation
+    # check children nodes
+
+GO:0002623	chronic_inflammation	-	1	negative regulation of B cell antigen processing and presentation
+GO:0002624	chronic_inflammation	+	1	positive regulation of B cell antigen processing and presentation
+GO:0002626	chronic_inflammation	-	1	negative regulation of T cell antigen processing and presentation
+GO:0002627	chronic_inflammation	+	1	positive regulation of T cell antigen processing and presentation
+
+# 	regulation of antigen processing and presentation of peptide antigen
+GO:1901040	chronic_inflammation	-	1	negative regulation of peptide antigen transport
+GO:1901041	chronic_inflammation	+	1	positive regulation of peptide antigen transport
+GO:0002584	chronic_inflammation	-	1	negative regulation of antigen processing and presentation of peptide antigen
+GO:0002585	chronic_inflammation	+	1	positive regulation of antigen processing and presentation of peptide antigen
+GO:1904283	chronic_inflammation	-	1	negative regulation of antigen processing and presentation of endogenous peptide antigen via MHC class I
+GO:1904284	chronic_inflammation	+	1	positive regulation of antigen processing and presentation of endogenous peptide antigen via MHC class I
+GO:0002587	chronic_inflammation	-	1	negative regulation of antigen processing and presentation of peptide antigen via MHC class II
+GO:0002588	chronic_inflammation	+	1	positive regulation of antigen processing and presentation of peptide antigen via MHC class II
+
+GO:0002581	chronic_inflammation	-	1	negative regulation of antigen processing and presentation of peptide or polysaccharide antigen via MHC class II
+GO:0002582	chronic_inflammation	+	1	positive regulation of antigen processing and presentation of peptide or polysaccharide antigen via MHC class II
+GO:0002587	chronic_inflammation	-	1	negative regulation of antigen processing and presentation of peptide antigen via MHC class II
+GO:0002588	chronic_inflammation	+	1	positive regulation of antigen processing and presentation of peptide antigen via MHC class II
+GO:0002593	chronic_inflammation	-	1	negative regulation of antigen processing and presentation via MHC class Ib
+GO:0002594	chronic_inflammation	+	1	positive regulation of antigen processing and presentation via MHC class Ib
+GO:0002605	chronic_inflammation	-	1	negative regulation of dendritic cell antigen processing and presentation
+GO:0002606	chronic_inflammation	+	1	positive regulation of dendritic cell antigen processing and presentation
+GO:0002608	chronic_inflammation	-	1	negative regulation of myeloid dendritic cell antigen processing and presentation
+GO:0002609	chronic_inflammation	+	1	positive regulation of myeloid dendritic cell antigen processing and presentation
+GO:0002617	chronic_inflammation	-	1	negative regulation of macrophage antigen processing and presentation
+GO:0002618	chronic_inflammation	+	1	positive regulation of macrophage antigen processing and presentation
+GO:0002614	chronic_inflammation	-	1	negative regulation of monocyte antigen processing and presentation
+GO:0002615	chronic_inflammation	+	1	positive regulation of monocyte antigen processing and presentation
+GO:0002439	chronic_inflammation	+	1	chronic inflammatory response to antigenic stimulus
+GO:0002876	chronic_inflammation	+	1	positive regulation of chronic inflammatory response to antigenic stimulus
+GO:0002875	chronic_inflammation	-	1	negative regulation of chronic inflammatory response to antigenic stimulus
+GO:0071347	chronic_inflammation	+	1	cellular response to interleukin-1
+GO:0071352	chronic_inflammation	+	1	cellular response to interleukin-2
+GO:0071353	chronic_inflammation	+	1	cellular response to interleukin-4
+GO:0071354	chronic_inflammation	+	1	cellular response to interleukin-6
+GO:0098759	chronic_inflammation	+	1	cellular response to interleukin-8
+GO:0071355	chronic_inflammation	+	1	cellular response to interleukin-9
+# Gene Ontology is missing cellular response to IL-10 !?
+GO:0071348	chronic_inflammation	-	1	cellular response to interleukin-11 # https://doi.org/10.1016/j.cyto.2021.155750: "consistent with this, recombinant human IL-11 has been shown to down-regulate serum TNFα and IL-1β levels in a murine model of endotoxemia. These observations suggest that IL-11 acts as an anti-inflammatory cytokine through modulation of the effector function of macrophages."
+GO:0071349	chronic_inflammation	+	1	cellular response to interleukin-12
+GO:0097398	chronic_inflammation	+	1	cellular response to interleukin-17
+GO:0071351	chronic_inflammation	+	1	cellular response to interleukin-18
+GO:0097397	chronic_inflammation	+	1	cellular response to interleukin-32
+GO:0004918	chronic_inflammation	+	1	interleukin-8 receptor activity
+
+GO:0007162	cancer	+	1	negative regulation of cell adhesion
+GO:0045785	cancer	-	1	positive regulation of cell adhesion
+GO:0060354	cancer	+	1	negative regulation of cell adhesion molecule production
+GO:0060355	cancer	-	1	positive regulation of cell adhesion molecule production
+GO:1903348	cancer	-	1	positive regulation of bicellular tight junction assembly
+GO:1903347	cancer	+	1	negative regulation of bicellular tight junction assembly
+GO:1903393	cancer	-	1	positive regulation of adherens junction organization
+GO:1903392	cancer	+	1	negative regulation of adherens junction organization
+GO:0010648	cancer	+	1	negative regulation of cell communication
+GO:0010647	cancer	-	1	positive regulation of cell communication
+GO:0045786	cancer	-	1	negative regulation of cell cycle
+GO:0045787	cancer	+	1	positive regulation of cell cycle
+GO:0051782	cancer	-	1	negative regulation of cell division
+GO:0051781	cancer	+	1	positive regulation of cell division
+GO:0030308	cancer	-	1	negative regulation of cell growth
+GO:0030307	cancer	+	1	positive regulation of cell growth
+GO:0043069	cancer	+	1	negative regulation of programmed cell death
+GO:0062100	cancer	-	1	positive regulation of programmed necrotic cell death
+GO:0043065	cancer	-	1	positive regulation of apoptotic process
+GO:0043066	cancer	+	1	negative regulation of apoptotic process
+GO:0001569	cancer	+	1	branching involved in blood vessel morphogenesis
+GO:1905555	cancer	+	1	positive regulation of blood vessel branching
+GO:1905554	cancer	-	1	negative regulation of vessel branching
+GO:0045766	cancer	+	1	positive regulation of angiogenesis
+GO:0016525	cancer	-	1	negative regulation of angiogenesis
+GO:0010573	cancer	+	1	vascular endothelial growth factor production
+GO:0010575	cancer	+	1	positive regulation of vascular endothelial growth factor production
+GO:1904046	cancer	-	1	negative regulation of vascular endothelial growth factor production
+GO:0022617	cancer	+	1	extracellular matrix disassembly
+GO:0010716	cancer	-	1	negative regulation of extracellular matrix disassembly
+GO:0090091	cancer	+	1	positive regulation of extracellular matrix disassembly
+GO:0098786	cancer	+	1	biofilm matrix disassembly
+GO:0034769	cancer	+	1	basement membrane disassembly
+GO:0030574	cancer	+	1	collagen catabolic process
+GO:0010711	cancer	-	1	negative regulation of collagen catabolic process
+GO:0120158	cancer	+	1	positive regulation of collagen catabolic process
+GO:0071356	cancer	+	1	cellular response to tumor necrosis factor
+
+
+# cell proliferation:
+GO:0008285	cancer	-	1	negative regulation of cell population proliferation
+GO:0008284	cancer	+	1	positive regulation of cell population proliferation
+GO:1901646	cancer	-	1	negative regulation of synoviocyte proliferation
+GO:1901647	cancer	+	1	positive regulation of synoviocyte proliferation
+GO:0060253	cancer	-	1	negative regulation of glial cell proliferation
+GO:0060252	cancer	+	1	positive regulation of glial cell proliferation
+GO:1904706	cancer	-	1	negative regulation of vascular associated smooth muscle cell proliferation
+GO:1904707	cancer	+	1	positive regulation of vascular associated smooth muscle cell proliferation
+#GO:0001938	cancer	+	1	positive regulation of endothelial cell proliferation
+#GO:0001937	cancer	-	1	negative regulation of endothelial cell proliferation
+#GO:1903589	cancer	+	1	positive regulation of blood vessel endothelial cell proliferation involved in sprouting angiogenesis
+#GO:1903588	cancer	-	1	negative regulation of blood vessel endothelial cell proliferation involved in sprouting angiogenesis
+GO:1903265	cancer	+	1	positive regulation of tumor necrosis factor-mediated signaling pathway
+GO:0010804	cancer	-	1	negative regulation of tumor necrosis factor-mediated signaling pathway
+GO:0030335	cancer	+	1	positive regulation of cell migration
+GO:0030336	cancer	-	1	negative regulation of cell migration
+
+# cell differentiation:
+GO:0045596	cancer	+	1	negative regulation of cell differentiation
+GO:0045597	cancer	-	1	positive regulation of cell differentiation
+
+

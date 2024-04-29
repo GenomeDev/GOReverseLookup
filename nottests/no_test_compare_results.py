@@ -2,6 +2,7 @@
 
 from goreverselookup import ReverseLookup
 
+"""
 if1 = "C:\\Aljosa\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v5\\IEA-\\ind_ann,p=0.05,IEA- (184)\\results\\data.json"
 if2 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v5\\IEA+\\ind_ann,p=0.05,IEA+ (184)\\results\\data.json"
 
@@ -10,6 +11,16 @@ if4 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_c
 
 if5 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v5\\IEA-\\no_ind_ann,p=0.05_IEA- (28)\\results\\data.json"
 if6 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v5\\IEA+\\no_ind_ann,p=0.05,IEA+ (23)\\results\\data.json"
+"""
+
+if1 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v6_FINAL\\IEA-\\ind_ann,p=0.05,IEA- (149)\\results\\data.json"
+if2 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v6_FINAL\\IEA+\\ind_ann,p=0.05,IEA+ (145)\\results\\data.json"
+
+if3 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v6_FINAL\\IEA-\\ind_ann,p=5e-8,IEA- (111)\\results\\data.json"
+if4 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v6_FINAL\\IEA+\\ind_ann,p=5e-8,IEA+ (110)\\results\\data.json"
+
+if5 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v6_FINAL\\IEA-\\no_ind_ann,p=0.05_IEA- (17)\\results\\data.json"
+if6 = "C:\\Aljosa\\Development\\GOReverseLookup-Env\\research_models\\chr_infl_cancer-v6_FINAL\\IEA+\\no_ind_ann,p=0.05,IEA+ (13)\\results\\data.json"
 
 model_IEAneg = ReverseLookup.load_model(if5)
 model_IEAplus = ReverseLookup.load_model(if6)
