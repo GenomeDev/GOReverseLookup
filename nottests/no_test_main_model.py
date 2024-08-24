@@ -27,7 +27,9 @@ WebsiteParser.init()
 
 # input_file = "input_files/input.txt"
 # input_file = "input_files/input_rhartritis_ortho.txt"
-input_file = "F:/Development/python_environments/goreverselookup/research_models/chr_infl_cancer/rescore_test_2/IEA-/ind_ann,p=0.05,IEA-/input.txt"
+# input_file = "F:/Development/python_environments/goreverselookup/research_models/chr_infl_cancer/rescore_test_2/IEA-/ind_ann,p=0.05,IEA-/input.txt"
+# input_file = "input_files/inputOS2-2.txt"
+input_file = "research_models\\chronic-inflammation_cancer\\input.txt"
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file(input_file)
