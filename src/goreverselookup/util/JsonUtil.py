@@ -62,26 +62,6 @@ class JsonUtil:
         with open(filepath, "w") as f:
             json.dump(data_dictionary, f, indent=4)
 
-        """
-        try: # this works on mac, not on windows
-            current_dir = os.path.dirname(os.path.abspath(traceback.extract_stack()[0].filename))
-            os.makedirs(os.path.dirname(os.path.join(current_dir, filepath)), exist_ok=True) # Create directory for the report file, if it does not exist
-            with open(os.path.join(current_dir, filepath), 'w') as f:
-                json.dump(data_dictionary, f, indent=4)
-        except OSError:
-            # pass the error on the first attempt
-            pass
-
-        try: # if first attempt fails, try using current_dir = os.getcwd(), this works on windows
-            windows_filepath = FileUtil.find_win_abs_filepath(filepath)
-            os.makedirs(os.path.dirname(windows_filepath), exist_ok=True) # Create directory for the report file, if it does not exist
-            with open(windows_filepath, 'w') as f:
-                json.dump(data_dictionary, f, indent=4)
-            #current_dir = os.getcwd()
-            #os.makedirs(os.path.dirname(os.path.join(current_dir, filepath)), exist_ok=True)
-        except OSError:
-            logger.info(f"ERROR creating filepath {filepath} at {os.getcwd()}")
-        """
     @classmethod
     def class_to_json(cls, var):
         json_data = {}

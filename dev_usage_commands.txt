@@ -2,7 +2,8 @@ In GOReverseLookup -> Terminal: poetry build
 
 C:\Aljosa\Development\Environments\goreverselookup_test\Scripts\activate.bat
 
-pip install C:\Aljosa\Development\GOReverseLookup\dist\goreverselookup-1.0.31.tar.gz (if building from a local poetry build)
+pip install C:\Aljosa\Development\GOReverseLookup\dist\goreverselookup-1.0.XX.tar.gz (if building from a local poetry build)
+NOTE: replace XX with current version
 or
 pip install goreverselookup
 

@@ -7,6 +7,7 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 import json
 import os
+from statsmodels.stats.multitest import multipletests
 
 from .core.ModelSettings import ModelSettings, OrganismInfo
 from .core.ModelStats import ModelStats
@@ -1342,6 +1343,23 @@ class ReverseLookup:
 
         if not isinstance(score_classes, list):
             score_classes = [score_classes]
+        
+        # determine which multiple correction method to use: https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html
+        valid_multiple_correction_methods = [
+            'bonferroni',
+            'sidak',
+            'holm-sidak',
+            'holm',
+            'simes-hochberg',
+            'hommel',
+            'fdr_bh',
+            'fdr_by',
+            'fdr_tsbh',
+            'fdr_tsbky'    
+        ]
+        if self.model_settings.multiple_correction_method not in valid_multiple_correction_methods:
+            self.model_settings.multiple_correction_method = "fdr_bh"
+            logger.info(f"WARNING: multiple correction method set by the user ('{self.model_settings.multiple_correction_method}') is not among valid multiple correction methods specified at https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html; automatically using 'fdr_bh' as the multiple correction method.")
 
         # perform scoring of each product (gene)
         with logging_redirect_tqdm():
@@ -1357,21 +1375,15 @@ class ReverseLookup:
                     #    self.score_miRNAs(_score_class, recalculate=recalculate)
                     #    continue
                     if isinstance(_score_class, basic_mirna_score):
-                        # just continue, see explanation above
-                        continue
+                        continue # just continue, see explanation above
 
-                    if (
-                        _score_class.name in product.scores and recalculate is True
-                    ):  # if score already exists and recalculate is set to True
-                        product.scores[_score_class.name] = _score_class.metric(
-                            product
-                        )  # create a dictionary between the scoring algorithm name and it's score for current product
-                    elif (
-                        _score_class.name not in product.scores
-                    ):  # if score doesn't exist yet
+                    if _score_class.name in product.scores and recalculate is True:  # if score already exists and recalculate is set to True
+                        product.scores[_score_class.name] = _score_class.metric(product)  # create a dictionary between the scoring algorithm name and it's score for current product
+                    elif _score_class.name not in product.scores:  # if score doesn't exist yet
                         product.scores[_score_class.name] = _score_class.metric(product)
 
         # calculate Benjamini-Hochberg FDR correction
+        
         for _score_class in score_classes:
             if isinstance(_score_class, basic_mirna_score):
                 # score miRNAs holistically here, see # NOTE
@@ -1390,13 +1402,10 @@ class ReverseLookup:
                             if "error" in product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]:  # check if there is "error" key
                                 continue
                             p_values.append(product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]["pvalue"])
-                # apply Benjamini-Hochberg FDR correction
+                
+                # apply multiple testing correction
                 if len(p_values) > 0:
-                    from statsmodels.stats.multitest import multipletests
-
-                    reject, p_corrected, _, _ = multipletests(
-                        p_values, alpha=0.05, method="fdr_bh"
-                    )
+                    reject, p_corrected, _, _ = multipletests(p_values, alpha=0.05, method=self.model_settings.multiple_correction_method)
                     for product in self.products:
                         for SOI in self.target_SOIs:
                             for direction in ["+", "-"]:
@@ -2567,6 +2576,8 @@ class ReverseLookup:
                             setting_value = False
                         if setting_name == "pvalue":
                             setting_value = float(chunks[1])
+                        if setting_name == "multiple_correction_method":
+                            logger.info(f"Using {setting_value} as multiple correction.")
 
                         if setting_name == "include_indirect_annotations" and setting_optionals is not None:
                             # this means that a setting optional of either parent or children direction of indirect annotations was specified

@@ -79,6 +79,21 @@
 #			the set pvalue (default is 0.05) for all the SOIs of the user (eg. cancer+, inflammation+) AND also higher pvalues than the set pvalue for opposite SOIs
 #			(eg. cancer-, inflammation-), then the VEGFA gene is said to be statistically important in the event of coexistance of inflammation and cancer.
 #
+#   - multiple_correction_method:
+#           Used in statistical evaluation of significant genes. Must be one of the following:
+#               * bonferroni
+#               * sidak
+#               * holm-sidak
+#               * holm
+#               * simes-hochberg
+#               * hommel 
+#               * fdr_bh
+#               * fdr_by
+#               * fdr_tsbh
+#               * fdr_tsbky
+#           Refer to https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html#statsmodels.stats.multitest.multipletests
+#           for further explanation of the above parameters.
+#
 #	- gorth_ortholog_refetch:
 #			We implemented a gOrth batch ortholog query (https://biit.cs.ut.ee/gprofiler/orth), which is called using (ReverseLookup).fetch_orthologs_products_batch_gOrth(target_taxon_number=...) function.
 #			The function attempts to find orthologs to genes in a single batch request. If 'gorth_ortholog_refetch' is True, then the genes for which orthologs were not found,
@@ -197,6 +212,7 @@ curator_statement	IC_ECO:0000305,ND_ECO:0000307
 electronic	IEA_ECO:0000501
 ###settings
 pvalue	0.05
+multiple_correction_method	fdr_bh
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
 ortholog_organisms
 #evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)

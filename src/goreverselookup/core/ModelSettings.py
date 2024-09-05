@@ -171,6 +171,7 @@ class ModelSettings:
         self.indirect_annotations_direction = None # determine whether to take parents or children goterms
         self.indirect_annotations_max_depth = None
         self.uniprotkb_genename_online_query = False
+        self.multiple_correction_method = "fdr_bh" # https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html
         self.pvalue = 0.05
         self.goterms_set = []
         self.datafile_paths = {}
