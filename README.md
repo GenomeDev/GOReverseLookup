@@ -116,6 +116,7 @@ curator_statement	IC_ECO:0000305,ND_ECO:0000307
 electronic	IEA_ECO:0000501
 ###settings
 pvalue	0.05
+multiple_correction_method	fdr_bh
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
 evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
@@ -257,6 +258,20 @@ b) The user has defined an SOI and has attributed GO terms only in one regulatio
 ```
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606
 ```
+
+**multiple_correction_method**: the multiple correction method used in statistical evaluation of significant genes. Default is `fdr_bh`. Must be one of the following:
+- `bonferroni`: one-step correction
+- `sidak`: one-step correction
+- `holm-sidak`: step down method using Sidak adjustments
+- `holm`: step-down method using Bonferroni adjustments
+- `simes-hochberg`: step-up method (independent)
+- `hommel`: closed method based on Simes tests (non-negative)
+- `fdr_bh`: Benjamini/Hochberg (non-negative)
+- `fdr_by`: Benjamini/Yekutieli (negative)
+- `fdr_tsbh`: two stage fdr correction (non-negative)
+- `fdr_tsbky`: two stage fdr correction (non-negative)
+
+Also refer to: https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html#statsmodels.stats.multitest.multipletests 
 
 **ortholog_organisms** represent all homologous organisms, the genes of which are also taken into account during the scoring phase if they are found to have existing target organism orthologous genes. This feature has been enabled as a GO term can be associated with genes belonging to different organisms, which are indexed by various databases. The current model has been tested on the following orthologous organisms: _Rattus norvegicus_, _Mus musculus_, _Danio rerio_ and _Xenopus tropicalis_. Example:
 ```
