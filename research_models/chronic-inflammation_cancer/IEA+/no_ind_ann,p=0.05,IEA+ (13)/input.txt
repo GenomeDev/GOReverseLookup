@@ -8,6 +8,7 @@ electronic	IEA_ECO:0000501
 ###settings
 pvalue	0.05
 multiple_correction_method	fdr_bh
+two_tailed	False
 include_indirect_annotations	False	p
 indirect_annotations_max_depth	-1
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon

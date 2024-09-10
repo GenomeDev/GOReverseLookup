@@ -172,6 +172,7 @@ class ModelSettings:
         self.indirect_annotations_max_depth = None
         self.uniprotkb_genename_online_query = False
         self.multiple_correction_method = "fdr_bh" # https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html
+        self.two_tailed = False # False - single tailed p-value test; True - two tailed p-value test e.g. p < pvalue and p > (1-pvalue)
         self.pvalue = 0.05
         self.goterms_set = []
         self.datafile_paths = {}
@@ -187,6 +188,21 @@ class ModelSettings:
         self.goterm_gene_query_max_retries = 3
         self.exclude_opposite_regulation_direction_check = False
         self.destination_dir = None
+        
+        # determine which multiple correction method to use: https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html
+        self._valid_multiple_correction_methods = [
+            'bonferroni',
+            'sidak',
+            'holm-sidak',
+            'holm',
+            'simes-hochberg',
+            'hommel',
+            'fdr_bh',
+            'fdr_by',
+            'fdr_tsbh',
+            'fdr_tsbky'    
+        ]
+        
 
     @classmethod
     def from_json(cls, json_data) -> ModelSettings:
@@ -259,14 +275,16 @@ class ModelSettings:
 
         if setting_name == "goterm_gene_query_timeout" or setting_name == "goterm_gene_query_max_retries":
             setting_value = int(setting_value)
+        
+        if setting_name == "multiple_correction_method":
+            if setting_value not in self._valid_multiple_correction_methods:
+                logger.info(f"WARNING: multiple correction method set by the user ('{setting_value}') is not among valid multiple correction methods specified at https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html; automatically using 'fdr_bh' as the multiple correction method.")
+                setting_value = "fdr_bh"
 
         if hasattr(self, setting_name):
             setattr(self, setting_name, setting_value)
         else:
-            logger.warning(
-                f"ModelSettings has no attribute {setting_name}! Make sure to"
-                " programmatically define the attribute."
-            )
+            logger.warning(f"ModelSettings has no attribute {setting_name}! Make sure to programmatically define the attribute.")
 
     def get_setting(self, setting_name: str):
         if hasattr(self, setting_name):

@@ -70,7 +70,8 @@ class ReverseLookup:
         obo_parser: OboParser = None,
         input_filepath:str = None,
         GO_api_version:str = None,
-        OBO_version_info:dict = None
+        OBO_version_info:dict = None,
+        defined_SOIs: List[Dict[str,str]] = None
     ):
         """
         A class representing a reverse lookup for gene products and their associated Gene Ontology terms.
@@ -88,10 +89,12 @@ class ReverseLookup:
                         when researching only GO Terms connected to biological processes and/or molecular activities helps to produce more accurate statistical scores.
             model_settings: used for saving and loading model settings
             obo_parser: Used for parsing the Gene Ontology's .obo file. If it isn't supplied, it will be automatically created
+            defined_SOIs (list): A list of all target SOIs and, if defined, their reverse SOIs
         """
         self.goterms = goterms
         self.products = products
         self.target_SOIs = target_SOIs
+        self.defined_SOIs = defined_SOIs
         self.miRNAs = miRNAs
         self.miRNA_overlap_treshold = miRNA_overlap_treshold
         self.model_settings = model_settings
@@ -1344,29 +1347,10 @@ class ReverseLookup:
         if not isinstance(score_classes, list):
             score_classes = [score_classes]
         
-        # determine which multiple correction method to use: https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html
-        valid_multiple_correction_methods = [
-            'bonferroni',
-            'sidak',
-            'holm-sidak',
-            'holm',
-            'simes-hochberg',
-            'hommel',
-            'fdr_bh',
-            'fdr_by',
-            'fdr_tsbh',
-            'fdr_tsbky'    
-        ]
-        if self.model_settings.multiple_correction_method not in valid_multiple_correction_methods:
-            self.model_settings.multiple_correction_method = "fdr_bh"
-            logger.info(f"WARNING: multiple correction method set by the user ('{self.model_settings.multiple_correction_method}') is not among valid multiple correction methods specified at https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html; automatically using 'fdr_bh' as the multiple correction method.")
-
         # perform scoring of each product (gene)
         with logging_redirect_tqdm():
             # iterate over each Product object in self.products and score them using the Scoring object
-            for product in tqdm(
-                self.products, "Scoring products"
-            ):  # each Product has a field scores - a dictionary between a name of the scoring algorithm and it's corresponding score
+            for product in tqdm(self.products, "Scoring products"):  # each Product has a field scores - a dictionary between a name of the scoring algorithm and it's corresponding score
                 for _score_class in score_classes:
                     # NOTE: Current miRNA scoring (self.score_miRNAs) performs miRNA scoring holistically - in one call for all miRNAs in self.miRNAs. It is pointless to call this function here, as it needs to
                     # be called only once. Here, a function for miRNA scoring has to be called, which displays the top N miRNAs, which bind to the specific product.
@@ -1729,6 +1713,7 @@ class ReverseLookup:
         data["GO_api_version"] = self.GO_api_version
         data["OBO_version_info"] = self.OBO_version_info
         data["target_SOIs"] = self.target_SOIs
+        data["defined_SOIs"] = self.defined_SOIs
         data["go_categories"] = self.go_categories
         data["model_settings"] = self.model_settings.to_json()
         data["miRNA_overlap_treshold"] = self.miRNA_overlap_treshold
@@ -2097,7 +2082,7 @@ class ReverseLookup:
             # merge both dictionaries
             return {**goterms_diff, **products_diff}
 
-    def perform_statistical_analysis(self, test_name="fisher_test", filepath="", use_dest_dir:bool = False):
+    def perform_statistical_analysis(self, test_name:str="fisher_test", filepath:str="", use_dest_dir:bool = False, two_tailed:bool=False):
         """
         Finds the statistically relevant products, saves them to 'filepath' (if it is provided) and returns a JSON object with the results.
 
@@ -2108,6 +2093,8 @@ class ReverseLookup:
           - (bool) use_dest_dir: Whether the ReverseLookup model's destination_dir should be used as the reference for the relative filepath.
                                  Production code should set 'use_dest_dir' to True, so that output files will be saved relatively to the specified destination directory.
                                  Developers should set 'use_dest_dir' to False, so that the output files are saved relatively to the development directory
+          - (bool) two_tailed: If True, will also analyze the second tail of significance (e.g. first tail is significance of target SOI and insignificance of reverse SOI, 
+                               second tail is insignificance of target SOI and significance of reverse SOI)
 
         Warning: Binomial test scoring is not yet implemented.
         Warning: Products in this model must be scored with the aforementioned statistical tests prior to calling this function.
@@ -2148,34 +2135,103 @@ class ReverseLookup:
                 pvalue_sum += pvalue_SOI
             return pvalue_sum
         
-        def determine_product_statistical_significance(product:Product, test_name, SOIs):              
-            if self.model_settings.exclude_opposite_regulation_direction_check == False: # checks both target and the opposite SOIs
+        def determine_product_statistical_significance(product:Product, test_name, SOIs, second_tail:bool=False):  
+            """
+            second_tail: if True, will return True for:
+              - if excluding opposite regulation direction check: genes, which statisfy pvalue > (1-p), if len(SOIs) = 1
+              - if not excluding opposite regulation direction check: genes, which satisfy pvalue > p (for target SOIs) and pvalue < p (for reverse SOIs)
+            
+            Returns dictionary:
+            {
+            'significance': True or False, whether the gene was found to be significant
+            'SOIs': the SOIs for which the gene was found to be significant, e.g. chronic_inflammation+:cancer+; obtained by example code: SOI1['SOI']}{SOI1['direction']}:{SOI2['SOI']}{SOI2['direction']
+            }
+            """
+            def get_SOI_groups_label(SOIs, change_direction:bool=False): # example return: diabetes+:angio+
+                printSOIs = ""
+                for SOI in SOIs:
+                    dir = SOI['direction']
+                    soi = SOI['SOI']
+                    if change_direction:
+                        dir = '+' if SOI['direction'] == '-' else '-'
+                    printSOIs = f"{printSOIs}:{soi}{dir}"
+                s = printSOIs[1: ] # remove first ':'
+                return s
+            
+            # determine if there is only one target SOI defined without complementary reverse SOI,
+            # or if there are target SOIs and their complementary reverse SOIs
+            has_complementary_SOIs = False
+            for SOI in self.target_SOIs:
+                soi_name = SOI['SOI']
+                direction = 1 if SOI['direction'] == "+" else -1
+                for dSOI in self.defined_SOIs:
+                    dsoi_name = dSOI['SOI']
+                    dsoi_direction = 1 if dSOI['direction'] == "+" else -1
+                    if (soi_name == dsoi_name) and (direction + dsoi_direction == 0):
+                        has_complementary_SOIs = True
+                
+            if self.model_settings.exclude_opposite_regulation_direction_check == False and has_complementary_SOIs: # checks both target and the opposite SOIs
+                if second_tail: # second tail checks insignificance of target SOI and significance of reverse SOI
+                    try:
+                        if all( # check target SOI > 0.05
+                            float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"]["pvalue_corr"])
+                            >= self.model_settings.pvalue
+                            for SOI in SOIs   
+                        ) and all( # check reverse SOI < 0.05
+                            float(product.scores[test_name][f"{SOI['SOI']}{'+' if SOI['direction'] == '-' else '-'}"]["pvalue_corr"])
+                            < self.model_settings.pvalue
+                            for SOI in SOIs
+                        ):
+                            return {
+                                'significance':True,
+                                'SOIs':get_SOI_groups_label(SOIs, change_direction=True)
+                            }
+                    except KeyError:
+                        return {'significance':False}
+                # first tail: checks significance of target SOI and insignificance of reverse SOI
                 try:
                     if all( # check target SOI < 0.05
                         float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"]["pvalue_corr"])
                         < self.model_settings.pvalue
                         for SOI in SOIs
-                    ) and all( # check opposite SOI > 0.05
+                    ) and all( # check reverse SOI > 0.05
                         float(product.scores[test_name][f"{SOI['SOI']}{'+' if SOI['direction'] == '-' else '-'}"]["pvalue_corr"])
                         >= self.model_settings.pvalue
                         for SOI in SOIs
                     ):
-                        return True
-                except KeyError:
-                    # most possibly pvalue_corr is missing (can happen if element in contingency table is negative)
-                    return False
-            else: # checks only target SOI
-                try:
-                    if all( # check target SOI < 0.05
+                        return {
+                            'significance':True,
+                            'SOIs': get_SOI_groups_label(SOIs, change_direction=False)
+                        }
+                except KeyError: # most possibly pvalue_corr is missing (can happen if element in contingency table is negative)
+                    return {'significance':False}
+            else: # checks only target SOI without reverse SOI
+                if second_tail: # second tail: check significance of reverse SOI (target SOI >= (1-0.05))
+                    try:
+                        if all( 
+                            float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"].get("pvalue_corr", 0))
+                            >= (1-self.model_settings.pvalue)
+                            for SOI in SOIs
+                        ):
+                            return {
+                                'significance':True,
+                                'SOIs': get_SOI_groups_label(SOIs, change_direction=True)
+                            }
+                    except KeyError:
+                        return {'significance':False}
+                try: # first tail: check significance of target SOI (target SOI < 0.05)
+                    if all( 
                         float(product.scores[test_name][f"{SOI['SOI']}{SOI['direction']}"].get("pvalue_corr", 1))
                         < self.model_settings.pvalue
                         for SOI in SOIs
                     ):
-                        return True
-                except KeyError:
-                    # most possibly pvalue_corr is missing (can happen if element in contingency table is negative)
-                    return False
-            return False
+                        return {
+                            'significance':True,
+                            'SOIs': get_SOI_groups_label(SOIs, change_direction=False)
+                        }
+                except KeyError: # most possibly pvalue_corr is missing (can happen if element in contingency table is negative)
+                    return {'significance':False}
+            return {'significance':False}
 
         statistically_relevant_products = []  # a list of lists; each member is [product, "SOI1_name_direction:SOI2_name_direction"]
         
@@ -2200,17 +2256,19 @@ class ReverseLookup:
             # negatively regulate both of the SOIs in the pair.
 
             if len(self.target_SOIs) == 1:
-                if determine_product_statistical_significance(
+                r = determine_product_statistical_significance(
                     product = product,
                     test_name = test_name,
-                    SOIs = self.target_SOIs
-                ):
+                    SOIs = self.target_SOIs,
+                    second_tail=two_tailed
+                )
+                if r.get('significance'):
                     statistically_relevant_products.append(
                                 [
                                     product,
-                                    f"{self.target_SOIs[0]['SOI']}{self.target_SOIs[0]['direction']}"
+                                    r.get('SOIs')
                                 ]
-                            )
+                            )                
                 continue # do not advance to the multiple target SOI scoring phase
 
             # multiple target SOIs scoring phase
@@ -2219,42 +2277,54 @@ class ReverseLookup:
                     SOI1 = self.target_SOIs[i]
                     SOI2 = self.target_SOIs[j]
                     pair = [SOI1, SOI2]
-
-                    if determine_product_statistical_significance(
+                    
+                    r = determine_product_statistical_significance(
                         product = product,
                         test_name = test_name,
-                        SOIs = pair
-                    ):
+                        SOIs = pair,
+                        second_tail=two_tailed
+                    )
+                    if r.get('significance'):
                         statistically_relevant_products.append(
                                 [
                                     product,
-                                    f"{SOI1['SOI']}{SOI1['direction']}:{SOI2['SOI']}{SOI2['direction']}"
+                                    r.get('SOIs')
                                 ]
                             )
+        
         statistically_relevant_products_final = {} # dictionary between two SOIs (eg. angio+:diabetes+) and all statistically relevant products or a single target SOI (eg. angio+) and all statistically relevant products
         if len(self.target_SOIs) == 1:
             # do not advance to the multiple target SOI score analysis phase
-            target_SOI_code = ""
-
             for element in statistically_relevant_products:
                 prod = element[0]
-                target_SOI_code = element[1]
-                if target_SOI_code not in statistically_relevant_products_final:
-                    statistically_relevant_products_final[target_SOI_code] = []
-                statistically_relevant_products_final[target_SOI_code].append(prod.__dict__)
-            # sort
-            statistically_relevant_products_final[target_SOI_code] = sorted(
-                statistically_relevant_products_final[target_SOI_code],
-                key=lambda gene: sorting_key(gene)
-            )
-            logger.info(f"Finished with product statistical analysis. Found {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}")
+                SOI_label = element[1]
+                if SOI_label not in statistically_relevant_products_final:
+                    statistically_relevant_products_final[SOI_label] = []
+                statistically_relevant_products_final[SOI_label].append(prod.__dict__)
+            
+            logger.info(f"Displaying significant genes:")
+            statistically_relevant_products_final_sorted = {}
+            num_significant_genes = 0
+            for SOIs_label,significant_products in statistically_relevant_products_final.items():
+                statistically_relevant_products_for_SOIs_label_sorted = sorted( # sorts each subgroup (each SOI label)
+                    significant_products,
+                    key= lambda gene: sorting_key(gene)
+                    )
+                statistically_relevant_products_final_sorted[SOIs_label] = statistically_relevant_products_for_SOIs_label_sorted
+                # update gene counts
+                num_significant_genes += len(statistically_relevant_products_for_SOIs_label_sorted)
+                logger.info(f"  - {SOIs_label} : {len(statistically_relevant_products_for_SOIs_label_sorted)} genes")
+            logger.info(f"  - total significant genes: {num_significant_genes}")
+            
+            # update significant genes
+            self.statistically_relevant_products = statistically_relevant_products_final_sorted            
             
             logger.info(f"Saving statistically relevant products to {os.path.abspath(filepath)}")
             JsonUtil.save_json(
-                data_dictionary=statistically_relevant_products_final,
+                data_dictionary=statistically_relevant_products_final_sorted,
                 filepath=filepath
             )
-            return statistically_relevant_products_final
+            return statistically_relevant_products_final_sorted
 
         # * multiple target SOIs score analysis phase *
         # statistically_relevant_products stores a list of lists, each member list is a Product object bound to a specific pair code (e.g. angio+:diabetes+).
@@ -2273,10 +2343,26 @@ class ReverseLookup:
             # each element is a list [product, "SOI1_name_direction:SOI2_name_direction"]
             prod = element[0]
             SOI_pair_code = element[1]
+            if SOI_pair_code not in statistically_relevant_products_final: # takes care also of the SOI pair codes if two-tailed test was used (this changes the SOI directions)
+                statistically_relevant_products_final[SOI_pair_code] = []
             statistically_relevant_products_final[SOI_pair_code].append(prod.__dict__)
-
+        
+        logger.info(f"Displaying significant genes:")
+        num_significant_genes = 0
         # sort the genes based on the ascending sum of pvalues (lowest pvalues first)
         statistically_relevant_products_final_sorted = {}
+        for SOIs_label,significant_products in statistically_relevant_products_final.items():
+            statistically_relevant_products_for_SOIs_label_sorted = sorted(
+                significant_products,
+                key= lambda gene: sorting_key(gene)
+            )
+            statistically_relevant_products_final_sorted[SOIs_label] = statistically_relevant_products_for_SOIs_label_sorted
+            # update gene counts
+            num_significant_genes += len(statistically_relevant_products_for_SOIs_label_sorted)
+            logger.info(f"  - {SOIs_label} : {len(statistically_relevant_products_for_SOIs_label_sorted)} genes")
+        logger.info(f"  - total significant genes: {num_significant_genes}")
+
+        """
         for i in range(len(self.target_SOIs) - 1):
             for j in range(i + 1, len(self.target_SOIs)):
                 SOI1 = self.target_SOIs[i]
@@ -2288,7 +2374,8 @@ class ReverseLookup:
                     key=lambda gene: sorting_key(gene)
                 )
                 statistically_relevant_products_final_sorted[pair_code] = statistically_relevant_products_for_SOI_pair_sorted
-
+        """
+        
         # TODO: save statistical analysis as a part of the model's json and load it up on startup
         self.statistically_relevant_products = statistically_relevant_products_final_sorted
         logger.info(f"Finished with product statistical analysis. Found {len(statistically_relevant_products)} statistically relevant products. p = {self.model_settings.pvalue}")
@@ -2334,6 +2421,7 @@ class ReverseLookup:
             logger.warning(f"Data is EMPTY!")
             
         target_SOIs = data["target_SOIs"]
+        defined_SOIs = data["defined_SOIs"]
         miRNA_overlap_treshold = data["miRNA_overlap_treshold"]
         
         input_filepath = data.get("input_filepath", None)
@@ -2417,7 +2505,8 @@ class ReverseLookup:
             obo_parser=obo_parser,
             input_filepath=input_filepath,
             GO_api_version=GO_api_version,
-            OBO_version_info=OBO_version_info
+            OBO_version_info=OBO_version_info,
+            defined_SOIs=defined_SOIs
         )
 
     @classmethod
@@ -2736,7 +2825,22 @@ class ReverseLookup:
                         goterm.parent_term_ids = goterm_parent_ids  # update parent term ids
                         # goterm.child_term_ids = goterm_children_ids  # update child term ids
             logger.info("Indirect annotations have been computed.")
-
+        
+        logger.info(f"Computing defined SOIs:")
+        defined_SOIs_fullnames = {} # dict linking a SOI full name (e.g. 'chronic_inflammation+') to its dict representation (e.g. {'SOI': "chronic_inflammation", 'direction': "+"})
+        for goterm in go_terms:
+            assert isinstance(goterm, GOTerm)
+            goterm_SOIs = goterm.SOIs
+            for goterm_SOI in goterm_SOIs:
+                fullname = f"{goterm_SOI['SOI']}{goterm_SOI['direction']}"
+                if fullname not in defined_SOIs_fullnames:
+                    defined_SOIs_fullnames[fullname] = goterm_SOI
+        
+        defined_SOIs = []
+        for fullname, SOI_dict in defined_SOIs_fullnames.items():
+            logger.info(f"  - {fullname}")
+            defined_SOIs.append(SOI_dict)
+            
         logger.info("Creating model from input file with:")
         logger.info(f"  - input file filepath: {filepath}")
         logger.info(f"  - destination dir: {destination_dir}")
@@ -2749,6 +2853,7 @@ class ReverseLookup:
         return cls(
             go_terms,
             target_SOIs=target_SOIs,
+            defined_SOIs=defined_SOIs,
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,

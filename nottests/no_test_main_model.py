@@ -29,7 +29,7 @@ WebsiteParser.init()
 # input_file = "input_files/input_rhartritis_ortho.txt"
 # input_file = "F:/Development/python_environments/goreverselookup/research_models/chr_infl_cancer/rescore_test_2/IEA-/ind_ann,p=0.05,IEA-/input.txt"
 # input_file = "input_files/inputOS2-2.txt"
-input_file = "research_models\\chronic-inflammation_cancer\\input.txt"
+input_file = "research_models\\test_models\\two_tailed_test-rhart\\input_rhartritis_ortho_singletail.txt"
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file(input_file)
@@ -40,7 +40,7 @@ model.create_products_from_goterms()
 # model.products_perform_idmapping() # TODO: reimplement this after fixing the bug !!!
 Cacher.save_data()
 model.fetch_orthologs_products_batch_gOrth(target_taxon_number="9606")
-model.fetch_ortholog_products(run_async=True, max_connections=20, semaphore_connections=10, req_delay=0.1)
+model.fetch_ortholog_products(run_async=True, max_connections=10, semaphore_connections=5, req_delay=0.5)
 model.prune_products()
 model.bulk_ens_to_genename_mapping()
 Cacher.save_data()
@@ -66,7 +66,8 @@ nterms_score = nterms(model)
 adv_prod_score = adv_product_score(model)
 binom_score = binomial_test(model)
 fisher_score = fisher_exact_test(model)
-model.score_products(score_classes=[nterms_score, adv_prod_score, binom_score, fisher_score])
+# model.score_products(score_classes=[nterms_score, adv_prod_score, binom_score, fisher_score])
+model.score_products(score_classes=[fisher_score])
 
 # model.model_settings.pvalue = 0.10  # set pvalue to be used in statistical analysis
 model.perform_statistical_analysis(

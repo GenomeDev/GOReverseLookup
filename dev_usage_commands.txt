@@ -7,6 +7,14 @@ NOTE: replace XX with current version
 or
 pip install goreverselookup
 
+IMPORTANT! If you are developing, run 'pip install -e .', to install goreverselookup in editable mode.
+    This links goreverselookup directly to your programming environment, and changes made in the programming environment
+    directly take effect in the goreverselookup module.
+
+    When running from CMD, activate the virtual environment from the .venv located in VSCode's working environment
+    to work with the latest goreverselookup developer instance (without having to re-install goreverselookup again and again
+    to a custom virtual environment)
+
 cd C:\Aljosa\Development\Environments\goreverselookup_test
 
 goreverselookup C:\Aljosa\Development\Environments\goreverselookup_test\test-model\input-test.txt

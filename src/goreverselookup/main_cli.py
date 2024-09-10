@@ -137,7 +137,12 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
         rescore_model_copy.statistically_relevant_products = {} # reset
         fisher_score = fisher_exact_test(rescore_model_copy)
         rescore_model_copy.score_products(score_classes=[fisher_score])
-        rescore_model_copy.perform_statistical_analysis(test_name="fisher_test", filepath="results/statistically_relevant_genes.json", use_dest_dir=True)
+        rescore_model_copy.perform_statistical_analysis(
+            test_name="fisher_test", 
+            filepath="results/statistically_relevant_genes.json", 
+            use_dest_dir=True, 
+            two_tailed=rescore_model.model_settings.two_tailed
+        )
         rescore_model_copy.save_model("results/data.json", use_dest_dir=True)
         return
 
@@ -188,7 +193,12 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     fisher_score = fisher_exact_test(model)
     # model.score_products(score_classes=[nterms_score, adv_prod_score, binom_score, fisher_score])
     model.score_products(score_classes=[fisher_score])
-    model.perform_statistical_analysis(test_name="fisher_test", filepath="results/statistically_relevant_genes.json", use_dest_dir=True)
+    model.perform_statistical_analysis(
+        test_name="fisher_test", 
+        filepath="results/statistically_relevant_genes.json", 
+        use_dest_dir=True, 
+        two_tailed=model.model_settings.two_tailed
+    )
     # TODO: fetch info for stat relevant genes here
     model.save_model("results/data.json", use_dest_dir=True)
 
