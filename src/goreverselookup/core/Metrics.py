@@ -456,6 +456,12 @@ class fisher_exact_test(Metrics):
     stimulate angiogenesis. The gene in question is SOX2, which is associated in 10
     of the 100 GO terms of angiogenesis+. Gene SOX2 is also associated with 100 GO
     terms in the “general” set (containing all existing GO terms - 10000 GO terms).
+    
+    Note:
+    - study count = num_goterms_product_SOI
+    - study set = num_goterms_all_SOI
+    - population count = num_goterms_product_general
+    - population set = num_goterms_all_general
 
                                     | n GOt (contains SOX2) | n GOt (doesnt contain SOX2)  | total
     --------------------------------------------------------------------------------------------------
@@ -519,7 +525,9 @@ class fisher_exact_test(Metrics):
         WARNING: 'use_goaf' determines if the GO Annotations File will be used to determine num_goterms_all (the set of all goterms in existence).
         If you wish to use EVERY GO Term in existence, then set 'use_goaf' to False - this will use the .obo instead to query all GO Terms in existence.
         However, if you wish to use a GO Annotations File for a specific species (e.g. ZFIN), then set use_goaf to True, so a ZFIN.gaf file will be used to
-        calculate all GO Terms in existence for the zebrafish. You must construct the binomial_test instance in this case with the ZFIN.gaf!!!
+        calculate all GO Terms in existence for the zebrafish. You must construct the binomial_test instance in this case with the ZFIN.gaf!!
+        
+        WARNING: use_goaf currently has no effect.
         """
         D_TEST_INCLUDE_INDIRECT_ANNOTATIONS_SOI_ALL = False # TODO: remove/integrate this
 
@@ -646,7 +654,6 @@ class fisher_exact_test(Metrics):
                     # don't run this if indirect annotations are already computed for num_goterms_all_proces
                     num_goterms_all_SOI += num_indirect_annotations
 
-                # time for Binomial test and "risk ratio"
                 cont_table = [
                     [
                         num_goterms_product_SOI, # top-left
@@ -716,7 +723,53 @@ class fisher_exact_test(Metrics):
                 }
 
         return results_dict
+    
+    @classmethod
+    def compute_contingency(self, study_set, study_count, population_set, population_count):
+        """
+        Computes the contingency table and returns the significance based on study_set, study_count, population_set and population_count
+        
+        - study count = num_goterms_product_SOI
+        - study set = num_goterms_all_SOI
+        - population count = num_goterms_product_general
+        - population set = num_goterms_all_general
+        """
+        cont_table = [
+            [
+                study_count, # top-left
+                study_set - study_count # top-right
+            ],
+            [
+                population_count - study_count, # bottom-left
+                population_set - population_count - (study_set - study_count) # bottom-right
+            ],
+        ]
+        
+        for x in cont_table:
+            for y in x:
+                if y < 0:
+                    return "Element in contingency table is negative!"
 
+                fisher = fisher_exact(cont_table, alternative="greater")
+                fisher_pvalue = fisher.pvalue
+                odds_ratio = fisher.statistic
+
+                fold_enrichment_score = 0
+                if (
+                    study_set != 0
+                    and population_count != 0
+                    and population_set != 0
+                ):
+                    fold_enrichment_score = study_count / (
+                        study_set
+                        * (population_count / population_set)
+                    )
+                
+        print(f"study_set = {study_set} \n study_count = {study_count}")
+        print(f"population_set = {population_set} \n population_count = {population_count}")
+        print(f"p = {fisher_pvalue}")
+        print(f"odds ratio = {odds_ratio}")
+        print(f"fold enrichment = {fold_enrichment_score}")
 
 class inhibited_products_id(Metrics):
     """
