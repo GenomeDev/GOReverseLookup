@@ -725,10 +725,16 @@ class fisher_exact_test(Metrics):
         return results_dict
     
     @classmethod
-    def compute_contingency(self, study_set, study_count, population_set, population_count):
+    def compute_contingency(self, study_set, study_count, population_set, population_count, hypothesis:str="two-sided"):
         """
         Computes the contingency table and returns the significance based on study_set, study_count, population_set and population_count
         
+        hypothesis can be either of:
+          - 'two-sided': the odds ratio of the underlying population is not one
+          - 'greater': the odds ratio of the underlying population is greater than one
+          - 'less': the odds ratio of the underlying population is less than one
+        
+        Note:
         - study count = num_goterms_product_SOI
         - study set = num_goterms_all_SOI
         - population count = num_goterms_product_general
@@ -745,31 +751,15 @@ class fisher_exact_test(Metrics):
             ],
         ]
         
-        for x in cont_table:
-            for y in x:
-                if y < 0:
-                    return "Element in contingency table is negative!"
-
-                fisher = fisher_exact(cont_table, alternative="greater")
-                fisher_pvalue = fisher.pvalue
-                odds_ratio = fisher.statistic
-
-                fold_enrichment_score = 0
-                if (
-                    study_set != 0
-                    and population_count != 0
-                    and population_set != 0
-                ):
-                    fold_enrichment_score = study_count / (
-                        study_set
-                        * (population_count / population_set)
-                    )
+        fisher = fisher_exact(cont_table, alternative=hypothesis)
+        fisher_pvalue = fisher.pvalue
+        odds_ratio = fisher.statistic
                 
         print(f"study_set = {study_set} \n study_count = {study_count}")
         print(f"population_set = {population_set} \n population_count = {population_count}")
         print(f"p = {fisher_pvalue}")
         print(f"odds ratio = {odds_ratio}")
-        print(f"fold enrichment = {fold_enrichment_score}")
+
 
 class inhibited_products_id(Metrics):
     """

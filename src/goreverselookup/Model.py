@@ -2421,7 +2421,7 @@ class ReverseLookup:
             logger.warning(f"Data is EMPTY!")
             
         target_SOIs = data["target_SOIs"]
-        defined_SOIs = data["defined_SOIs"]
+        defined_SOIs = data["defined_SOIs"] if "defined_SOIs" in data else target_SOIs
         miRNA_overlap_treshold = data["miRNA_overlap_treshold"]
         
         input_filepath = data.get("input_filepath", None)
