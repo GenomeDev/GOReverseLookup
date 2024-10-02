@@ -111,10 +111,12 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
         model_data = JsonUtil.load_json(model_data_filepath)
     else:
         # attempt auto-infer from input_file
+        logger.info(f"Model data filepath was None. Attempting auto infer data.json from {input_file}")
         root = FileUtil.backtrace(input_file, 1) # move 1 file up to root dir
         m_data_filepath = os.path.join(root, "data.json").replace("\\", "/")
+        logger.debug(f"m_data_filepath={m_data_filepath}")
         if FileUtil.check_path(m_data_filepath, auto_create=False):
-            if FileUtil.get_file_size(m_data_filepath, "kb") > 5: # if ReverseLookup data file is greater than 5kb then assign, otherwise it's most likely an error
+            if FileUtil.get_file_size(m_data_filepath, "kb") > 0: # if ReverseLookup data file is greater than 5kb then assign, otherwise it's most likely an error
                 print(f"Model data filepath was found by auto infer: {m_data_filepath}")
                 model_data_filepath = m_data_filepath
                 model_data = JsonUtil.load_json(model_data_filepath)
@@ -123,6 +125,9 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
     
     if report is True and model_data is not None: # should generate report only
         generate_report(results_file=input_file, model_data=model_data)
+        return
+    elif report is True and model_data is None: # error
+        print(f"Report is True, but no model data (data.json) files were found. You need to keep both statistically_relevant_genes.json and data.json in the same folders wihtout deleting them!")
         return
          
     # Runs the GOReverseLookup analysis

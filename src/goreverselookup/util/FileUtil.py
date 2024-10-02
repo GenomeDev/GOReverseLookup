@@ -62,6 +62,7 @@ class FileUtil:
         # bugfix: sometimes when using os.path.join("folder1/folder2", "file1"), the result can be: folder1/folder2\file1
         if "\\" in filepath and "/" in filepath:
             filepath = filepath.replace("\\", "/")
+        logger.debug(f"in_fpath = {filepath}")
 
         # first, see if is a single file or a file inside folder(s)
         folders = []
@@ -74,8 +75,11 @@ class FileUtil:
             file = filepath.split("/")[-1]  # file is the last in filepath
         else:
             file = filepath
+        logger.debug(f"_ folders='{folders}'")
+        logger.debug(f"_ file='{file}'")
 
         current_path = self.project_root_path
+        logger.debug(f"_ current_path & self.project_root_path = {self.project_root_path}")
         if len(folders) == 0:  # filepath is a single file
             for i in range(backtrace):  # ascend 'backtrace' levels to the parent directory
                 # we ascend a directory using os.path.dirname on a filepath
@@ -205,10 +209,12 @@ class FileUtil:
         Warning: 'path' is by default presumably pointing to a file (specified by 'is_file' set to True).
         If you are passing a path pointing to a directory, make sure to set 'is_file' to False.
         """
+        logger.debug(f"path={path}, is_file={is_file}, auto_create={auto_create}")
         if is_file is True:
             dir_path = os.path.dirname(path)
         else:
             dir_path = path
+        logger.debug(f"dir_path={dir_path}")
 
         # check if directory exist - if it doesn't create it
         if not os.path.exists(dir_path) and auto_create is True:
@@ -222,8 +228,10 @@ class FileUtil:
                     pass
 
         if os.path.exists(path):
+            logger.debug(f"Exists: '{path}'")
             return True
         else:
+            logger.debug(f"Doesn't exist: '{path}'")
             return False
 
     @classmethod
@@ -317,6 +325,7 @@ class FileUtil:
         # [2]: Documents
         # [3]: Personal
         # backtrace 2 -> return up to 1
+        logger.debug(f"filepath={filepath}, backtrace={backtrace}, file_separator={file_separator}")
         if "\\" in filepath:
             filepath = filepath.replace("\\", file_separator)
         elements = filepath.split(file_separator)
@@ -324,12 +333,19 @@ class FileUtil:
         if backtrace > final_element_index:
             logger.warning(f"Backtrace {backtrace} is greater than final element index {final_element_index} for filepath {filepath}! Returning ''.")
             return ""
+        
+        logger.debug(f"elements={elements}")
         res_elements = elements[0:final_element_index-backtrace+1]
+        logger.debug(f"res_elements={res_elements}")
+        
         final_path = ""
+        logger.debug(f"_ building final path")
         for e in res_elements:
             final_path = os.path.join(final_path, e)
+            logger.debug(f"    - final_path={final_path}")
         final_path = final_path.replace("\\", f"{file_separator}")
         final_path = final_path.replace(":", f":{file_separator}")
+        logger.info(f"backtrace final path: {final_path}")
         return final_path
     
     @classmethod
@@ -360,6 +376,7 @@ class FileUtil:
 
         fsize_bytes = os.path.getsize(filepath)
         fsize = fsize_bytes / size_multipliers[size_delimiter] # calculate file size based on the size delimiter
+        logger.info(f"file '{filepath}' size: {fsize} {size_delimiter}")
         return fsize
     
     @classmethod
