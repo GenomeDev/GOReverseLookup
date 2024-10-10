@@ -210,6 +210,12 @@ class FileUtil:
         If you are passing a path pointing to a directory, make sure to set 'is_file' to False.
         """
         logger.debug(f"path={path}, is_file={is_file}, auto_create={auto_create}")
+        
+        # convert to abspath due to MacOS issues
+        # By converting the path to an absolute path, you ensure that os.path.exists(path) checks the correct location regardless of the current working directory or operating system
+        path = os.path.abspath(path)
+        logger.debug(f"path converted to absolute path: {path}")
+
         if is_file is True:
             dir_path = os.path.dirname(path)
         else:
