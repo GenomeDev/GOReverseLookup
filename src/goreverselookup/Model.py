@@ -820,7 +820,8 @@ class ReverseLookup:
                 continue
             
             for p_id in product_ids_short:
-                ortholog_query_dict[product_taxon_number].append(p_id)
+                if product_taxon_number in ortholog_query_dict:
+                    ortholog_query_dict[product_taxon_number].append(p_id)
 
         num_queried_orthologs_definitive = 0
         num_queried_orthologs_indefinitive = 0
