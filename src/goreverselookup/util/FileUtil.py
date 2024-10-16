@@ -213,8 +213,15 @@ class FileUtil:
         
         # convert to abspath due to MacOS issues
         # By converting the path to an absolute path, you ensure that os.path.exists(path) checks the correct location regardless of the current working directory or operating system
-        path = os.path.abspath(path)
-        logger.debug(f"path converted to absolute path: {path}")
+        if not os.path.isabs(path):
+            if path.startswith('Users'+os.sep) or path.startswith('Users/'): # MacOS problem - if the path starts with 'Users/', add leading slash
+                path = os.sep+path # add leading slash
+            else:
+                # Convert to absolute path based on current working directory
+                path = os.path.abspath(path)
+            logger.debug(f"path adjusted to absolute path: {path}")
+        else:
+            logger.debug(f"path '{path}' is an absolute path.")
 
         if is_file is True:
             dir_path = os.path.dirname(path)
