@@ -101,7 +101,10 @@ To confirm the installation, run the command `pip list` and find the `goreversel
 ### Creating the input file
 The entry to the program is an input file, which is ideally placed in the `.../goreverselookup/research_models/` folder, as explained in _Folder setup_. It contains all the relevant data for the program to complete the analysis of statistically important genes that positively or negatively contribute to one or more states of interest.
 
-An example input.txt file to discover the genes that positively contribute to both the development of chronic inflammation and cancer is:
+An example input.txt file to discover the genes that positively contribute to both the development of chronic inflammation and cancer is supplied below.
+
+WARNING: This is just an example input file intended to give a quick overview of the general contents of an input file. It is not meant to be used in an analysis, as it contains far too few GO terms to discover any potential genes. To test if your program setup works, use research-grade input files, which are located in the `research_models` folder, e.g. `research_models/chronic-inflammation_cancer/IEA+/ind_ann,p=0.05,IEA+ (145)/input.txt`.
+
 ```
 # Comments are preceded by a single '#'. Comment lines will not be parsed in code.
 # Section titles are preceded by three '###'
