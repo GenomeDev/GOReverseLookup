@@ -2818,6 +2818,11 @@ class ReverseLookup:
                 for goterm in tqdm(go_terms, desc="Compute indirect nodes"):
                     assert isinstance(goterm, GOTerm)
                     if goterm.parent_term_ids == [] or goterm.parent_term_ids is None:
+                        # TODO: IMPLEMENT CHECK HERE
+                        # If Obo file is too old, obo_parser.all_goterms might not have a newly defined goterm
+                        # -> Warn the user
+                        # -> Reinstall obo file
+                        # As of 05 June 2025, this has not yet been implemented!
                         goterm_obo = GOTerm.from_dict(obo_parser.all_goterms[goterm.id].__dict__)  # obo representation of this goterm
                         goterm.update(goterm_obo)  # update current goterm with information from .obo file
 
