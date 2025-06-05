@@ -309,6 +309,7 @@ class EnsemblApi:
         """
         if id is None: # can happen if a faulty request
             logger.debug(f"'id' parameter is None! Returning None from get_orthology_aync. source_taxon = {source_taxon}, target_taxon = {target_taxon}")
+            return
             
         ensembl_data_key = f"[{self.__class__.__name__}][{self.get_human_ortholog_async.__name__}][id={id}]"
         previous_result = Cacher.get_data("ensembl", ensembl_data_key)
