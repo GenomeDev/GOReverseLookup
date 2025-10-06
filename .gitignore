@@ -13,6 +13,7 @@ archive/*
 tests_debug/*
 log_output/association_differences.json
 .vscode
+debug/*
 
 
 # Byte-compiled / optimized / DLL files
