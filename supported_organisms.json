@@ -1,0 +1,866 @@
+[
+    {
+        "name": "human",
+        "long_name": "Homo sapiens",
+        "taxon_id": "NCBITaxon:9606",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "mouse",
+        "long_name": "Mus musculus",
+        "taxon_id": "NCBITaxon:10090",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "rat",
+        "long_name": "Rattus norvegicus",
+        "taxon_id": "NCBITaxon:10116",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "chicken",
+        "long_name": "Gallus gallus",
+        "taxon_id": "NCBITaxon:9031",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "zebrafish",
+        "long_name": "Danio rerio",
+        "taxon_id": "NCBITaxon:7955",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "fruit_fly",
+        "long_name": "Drosophila melanogaster",
+        "taxon_id": "NCBITaxon:7227",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "nematode_worm",
+        "long_name": "Caenorhabditis elegans",
+        "taxon_id": "NCBITaxon:6239",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "budding_yeast",
+        "long_name": "Saccharomyces cerevisiae",
+        "taxon_id": "NCBITaxon:559292",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "fission_yeast",
+        "long_name": "Schizosaccharomyces pombe",
+        "taxon_id": "NCBITaxon:284812",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "dictyostelium",
+        "long_name": "Dictyostelium discoideum",
+        "taxon_id": "NCBITaxon:44689",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "arabidopsis",
+        "long_name": "Arabidopsis thaliana",
+        "taxon_id": "NCBITaxon:3702",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "e_coli",
+        "long_name": "Escherichia coli",
+        "taxon_id": "NCBITaxon:83333",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "aspergillus",
+        "long_name": "Emericella nidulans",
+        "taxon_id": "NCBITaxon:227321",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "Amborella",
+        "long_name": "Amborella trichopoda",
+        "taxon_id": "NCBITaxon:13333",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "lizard",
+        "long_name": "Anolis carolinensis",
+        "taxon_id": "NCBITaxon:28377",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "mosquito",
+        "long_name": "Anopheles gambiae",
+        "taxon_id": "NCBITaxon:7165",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "aquifex",
+        "long_name": "Aquifex aeolicus",
+        "taxon_id": "NCBITaxon:224324",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "bacillus_cereus",
+        "long_name": "Bacillus cereus",
+        "taxon_id": "NCBITaxon:226900",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "bacillus_subtilis",
+        "long_name": "Bacillus subtilis",
+        "taxon_id": "NCBITaxon:224308",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "bacteroidetes",
+        "long_name": "Bacteroides thetaiotaomicron",
+        "taxon_id": "NCBITaxon:226186",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "chytrid",
+        "long_name": "Batrachochytrium dendrobatidis",
+        "taxon_id": "NCBITaxon:684364",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "cow",
+        "long_name": "Bos taurus",
+        "taxon_id": "NCBITaxon:9913",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "purple_false_brome",
+        "long_name": "Brachypodium distachyon",
+        "taxon_id": "NCBITaxon:15368",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "bradyrhizobium",
+        "long_name": "Bradyrhizobium diazoefficiens",
+        "taxon_id": "NCBITaxon:224911",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "branchiostoma",
+        "long_name": "Branchiostoma floridae",
+        "taxon_id": "NCBITaxon:7739",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "e_campestris",
+        "long_name": "Brassica campestris",
+        "taxon_id": "NCBITaxon:3711",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "canola",
+        "long_name": "Brassica napus",
+        "taxon_id": "NCBITaxon:3708",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "c_briggsae",
+        "long_name": "Caenorhabditis briggsae",
+        "taxon_id": "NCBITaxon:6238",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "candida",
+        "long_name": "Candida albicans",
+        "taxon_id": "NCBITaxon:237561",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "dog",
+        "long_name": "Canis lupus familiaris",
+        "taxon_id": "NCBITaxon:9615",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "bell pepper",
+        "long_name": "Capsicum annuum",
+        "taxon_id": "NCBITaxon:4072",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "chlamydia",
+        "long_name": "Chlamydia trachomatis",
+        "taxon_id": "NCBITaxon:272561",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "green_algae",
+        "long_name": "Chlamydomonas reinhardtii",
+        "taxon_id": "NCBITaxon:3055",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "chloroflexus",
+        "long_name": "Chloroflexus aurantiacus",
+        "taxon_id": "NCBITaxon:324602",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "ciona",
+        "long_name": "Ciona intestinalis",
+        "taxon_id": "NCBITaxon:7719",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "orange",
+        "long_name": "Citrus sinensis",
+        "taxon_id": "NCBITaxon:2711",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "clostridium",
+        "long_name": "Clostridium botulinum",
+        "taxon_id": "NCBITaxon:441771",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "coxiella",
+        "long_name": "Coxiella burnetii",
+        "taxon_id": "NCBITaxon:227377",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "cryptococcus",
+        "long_name": "Cryptococcus neoformans",
+        "taxon_id": "NCBITaxon:214684",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "cucumber",
+        "long_name": "Cucumis sativus",
+        "taxon_id": "NCBITaxon:3659",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "water_flea",
+        "long_name": "Daphnia pulex",
+        "taxon_id": "NCBITaxon:6669",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "deinococcus",
+        "long_name": "Deinococcus radiodurans",
+        "taxon_id": "NCBITaxon:243230",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "dictyoglomus",
+        "long_name": "Dictyoglomus turgidum",
+        "taxon_id": "NCBITaxon:515635",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "d_purpureum",
+        "long_name": "Dictyostelium purpureum",
+        "taxon_id": "NCBITaxon:5786",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "e_histolytica",
+        "long_name": "Entamoeba histolytica",
+        "taxon_id": "NCBITaxon:294381",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "horse",
+        "long_name": "Equus caballus",
+        "taxon_id": "NCBITaxon:9796",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "e_gossypii",
+        "long_name": "Eremothecium gossypii",
+        "taxon_id": "NCBITaxon:284811",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "yellow monkey flower",
+        "long_name": "Erythranthe guttata",
+        "taxon_id": "NCBITaxon:4155",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "flooded gum",
+        "long_name": "Eucalyptus grandis",
+        "taxon_id": "NCBITaxon:71139",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "cat",
+        "long_name": "Felis catus",
+        "taxon_id": "NCBITaxon:9685",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "fusobacterium",
+        "long_name": "Fusobacterium nucleatum",
+        "taxon_id": "NCBITaxon:190304",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "geobacter",
+        "long_name": "Geobacter sulfurreducens",
+        "taxon_id": "NCBITaxon:243231",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "giardia",
+        "long_name": "Giardia intestinalis",
+        "taxon_id": "NCBITaxon:184922",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "gloeobacter",
+        "long_name": "Gloeobacter violaceus",
+        "taxon_id": "NCBITaxon:251221",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "soybean",
+        "long_name": "Glycine max",
+        "taxon_id": "NCBITaxon:3847",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "gorilla",
+        "long_name": "Gorilla gorilla gorilla",
+        "taxon_id": "NCBITaxon:9595",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "cotton",
+        "long_name": "Gossypium hirsutum",
+        "taxon_id": "NCBITaxon:3635",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "h_flu",
+        "long_name": "Haemophilus influenzae",
+        "taxon_id": "NCBITaxon:71421",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "halobacterium",
+        "long_name": "Halobacterium salinarum",
+        "taxon_id": "NCBITaxon:64091",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "sunflower",
+        "long_name": "Helianthus annuus",
+        "taxon_id": "NCBITaxon:4232",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "h_pylori",
+        "long_name": "Helicobacter pylori",
+        "taxon_id": "NCBITaxon:85962",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "barley",
+        "long_name": "Hordeum vulgare subsp. vulgare",
+        "taxon_id": "NCBITaxon:112509",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "tick",
+        "long_name": "Ixodes scapularis",
+        "taxon_id": "NCBITaxon:6945",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "english walnut",
+        "long_name": "Juglans regia",
+        "taxon_id": "NCBITaxon:51240",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "green algae",
+        "long_name": "Klebsormidium nitens",
+        "taxon_id": "NCBITaxon:105231",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "korarchaeum",
+        "long_name": "Korarchaeum cryptofilum",
+        "taxon_id": "NCBITaxon:374847",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "garden lettuce",
+        "long_name": "Lactuca sativa",
+        "taxon_id": "NCBITaxon:4236",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "leishmania",
+        "long_name": "Leishmania major",
+        "taxon_id": "NCBITaxon:5664",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "leptospira",
+        "long_name": "Leptospira interrogans",
+        "taxon_id": "NCBITaxon:189518",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "listeria",
+        "long_name": "Listeria monocytogenes",
+        "taxon_id": "NCBITaxon:169963",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "macacque",
+        "long_name": "Macaca mulatta",
+        "taxon_id": "NCBITaxon:9544",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "cassava",
+        "long_name": "Manihot esculenta",
+        "taxon_id": "NCBITaxon:3983",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "liverwort",
+        "long_name": "Marchantia polymorpha",
+        "taxon_id": "NCBITaxon:3197",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "barrel medic",
+        "long_name": "Medicago truncatula",
+        "taxon_id": "NCBITaxon:3880",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "methanocaldococcus",
+        "long_name": "Methanocaldococcus jannaschii",
+        "taxon_id": "NCBITaxon:243232",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "methanosarcina",
+        "long_name": "Methanosarcina acetivorans",
+        "taxon_id": "NCBITaxon:188937",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "opossum",
+        "long_name": "Monodelphis domestica",
+        "taxon_id": "NCBITaxon:13616",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "monosiga",
+        "long_name": "Monosiga brevicollis",
+        "taxon_id": "NCBITaxon:81824",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "banana",
+        "long_name": "Musa acuminata subsp. malaccensis",
+        "taxon_id": "NCBITaxon:214687",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "mycobacterium",
+        "long_name": "Mycobacterium tuberculosis",
+        "taxon_id": "NCBITaxon:83332",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "meningococcus",
+        "long_name": "Neisseria meningitidis serogroup b",
+        "taxon_id": "NCBITaxon:122586",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "sacred lotus",
+        "long_name": "Nelumbo nucifera",
+        "taxon_id": "NCBITaxon:4432",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "nematostella",
+        "long_name": "Nematostella vectensis",
+        "taxon_id": "NCBITaxon:45351",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "aspergillus",
+        "long_name": "Neosartorya fumigata",
+        "taxon_id": "NCBITaxon:330879",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "neurospora",
+        "long_name": "Neurospora crassa",
+        "taxon_id": "NCBITaxon:367110",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "tobacco",
+        "long_name": "Nicotiana tabacum",
+        "taxon_id": "NCBITaxon:4097",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "nitrosopumilu",
+        "long_name": "Nitrosopumilus maritimus",
+        "taxon_id": "NCBITaxon:436308",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "platypus",
+        "long_name": "Ornithorhynchus anatinus",
+        "taxon_id": "NCBITaxon:9258",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "rice",
+        "long_name": "Oryza sativa",
+        "taxon_id": "NCBITaxon:39947",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "oryzias",
+        "long_name": "Oryzias latipes",
+        "taxon_id": "NCBITaxon:8090",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "chimpanzee",
+        "long_name": "Pan troglodytes",
+        "taxon_id": "NCBITaxon:9598",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "paramecium",
+        "long_name": "Paramecium tetraurelia",
+        "taxon_id": "NCBITaxon:5888",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "phaeosphaeria",
+        "long_name": "Phaeosphaeria nodorum",
+        "taxon_id": "NCBITaxon:321614",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "moss",
+        "long_name": "Physcomitrella patens",
+        "taxon_id": "NCBITaxon:3218",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "phytophthora",
+        "long_name": "Phytophthora ramorum",
+        "taxon_id": "NCBITaxon:164328",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "plasmodium",
+        "long_name": "Plasmodium falciparum",
+        "taxon_id": "NCBITaxon:36329",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "black_cottonwood",
+        "long_name": "Populus trichocarpa",
+        "taxon_id": "NCBITaxon:3694",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "pristionchus",
+        "long_name": "Pristionchus pacificus",
+        "taxon_id": "NCBITaxon:54126",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "peach",
+        "long_name": "Prunus persica",
+        "taxon_id": "NCBITaxon:3760",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "pseudomonas",
+        "long_name": "Pseudomonas aeruginosa",
+        "taxon_id": "NCBITaxon:208964",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "puccinia",
+        "long_name": "Puccinia graminis",
+        "taxon_id": "NCBITaxon:418459",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "pyrobaculum",
+        "long_name": "Pyrobaculum aerophilum",
+        "taxon_id": "NCBITaxon:178306",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "rhodopirellula",
+        "long_name": "Rhodopirellula baltica",
+        "taxon_id": "NCBITaxon:243090",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "bean",
+        "long_name": "Ricinus communis",
+        "taxon_id": "NCBITaxon:3988",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "salmonella",
+        "long_name": "Salmonella typhimurium",
+        "taxon_id": "NCBITaxon:99287",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "s_japonicus",
+        "long_name": "Schizosaccharomyces japonicus",
+        "taxon_id": "NCBITaxon:402676",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "sclerotinia",
+        "long_name": "Sclerotinia sclerotiorum",
+        "taxon_id": "NCBITaxon:665079",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "spikemoss",
+        "long_name": "Selaginella moellendorffii",
+        "taxon_id": "NCBITaxon:88036",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "millet",
+        "long_name": "Setaria italica",
+        "taxon_id": "NCBITaxon:4555",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "shewanella",
+        "long_name": "Shewanella oneidensis",
+        "taxon_id": "NCBITaxon:211586",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "tomato",
+        "long_name": "Solanum lycopersicum",
+        "taxon_id": "NCBITaxon:4081",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "potato",
+        "long_name": "Solanum tuberosum",
+        "taxon_id": "NCBITaxon:4113",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "sorghum",
+        "long_name": "Sorghum bicolor",
+        "taxon_id": "NCBITaxon:4558",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "spinach",
+        "long_name": "Spinacia oleracea",
+        "taxon_id": "NCBITaxon:3562",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "staph",
+        "long_name": "Staphylococcus aureus",
+        "taxon_id": "NCBITaxon:93061",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "strep",
+        "long_name": "Streptococcus pneumoniae",
+        "taxon_id": "NCBITaxon:171101",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "streptomyces",
+        "long_name": "Streptomyces coelicolor",
+        "taxon_id": "NCBITaxon:100226",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "sea_urchin",
+        "long_name": "Strongylocentrotus purpuratus",
+        "taxon_id": "NCBITaxon:7668",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "sulfolobus",
+        "long_name": "Sulfolobus solfataricus",
+        "taxon_id": "NCBITaxon:273057",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "pig",
+        "long_name": "Sus scrofa",
+        "taxon_id": "NCBITaxon:9823",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "synechocystis",
+        "long_name": "Synechocystis",
+        "taxon_id": "NCBITaxon:1111708",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "thalassiosira",
+        "long_name": "Thalassiosira pseudonana",
+        "taxon_id": "NCBITaxon:35128",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "cacao",
+        "long_name": "Theobroma cacao",
+        "taxon_id": "NCBITaxon:3641",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "thermococcus",
+        "long_name": "Thermococcus kodakaraensis",
+        "taxon_id": "NCBITaxon:69014",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "thermodesulfovibrio",
+        "long_name": "Thermodesulfovibrio yellowstonii",
+        "taxon_id": "NCBITaxon:289376",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "thermotoga",
+        "long_name": "Thermotoga maritima",
+        "taxon_id": "NCBITaxon:243274",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "tribolium",
+        "long_name": "Tribolium castaneum",
+        "taxon_id": "NCBITaxon:7070",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "trichomonas",
+        "long_name": "Trichomonas vaginalis",
+        "taxon_id": "NCBITaxon:412133",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "trichoplax",
+        "long_name": "Trichoplax adhaerens",
+        "taxon_id": "NCBITaxon:10228",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "wheat",
+        "long_name": "Triticum aestivum",
+        "taxon_id": "NCBITaxon:4565",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "t_brucei",
+        "long_name": "Trypanosoma brucei",
+        "taxon_id": "NCBITaxon:185431",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "ustilago",
+        "long_name": "Ustilago maydis",
+        "taxon_id": "NCBITaxon:237631",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "cholera",
+        "long_name": "Vibrio cholerae",
+        "taxon_id": "NCBITaxon:243277",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "grape",
+        "long_name": "Vitis vinifera",
+        "taxon_id": "NCBITaxon:29760",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "xanthomonas",
+        "long_name": "Xanthomonas campestris",
+        "taxon_id": "NCBITaxon:190485",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "x_laevis",
+        "long_name": "Xenopus laevis",
+        "taxon_id": "NCBITaxon:8355",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "frog",
+        "long_name": "Xenopus tropicalis",
+        "taxon_id": "NCBITaxon:8364",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "yarrowia",
+        "long_name": "Yarrowia lipolytica",
+        "taxon_id": "NCBITaxon:284591",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "yersinia",
+        "long_name": "Yersinia pestis",
+        "taxon_id": "NCBITaxon:632",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "maize",
+        "long_name": "Zea mays",
+        "taxon_id": "NCBITaxon:4577",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "eelgrass",
+        "long_name": "Zostera marina",
+        "taxon_id": "NCBITaxon:29655",
+        "version": "Reference Proteome 2023_05"
+    },
+    {
+        "name": "helobdella",
+        "long_name": "helobdella robusta",
+        "taxon_id": "NCBITaxon:6412",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "lepisosteudae",
+        "long_name": "lepisosteus oculatus",
+        "taxon_id": "NCBITaxon:7918",
+        "version": "Reference Proteome 2023_03"
+    },
+    {
+        "name": "m_genitalium",
+        "long_name": "mycoplasma genitalium",
+        "taxon_id": "NCBITaxon:243273",
+        "version": "Reference Proteome 2023_03"
+    }
+]
