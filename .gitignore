@@ -17,6 +17,7 @@ tests_debug/*
 log_output/association_differences.json
 .vscode
 debug/*
+scripts/pidkill.py
 
 
 # Byte-compiled / optimized / DLL files
