@@ -1,11 +1,14 @@
 # Project files
+crash_products.json
 app/goreverselookup/data_files/*
+bugs/*
 research_models/test*
 data_files/*
 src/goreverselookup/cache/*
 data_files/*
 cache/*
 results/*
+nottests/*
 exe_version/data_files/*
 exe_version/cache/*
 exe_version/results/*

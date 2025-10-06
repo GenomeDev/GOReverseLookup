@@ -29,7 +29,8 @@ WebsiteParser.init()
 # input_file = "input_files/input_rhartritis_ortho.txt"
 # input_file = "F:/Development/python_environments/goreverselookup/research_models/chr_infl_cancer/rescore_test_2/IEA-/ind_ann,p=0.05,IEA-/input.txt"
 # input_file = "input_files/inputOS2-2.txt"
-input_file = "research_models\\test_models\\two_tailed_test-rhart\\input_rhartritis_ortho_singletail.txt"
+# input_file = "research_models\\test_models\\two_tailed_test-rhart\\input_rhartritis_ortho_singletail.txt"
+input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\test_models\\rhart_aug25\\no_orthologs\\input.txt"
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file(input_file)
@@ -37,7 +38,7 @@ model = ReverseLookup.from_input_file(input_file)
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) 
 model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=5)
 model.create_products_from_goterms()
-# model.products_perform_idmapping() # TODO: reimplement this after fixing the bug !!!
+model.products_perform_idmapping() # TODO: reimplement this after fixing the bug !!!
 Cacher.save_data()
 model.fetch_orthologs_products_batch_gOrth(target_taxon_number="9606")
 model.fetch_ortholog_products(run_async=True, max_connections=10, semaphore_connections=5, req_delay=0.5)

@@ -151,7 +151,7 @@ class EnsemblApi:
         merged_dict = {}
         for response in responses:
             for key, value in response.items():
-                if key in merged_dict:
+                if key in merged_dict and key is not None:
                     merged_dict[key].update(value)
                 else:
                     merged_dict[key] = value

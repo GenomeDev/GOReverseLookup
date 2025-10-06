@@ -25,7 +25,7 @@ class JsonUtil:
         if not os.path.exists(filepath):
             FileUtil.create_empty_file(filepath)
             
-            if not os.path.isabs(filepath) and not platform.system == 'Darwin': # bugfix: fileutil.find_file doesn't work on Mac (platform.system == 'Darwin')
+            if not os.path.isabs(filepath) and not platform.system() == 'Darwin': # bugfix: fileutil.find_file doesn't work on Mac (platform.system == 'Darwin')
                 fileutil = FileUtil()
                 filepath = fileutil.find_file(filepath)  # attempt backtrace file search
                 logger.info(f"Filepath after file search: {filepath}")
