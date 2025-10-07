@@ -39,7 +39,7 @@ dependencies = [
     "pandas",
     "openpyxl"
 ]
-version = "1.0.60"
+version = "1.0.61"
 #dynamic = ["version"]
 
 [project.optional-dependencies]
@@ -55,15 +55,15 @@ dev = [
 
 [tool.poetry]
 name = "goreverselookup"
-version = "1.0.60"
+version = "1.0.61"
 description = "Python library for Gene Ontology Reverse Lookup"
 readme = "README.md"
 authors = ["Aljoša Škorjanc", "Vladimir Smrkolj"]
 packages = [{include = "goreverselookup", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-numpy = "^1.24.1"
+python = ">=3.10,<3.15"
+numpy = "^1.26.4"
 scipy = "^1.10.0"
 aiohttp = "^3.8.3"
 asyncio = "^3.4.2"
@@ -85,6 +85,9 @@ goreverselookup = "goreverselookup.main_cli:main"
 #Documentation = "https://readthedocs.org"
 #Repository = "https://github.com/me/spam.git"
 #Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
+
+[tool.poetry.group.dev.dependencies]
+pyinstaller = "^6.16.0"
 
 [project.scripts]
 goreverselookup = "goreverselookup.main_cli:main"

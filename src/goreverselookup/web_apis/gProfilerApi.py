@@ -258,14 +258,39 @@ class gProfilerUtil:
 
         url = "https://biit.cs.ut.ee/gprofiler/api/util/organisms_list"
         prev_response = Cacher.get_data("gprofiler", url)
+        results = None  # Initialize results
+    
         if prev_response is None:
-            r = requests.get(url)
-            results = r.json()
-            Cacher.store_data("gprofiler", data_key=url, data_value=results)
+            try:
+                r = requests.get(url, timeout=30) # Add a timeout for safety
+                r.raise_for_status() 
+                results = r.json()
+                
+                Cacher.store_data("gprofiler", data_key=url, data_value=results)
+                
+            except requests.exceptions.HTTPError as e:
+                # Handle non-200 status codes (e.g., 404, 500, 502)
+                logger.error(f"GProfiler API Error (HTTP {r.status_code}): Failed to fetch organisms list from {url}. Error: {e}")
+                return None
+            except requests.exceptions.RequestException as e:
+                # Handle connection errors (e.g., DNS failure, timeout)
+                logger.error(f"GProfiler API Connection Error: Failed to fetch organisms list from {url}. Error: {e}")
+                return None
+            except requests.exceptions.JSONDecodeError as e:
+                # Handle case where status is 200 but content is NOT JSON (e.g., empty string or HTML page)
+                logger.error(f"GProfiler API JSON Decode Error: Response content was not valid JSON for {url}. Content snippet: {r.text[:100]}. Error: {e}")
+                return None
         else:
             results = prev_response
+
+        if results is None:
+            logger.warning(f"Could not retrieve GProfiler organisms list. Returning None for taxon {taxon}.")
+            return None
             
         taxon_equivalents = {}
         for r in results:
-            taxon_equivalents[r["taxonomy_id"]] = r["id"]
+            # Note: GProfiler's taxonomy_id might be an integer in the API response,
+            # but storing it as str ensures compatibility with str(taxon) comparison.
+            taxon_equivalents[str(r["taxonomy_id"])] = r["id"]
+            
         return taxon_equivalents.get(str(taxon), None)

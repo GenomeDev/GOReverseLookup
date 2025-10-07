@@ -43,4 +43,5 @@ class LogConfigLoader:
         log_config_dict = JsonUtil.load_json(log_config_json_filepath, display_json=True)
         config.dictConfig(log_config_dict)
         logger.info(f"Setup log config using: {log_config_json_filepath}")
+    
 
