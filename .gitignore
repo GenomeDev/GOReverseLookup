@@ -16,6 +16,8 @@ archive/*
 tests_debug/*
 log_output/association_differences.json
 .vscode
+debug/*
+scripts/pidkill.py
 
 
 # Byte-compiled / optimized / DLL files
@@ -50,7 +52,7 @@ MANIFEST
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
+# *.spec
 
 # Installer logs
 pip-log.txt
