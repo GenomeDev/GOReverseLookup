@@ -12,20 +12,20 @@ thus we are choosing the 'greater' alternative hypothesis for Fisher's exact tes
 
 from goreverselookup import fisher_exact_test
 
-fisher_exact_test.compute_contingency(
-    study_set=3,
-    study_count=3,
-    population_set=14,
-    population_count=5,
-    hypothesis="greater"
-)
+interest_set = 3
+interest_count = 0
+population_set = 28
+population_count = 7
 
-print("")
+study_set = interest_set
+study_count = interest_count
+population_set = population_set
+population_count = population_count
 
 fisher_exact_test.compute_contingency(
-    study_set=4,
-    study_count=1,
-    population_set=14,
-    population_count=5,
+    study_set=study_set,
+    study_count=study_count,
+    population_set=population_set,
+    population_count=population_count,
     hypothesis="greater"
 )

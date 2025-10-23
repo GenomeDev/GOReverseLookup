@@ -186,6 +186,10 @@ class ModelSettings:
         self.valid_evidence_codes = [] # a list containing all valid evidence codes for this research
         self.goterm_gene_query_timeout = 20 
         self.goterm_gene_query_max_retries = 3
+        self.goterm_name_fetch_req_delay = 1.0
+        self.goterm_name_fetch_max_connections = 20
+        self.goterm_gene_fetch_req_delay = 0.5
+        self.goterm_gene_fetch_max_connections = 7
         self.exclude_opposite_regulation_direction_check = False
         self.destination_dir = None
         

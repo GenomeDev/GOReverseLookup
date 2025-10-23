@@ -30,13 +30,27 @@ WebsiteParser.init()
 # input_file = "F:/Development/python_environments/goreverselookup/research_models/chr_infl_cancer/rescore_test_2/IEA-/ind_ann,p=0.05,IEA-/input.txt"
 # input_file = "input_files/inputOS2-2.txt"
 # input_file = "research_models\\test_models\\two_tailed_test-rhart\\input_rhartritis_ortho_singletail.txt"
-input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\test_models\\rhart_aug25\\no_orthologs\\input.txt"
+#input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\test_models\\rhart_aug25\\orthologs\\input.txt"
+input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\haries-test\\input3.txt"
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file(input_file)
-# model.goterms = model.goterms[0:20]
-model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) 
-model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=5)
+
+GOTERM_NAME_FETCH_REQ_DELAY = 1.0
+GOTERM_NAME_FETCH_MAX_CONNECTIONS = 20
+GOTERM_GENE_FETCH_REQ_DELAY = 0.5   
+GOTERM_GENE_FETCH_MAX_CONNECTIONS = 7
+if 'goterm_name_fetch_req_delay' in model.model_settings.__dict__:
+    GOTERM_NAME_FETCH_REQ_DELAY = model.model_settings.goterm_name_fetch_req_delay
+if 'goterm_name_fetch_max_connections' in model.model_settings.__dict__:
+    GOTERM_NAME_FETCH_MAX_CONNECTIONS = model.model_settings.goterm_name_fetch_max_connections
+if 'goterm_gene_fetch_req_delay' in model.model_settings.__dict__:
+    GOTERM_GENE_FETCH_REQ_DELAY = model.model_settings.goterm_gene_fetch_req_delay
+if 'goterm_gene_fetch_max_connections' in model.model_settings.__dict__:
+    GOTERM_GENE_FETCH_MAX_CONNECTIONS = model.model_settings.goterm_gene_fetch_max_connections
+
+model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=GOTERM_NAME_FETCH_REQ_DELAY, max_connections=GOTERM_NAME_FETCH_MAX_CONNECTIONS) 
+model.fetch_all_go_term_products(web_download=True, run_async=True, delay=GOTERM_GENE_FETCH_REQ_DELAY, max_connections=GOTERM_GENE_FETCH_MAX_CONNECTIONS, request_params = {"rows": 10000000})
 model.create_products_from_goterms()
 model.products_perform_idmapping() # TODO: reimplement this after fixing the bug !!!
 Cacher.save_data()

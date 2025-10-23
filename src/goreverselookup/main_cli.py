@@ -164,11 +164,26 @@ def main(input_file:str, destination_dir:str = None, report:bool = False, model_
         # model_data[''] # TODO ADD DESTINATION DIR HERE !!!!!
         model = ReverseLookup.load_model(model_data_filepath, destination_dir=destination_dir)
         print(f"Model was created from a previous model_data dictionary: {model_data_filepath}")
-    model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=1, max_connections=20) 
-    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=0.5, max_connections=7, request_params = {"rows": 10000000})
+    
+    GOTERM_NAME_FETCH_REQ_DELAY = 1.0
+    GOTERM_NAME_FETCH_MAX_CONNECTIONS = 20
+    GOTERM_GENE_FETCH_REQ_DELAY = 0.5   
+    GOTERM_GENE_FETCH_MAX_CONNECTIONS = 7
+    
+    if 'goterm_name_fetch_req_delay' in model.model_settings.__dict__:
+        GOTERM_NAME_FETCH_REQ_DELAY = model.model_settings.goterm_name_fetch_req_delay
+    if 'goterm_name_fetch_max_connections' in model.model_settings.__dict__:
+        GOTERM_NAME_FETCH_MAX_CONNECTIONS = model.model_settings.goterm_name_fetch_max_connections
+    if 'goterm_gene_fetch_req_delay' in model.model_settings.__dict__:
+        GOTERM_GENE_FETCH_REQ_DELAY = model.model_settings.goterm_gene_fetch_req_delay
+    if 'goterm_gene_fetch_max_connections' in model.model_settings.__dict__:
+        GOTERM_GENE_FETCH_MAX_CONNECTIONS = model.model_settings.goterm_gene_fetch_max_connections
+
+    model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=GOTERM_NAME_FETCH_REQ_DELAY, max_connections=GOTERM_NAME_FETCH_MAX_CONNECTIONS) 
+    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=GOTERM_GENE_FETCH_REQ_DELAY, max_connections=GOTERM_GENE_FETCH_MAX_CONNECTIONS, request_params = {"rows": 10000000})
     Cacher.save_data()
     model.create_products_from_goterms()
-    model.products_perform_idmapping() # TODO: re-enable this !!! resolve the bug here !!!
+    model.products_perform_idmapping() 
     Cacher.save_data()
     model.fetch_orthologs_products_batch_gOrth(target_taxon_number=f"{model.model_settings.target_organism.ncbi_id}") # TODO: change!
     model.fetch_ortholog_products(run_async=True, max_connections=15, semaphore_connections=7, req_delay=0.1)

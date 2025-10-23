@@ -242,11 +242,11 @@ class GOTerm:
         
         previous_data = Cacher.get_data("go", data_key)
         if previous_data != None:
-            logger.debug(f"Cached previous product fetch data for {self.id}")
             ModelStats.goterm_product_query_results[self.id] = previous_data
             self.products = previous_data
             self.products.sort()
             self.num_products = len(self.products)
+            logger.debug(f"Cached {self.num_products} previous product fetch data for {self.id}")
             return previous_data
 
         approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists

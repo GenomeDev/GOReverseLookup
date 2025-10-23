@@ -196,6 +196,7 @@ class ReverseLookup:
         """
         Iterates over all GOTerm objects in the go_term set and calls the fetch_name_description method for each object.
         """
+        logger.debug(f"Fetching GO Term names and descriptions. run_async = {run_async}, req_delay = {req_delay}, max_connections = {max_connections}")
         self.timer.set_start_time()
         api = GOApi()
 
@@ -207,8 +208,6 @@ class ReverseLookup:
             )
         else:
             logger.info("Fetching GO term names and their descriptions.")
-            # TODO: tqdm prevents any logger.info to be printed to console
-            # tqdm.write(f"Fetching GO term names and their descriptions.")
             with logging_redirect_tqdm():
                 for goterm in tqdm(self.goterms, desc="Fetch term names and descs"):
                     if (
@@ -335,7 +334,7 @@ class ReverseLookup:
                 then supplied to asyncio.gather. The code also uses a master ClientSession with a custom TCPConnector object,
                 which limits the maximum server connections.
         """
-        logger.info("Started fetching all GO Term products.")
+        logger.info(f"Started fetching all GO Term products. web_download={web_download}, run_async={run_async}, recalculate={recalculate}, delay={delay}, max_connections={max_connections}, run_async_options={run_async_options}")
         self.timer.set_start_time()
 
         if web_download is True:
@@ -378,6 +377,13 @@ class ReverseLookup:
         if "fetch_all_go_term_products" not in self.execution_times:
             self.execution_times["fetch_all_go_term_products"] = self.timer.get_elapsed_formatted()
         self.timer.print_elapsed_time()
+        
+        # Print the discovered products for each goterm
+        logger.debug(f"Displaying product query results for input goterms.")
+        for goterm in self.goterms:
+            logger.debug(f"{goterm.id}: {goterm.products}")
+            
+            
 
     async def _fetch_all_go_term_products_async_v1(
         self, 
@@ -2700,6 +2706,15 @@ class ReverseLookup:
                                 if organism_info.ncbi_id_full != "":
                                     organism_info_dict[organism_info.ncbi_id_full] = organism_info
                             setting_value = organism_info_dict
+                            
+                        if setting_name == "goterm_name_fetch_req_delay":
+                            setting_value = float(setting_value)
+                        if setting_name == "goterm_name_fetch_max_connections":
+                            setting_value = int(setting_value)
+                        if setting_name == "goterm_gene_fetch_req_delay":
+                            setting_value = float(setting_value)
+                        if setting_name == "goterm_gene_fetch_max_connections":
+                            setting_value = int(setting_value)
                         
                         # finally, set the setting
                         settings.set_setting(setting_name=setting_name, setting_value=setting_value)

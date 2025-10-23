@@ -150,7 +150,8 @@ class gProfiler:
 
         source_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(source_taxon)
         target_taxon = gProfilerUtil.NCBITaxon_to_gProfiler(target_taxon)
-        if not source_taxon or not target_taxon:
+        if (not source_taxon or not target_taxon) or (source_taxon is None or target_taxon is None):
+            logger.debug(f"source_taxon={source_taxon}, target_taxon={target_taxon}. Suspending gProfiler ortholog fetch.")
             return {}
 
         # cache previous data -> query only NEW ids
@@ -260,6 +261,10 @@ class gProfilerUtil:
         prev_response = Cacher.get_data("gprofiler", url)
         if prev_response is None:
             r = requests.get(url)
+            if not r.ok:
+                logger.error("gProfiler organisms_list returned status %s; body: %.500s", r.status_code, r.text)
+                logger.debug("Returning None.")
+                return None
             results = r.json()
             Cacher.store_data("gprofiler", data_key=url, data_value=results)
         else:
