@@ -3,6 +3,7 @@ crash_products.json
 app/goreverselookup/data_files/*
 bugs/*
 research_models/test*
+research_models/haries-test*
 data_files/*
 src/goreverselookup/cache/*
 data_files/*
