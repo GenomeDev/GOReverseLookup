@@ -2,6 +2,7 @@
 crash_products.json
 app/goreverselookup/data_files/*
 bugs/*
+research_models/*
 research_models/test*
 research_models/haries-test*
 data_files/*
@@ -19,6 +20,7 @@ log_output/association_differences.json
 .vscode
 debug/*
 scripts/pidkill.py
+videos/*
 
 
 # Byte-compiled / optimized / DLL files

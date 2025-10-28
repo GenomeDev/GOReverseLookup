@@ -734,20 +734,23 @@ class UniProtApi:
 
         return self.idmapping_to_and_from_db_ids
 
-    def idmapping_batch(self, ids: list, from_db="UniProtKB_AC-ID", to_db="Ensembl"):
+    def idmapping_batch(
+        self,
+        ids: list,
+        from_db: str = "UniProtKB_AC-ID",
+        to_db: str = "Ensembl",
+        chunk_size: int = 1000,
+    ):
         """
-        Performs identifier mapper from 'from_db' database to 'to_db' database on every identifier from 'ids'.
-        Reference implementation documents:
-          - implementation guidelines: https://www.uniprot.org/help/id_mapping
-          - useful info on idmapping (possible to and from parameters etc): https://www.uniprot.org/help/id_mapping#submitting-an-id-mapping-job
-          - use 'curl -k https://rest.uniprot.org/configure/idmapping/fields' or 'curl http://rest.uniprot.org/configure/idmapping/fields' in CMD (after installing curl as per https://linuxhint.com/install-use-curl-windows/)
-            to find all available to and from parameters. Note the '-k' flag forces curl to omit ssl security verification, otherwise it throws an error for https in my case.
-            see https://jsonformatter.org/f5632a for a list of all possible values
+        Performs identifier mapping from 'from_db' to 'to_db' on every identifier from 'ids',
+        submitting to UniProt in sequential chunks (default size=1000) and aggregating results.
 
-        WARNING: For MGI ids (eg. MGI:1932410), Uniprot idmapping service expects the FULL id (MGI:1932410) and not the processed version of the id (1932410). For Zebrafish ids (eg. ZFIN:ZDB-GENE-040426-2477), the Uniprot idmapping
-        service expects processed ids (without "ZFIN:", eg. ZDB-GENE-040426-2477).
+        WARNING:
+        - For MGI ids (eg. MGI:1932410), UniProt expects the FULL id (MGI:1932410).
+        - For ZFIN ids (eg. ZFIN:ZDB-GENE-040426-2477), UniProt expects processed ids
+            (without the 'ZFIN:' prefix): ZDB-GENE-040426-2477.
         """
-
+        # --- helpers --------------------------------------------------------------
         def check_to_and_from_db_validity(from_db, to_db):
             valid_db_ids = self.get_allowed_to_and_from_databases()
             valid_db_ids_from = valid_db_ids.get("from_dbs")
@@ -755,91 +758,84 @@ class UniProtApi:
 
             if from_db not in valid_db_ids_from:
                 raise Exception(
-                    f"The value of 'from_db' {from_db} is not among allowed 'from databases' for idmapping. Allowed 'from databases' are: {valid_db_ids_from}"
+                    f"The value of 'from_db' {from_db} is not among allowed 'from databases' for idmapping. "
+                    f"Allowed 'from databases' are: {valid_db_ids_from}"
                 )
-
             if to_db not in valid_db_ids_to:
                 raise Exception(
-                    f"The value of 'to_db' {to_db} is not among allowed 'to databases' for idmapping. Allowed 'to databases' are: {valid_db_ids_to}"
+                    f"The value of 'to_db' {to_db} is not among allowed 'to databases' for idmapping. "
+                    f"Allowed 'to databases' are: {valid_db_ids_to}"
                 )
-
             return True
 
+        def _chunks(seq, n):
+            for i in range(0, len(seq), n):
+                yield seq[i : i + n]
+
         def check_idmapping_results_ready(
-            job_id, 
-            session: requests.Session, 
-            api_url="https://rest.uniprot.org",
-            max_retries:int = 30
-        ):    
-            i = 0
-            while True and i < max_retries:
-                i+=1
-                request_job = session.get(f"{api_url}/idmapping/status/{job_id}")
-                request_job = request_job.json()
-                if "jobStatus" in request_job:
-                    if request_job["jobStatus"] == "RUNNING":
-                        logger.info(f"idmapping for job id {job_id} in progress (retry {i}/{max_retries}), retrying in {polling_interval}s")
-                        time.sleep(polling_interval)
-                    else:
-                        raise Exception(f"Error during uniprot idmapping. Error status (from uniprot servers): {request_job['jobStatus']}")
-                else:
-                    if "results" in request_job and "failedIds" in request_job:
-                        return bool(request_job["results"] or request_job["failedIds"])
-                    elif "results" in request_job:
-                        return bool(request_job["results"])
+            job_id: str,
+            session: requests.Session,
+            api_url: str = "https://rest.uniprot.org",
+            max_retries: int = 30,
+            polling_interval: float = 3.0,
+        ) -> bool:
+            """
+            Returns True when job is FINISHED and results can be fetched.
+            Returns False if we ran out of retries while still pending/running.
+            Raises on FAILED/ERROR.
+            """
+            for i in range(1, max_retries + 1):
+                r = session.get(f"{api_url}/idmapping/status/{job_id}", timeout=15)
+                r.raise_for_status()
+                payload = r.json()
+                status = (payload.get("jobStatus") or "").upper()
+
+                if status in ("NEW", "PENDING", "QUEUED", "RUNNING"):
+                    logger.info(
+                        f"idmapping for job id {job_id} in progress (retry {i}/{max_retries}), "
+                        f"retrying in {polling_interval}s"
+                    )
+                    time.sleep(polling_interval)
+                    continue
+
+                if status in ("FINISHED", "COMPLETE"):
+                    return True
+
+                if status in ("FAILED", "ERROR"):
+                    detail = payload.get("messages") or payload
+                    raise Exception(
+                        f"UniProt idmapping failed. jobStatus={status}; details={detail}"
+                    )
+
+                # Fallback for odd payloads that directly include results
+                if "results" in payload or "failedIds" in payload:
+                    return True
+
+                logger.warning(
+                    f"Unexpected status payload for job {job_id}: {payload}. "
+                    f"Retrying in {polling_interval}s"
+                )
+                time.sleep(polling_interval)
+
             return False
 
         def get_idmapping_results_link(
-            job_id, session: requests.Session, api_url="https://rest.uniprot.org"
-        ):
+            job_id: str, session: requests.Session, api_url: str = "https://rest.uniprot.org"
+        ) -> str:
             url = f"{api_url}/idmapping/details/{job_id}"
-            request = session.get(url)
-            return request.json()["redirectURL"]
-
-        def get_idmapping_results_search(url, session: requests.Session):
-            parsed = urlparse(url)
-            query = parse_qs(parsed.query)
-            file_format = query["format"][0] if "format" in query else "json"
-            if "size" in query:
-                size = int(query["size"][0])
-            else:
-                size = 500  # TODO: change this hardcode?
-                query["size"] = size
-            compressed = (
-                query["compressed"][0].lower() == "true"
-                if "compressed" in query
-                else False
-            )
-            parsed = parsed._replace(query=urlencode(query, doseq=True))
-            url = parsed.geturl()
-            request = session.get(url)
-            try:
-                results = decode_results(request, file_format, compressed)
-            except requests.exceptions.JSONDecodeError as e:
-                logger.error(f"JSONDecode error during uniprot batch request: {e}")
-                return None
-            total = int(request.headers["x-total-results"])
-            print_progress_batches(0, size, total)
-            for i, batch in enumerate(
-                get_batch(request, file_format, compressed, session), 1
-            ):
-                results = combine_batches(results, batch, file_format)
-                print_progress_batches(i, size, total)
-            if file_format == "xml":
-                return merge_xml_results(results)
-            return results
+            request = session.get(url, timeout=30)
+            request.raise_for_status()
+            j = request.json()
+            return j["redirectURL"]
 
         def decode_results(response, file_format, compressed):
             if compressed:
                 decompressed = zlib.decompress(response.content, 16 + zlib.MAX_WBITS)
                 if file_format == "json":
-                    j = json.loads(decompressed.decode("utf-8"))
-                    return j
+                    return json.loads(decompressed.decode("utf-8"))
                 elif file_format == "tsv":
                     return [
-                        line
-                        for line in decompressed.decode("utf-8").split("\n")
-                        if line
+                        line for line in decompressed.decode("utf-8").split("\n") if line
                     ]
                 elif file_format == "xlsx":
                     return [decompressed]
@@ -857,32 +853,24 @@ class UniProtApi:
                 return [response.text]
             return response.text
 
-        def print_progress_batches(batch_index, size, total):
-            n_fetched = min((batch_index + 1) * size, total)
-            logger.info(f"Fetched: {n_fetched} / {total}")
-
-        def get_batch(batch_response, file_format, compressed, session):
-            batch_url = get_next_link(batch_response.headers)
-            while batch_url:
-                try:
-                    batch_response = session.get(batch_url)
-                    # batch_response = session.get(batch_url, verify=False) # verify = False to prevent SSL errors
-                    batch_response.raise_for_status()
-                    yield decode_results(batch_response, file_format, compressed)
-                    batch_url = get_next_link(batch_response.headers)
-                except requests.exceptions.SSLError as e:
-                    logger.warning(f"SSL exception encountered when attempting batch UniProtKB id-convert.")
-                    logger.warning(f"Error: {e}")
-                    u_in = input(f"Enter y to continue or n to close application:")
-                    if u_in == "n":
-                        sys.exit("Application closed by user.")
-        
         def get_next_link(headers):
             re_next_link = re.compile(r'<(.+)>; rel="next"')
             if "Link" in headers:
                 match = re_next_link.match(headers["Link"])
                 if match:
                     return match.group(1)
+
+        def get_batch(batch_response, file_format, compressed, session):
+            batch_url = get_next_link(batch_response.headers)
+            while batch_url:
+                batch_response = session.get(batch_url, timeout=60)
+                batch_response.raise_for_status()
+                yield decode_results(batch_response, file_format, compressed)
+                batch_url = get_next_link(batch_response.headers)
+
+        def print_progress_batches(batch_index, size, total):
+            n_fetched = min((batch_index + 1) * size, total)
+            logger.info(f"Fetched: {n_fetched} / {total}")
 
         def merge_xml_results(xml_results):
             merged_root = ElementTree.fromstring(xml_results[0])
@@ -910,120 +898,151 @@ class UniProtApi:
                 return all_results + batch_results
             return all_results
 
-        # check correct parameters
+        def get_idmapping_results_search(url, session: requests.Session):
+            parsed = urlparse(url)
+            query = parse_qs(parsed.query)
+            file_format = query["format"][0] if "format" in query else "json"
+            if "size" in query:
+                size = int(query["size"][0])
+            else:
+                size = 500  # page size for pagination over results
+                query["size"] = size
+            compressed = (
+                query["compressed"][0].lower() == "true"
+                if "compressed" in query
+                else False
+            )
+            parsed = parsed._replace(query=urlencode(query, doseq=True))
+            url = parsed.geturl()
+            request = session.get(url, timeout=60)
+            try:
+                results = decode_results(request, file_format, compressed)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSONDecode error during uniprot batch request: {e}")
+                return None
+
+            total_header = request.headers.get("x-total-results")
+            total = int(total_header) if total_header and total_header.isdigit() else 0
+            if total:
+                print_progress_batches(0, size, total)
+
+            for i, batch in enumerate(get_batch(request, file_format, compressed, session), 1):
+                results = combine_batches(results, batch, file_format)
+                if total:
+                    print_progress_batches(i, size, total)
+
+            if file_format == "xml":
+                return merge_xml_results(results)
+            return results
+
+        # --- validation & preprocessing ------------------------------------------
+        logger.info(f"Starting UniProt idmapping batch: from {from_db} to {to_db} for {len(ids)} ids.")
+        
         check_to_and_from_db_validity(from_db=from_db, to_db=to_db)
 
-        # check uniprot ids
         processed_ids = []
-        for id in ids:
-            if "MGI:" in id:
-                processed_ids.append(id)
+        for _id in ids:
+            if "MGI:" in _id:
+                processed_ids.append(_id)  # keep full MGI:xxxx
                 continue
-            processed_ids.append(
-                id.split(":")[1]
-            ) if ":" in id else processed_ids.append(id)
-        ids = processed_ids
+            processed_ids.append(_id.split(":")[1]) if ":" in _id else processed_ids.append(_id)
 
-        """
-        # cache previous data
-        cached_data = {"results": [], "failedIds": []}
-        new_ids = []  # new ids that havent been yet queried (these must be queried now)
-        for id in processed_ids:
-            data_key = f"[{self.__class__.__name__}][{self.idmapping_batch.__name__}][id={id},from_db={from_db},to_db={to_db}]"
-            cached = Cacher.get_data("uniprot", data_key=data_key)
-            if cached is None or cached == {}:
-                new_ids.append(id)
-                continue
-            if cached["query_status"] == "successful":
-                cached_data["results"].append(cached["results"])
-            else:
-                cached_data["failedIds"].append(id)
+        new_ids = processed_ids
 
-        # if there is no new_ids (ie all previous ids are cached) -> return cached
-        if new_ids == []:
-            return cached_data
-        """
-        new_ids = ids # NOTE: if reimplementing caching here, delete this and use the above new_ids !!
-
-        polling_interval = 3
-
+        polling_interval = 3.0  # seconds between polls
         api_url = "https://rest.uniprot.org"
+
         retries = Retry(
-            total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504]
+            total=5,
+            backoff_factor=0.3,
+            status_forcelist=[429, 500, 502, 503, 504],
+            respect_retry_after_header=True,
         )
         session = requests.Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
 
-        try:
+        # --- aggregate over chunks -----------------------------------------------
+        all_results = {"results": [], "failedIds": []}
 
-            # ",".join(ids) because the request requires identifiers as comma-serparated values
-            request = requests.post(
-                f"{api_url}/idmapping/run",
-                data={"from": from_db, "to": to_db, "ids": ",".join(new_ids)},
+        for chunk_idx, chunk in enumerate(_chunks(new_ids, chunk_size), start=1):
+            logger.info(
+                f"Submitting UniProt idmapping chunk {chunk_idx}: size={len(chunk)} "
+                f"(from={from_db} to={to_db})"
             )
-            logger.info(f"Attempting batch idmapping from {from_db} to {to_db}. Url = {request.url}")
-
-            request.raise_for_status()
-
-            request_job_id = request.json()["jobId"]
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"HTTP error during batch uniprot mapping: {e}")
-            request_job_id = None
-            return None
-
-        # check idmapping results ready
-        if check_idmapping_results_ready(request_job_id, session, max_retries=self.idmapping_max_retries):
             try:
-                link = get_idmapping_results_link(request_job_id, session)
+                # use the SAME retrying session for submit/poll/fetch
+                req = session.post(
+                    f"{api_url}/idmapping/run",
+                    data={"from": from_db, "to": to_db, "ids": ",".join(chunk)},
+                    timeout=60,
+                )
+                logger.info(
+                    f"Attempting batch idmapping from {from_db} to {to_db}. Url = {req.url}"
+                )
+                req.raise_for_status()
+                job_id = req.json()["jobId"]
+            except Exception as e:
+                logger.error(
+                    f"Error submitting UniProt idmapping for chunk {chunk_idx}: {e}"
+                )
+                # If a submission fails outright, mark the whole chunk as failed
+                all_results["failedIds"].extend(chunk)
+                continue
+
+            try:
+                ready = check_idmapping_results_ready(
+                    job_id,
+                    session,
+                    api_url=api_url,
+                    max_retries=self.idmapping_max_retries,
+                    polling_interval=polling_interval,
+                )
+            except Exception as e:
+                logger.error(
+                    f"UniProt idmapping reported failure for chunk {chunk_idx} (job {job_id}): {e}"
+                )
+                all_results["failedIds"].extend(chunk)
+                continue
+
+            if not ready:
+                logger.error(
+                    f"UniProt idmapping did not finish within {self.idmapping_max_retries} polls "
+                    f"for chunk {chunk_idx} (job {job_id})."
+                )
+                all_results["failedIds"].extend(chunk)
+                continue
+
+            try:
+                link = get_idmapping_results_link(job_id, session, api_url=api_url)
                 results = get_idmapping_results_search(link, session)
             except requests.exceptions.SSLError as e:
-                    logger.warning(f"SSL exception encountered when attempting batch UniProtKB id-convert.")
-                    logger.warning(f"Error: {e}")
-                    u_in = input(f"Enter y to continue or n to close application:")
-                    if u_in == "n":
-                        sys.exit("Application closed by user.")
-                    return None
+                logger.warning(
+                    f"SSL exception encountered when fetching results for chunk {chunk_idx} "
+                    f"(job {job_id}). Error: {e}"
+                )
+                results = None
+            except Exception as e:
+                logger.error(
+                    f"Error fetching/decoding results for chunk {chunk_idx} (job {job_id}): {e}"
+                )
+                results = None
 
             if results is None:
-                return None
-            
-            # cache results
-            successful = results.get("results", [])
-            failedIds = results.get("failedIds", [])
-            
-            """
-            # store successful results to cache
-            for element in successful:
-                # element = {'from': 'ZDB-GENE-020806-3', 'to': {'entryType': 'UniProtKB unreviewed (TrEMBL)', 'primaryAccession': 'Q90ZN6', 'uniProtkbId': 'Q90ZN6_DANRE', 'entryAudit': {...}, 'annotationScore': 2.0, 'organism': {...}, 'proteinExistence': '2: Evidence at transcript level', 'proteinDescription': {...}, 'genes': [...], ...}}
-                source_id = element["from"]
-                data_key = f"[{self.__class__.__name__}][{self.idmapping_batch.__name__}][id={source_id},from_db={from_db},to_db={to_db}]"
-                to_cache = {"query_status": "successful", "results": element}
-                Cacher.store_data("uniprot", data_key, data_value=to_cache)
-            # store failed ids to cache
-            for id in failedIds:
-                data_key = f"[{self.__class__.__name__}][{self.idmapping_batch.__name__}][id={id},from_db={from_db},to_db={to_db}]"
-                to_cache = {"query_status": "failed", "results": id}
-                Cacher.store_data("uniprot", data_key, data_value=to_cache)
-            """
+                # if we couldn't fetch results, count the whole chunk as failed
+                all_results["failedIds"].extend(chunk)
+                continue
 
-            # merge queried results and results obtained from cache
-            return_value = {"results": [], "failedIds": []}
-            # merge queried results
-            for element in successful:
-                return_value["results"].append(element)
-            for id in failedIds:
-                return_value["failedIds"].append(id)
-            """
-            # merge cached results
-            cached_successful = cached_data["results"]
-            cached_failedIds = cached_data["failedIds"]
-            for element in cached_successful:
-                return_value["results"].append(element)
-            for id in cached_failedIds:
-                return_value["failedIds"].append(id)
-            """
-            return return_value
-        return None
+            successful = results.get("results", []) if isinstance(results, dict) else []
+            failed_ids = results.get("failedIds", []) if isinstance(results, dict) else []
+
+            all_results["results"].extend(successful)
+            all_results["failedIds"].extend(failed_ids)
+
+            logger.info(
+                f"Chunk {chunk_idx} done: +{len(successful)} mapped, +{len(failed_ids)} failed"
+            )
+
+        return all_results
 
     def idmapping_ensembl_batch(self, uniprot_ids: list):
         """

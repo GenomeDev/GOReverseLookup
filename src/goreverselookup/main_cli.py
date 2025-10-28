@@ -170,9 +170,8 @@ def main(input_file: str, destination_dir: str = None, report: bool = False, mod
     if model_data_filepath is not None:
         model_data = JsonUtil.load_json(model_data_filepath)
     else:
-        # attempt auto-infer from input_file
         logger.info(f"Model data filepath was None. Attempting auto infer data.json from {input_file}")
-        root = FileUtil.backtrace(input_file, 1)  # move 1 file up to root dir
+        root = FileUtil.backtrace(input_file, 1)  # move 1 file up to root dir 
         m_data_filepath = os.path.join(root, "data.json").replace("\\", "/")
         logger.debug(f"m_data_filepath={m_data_filepath}")
         if FileUtil.check_path(m_data_filepath, auto_create=False):
@@ -193,7 +192,6 @@ def main(input_file: str, destination_dir: str = None, report: bool = False, mod
         )
         return
 
-    # Runs the GOReverseLookup analysis
     if destination_dir is None:
         destination_dir = os.path.dirname(os.path.realpath(input_file))
 
@@ -244,9 +242,9 @@ def main(input_file: str, destination_dir: str = None, report: bool = False, mod
     if 'goterm_gene_fetch_max_connections' in model.model_settings.__dict__:
         GOTERM_GENE_FETCH_MAX_CONNECTIONS = model.model_settings.goterm_gene_fetch_max_connections
 
-    model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=GOTERM_NAME_FETCH_REQ_DELAY,
+    model.fetch_all_go_term_names_descriptions(run_async=model.model_settings.goterm_name_fetch_async, req_delay=GOTERM_NAME_FETCH_REQ_DELAY,
                                                max_connections=GOTERM_NAME_FETCH_MAX_CONNECTIONS)
-    model.fetch_all_go_term_products(web_download=True, run_async=True, delay=GOTERM_GENE_FETCH_REQ_DELAY,
+    model.fetch_all_go_term_products(web_download=True, run_async=model.model_settings.goterm_gene_fetch_async, delay=GOTERM_GENE_FETCH_REQ_DELAY,
                                      max_connections=GOTERM_GENE_FETCH_MAX_CONNECTIONS,
                                      request_params={"rows": 10000000})
     Cacher.save_data()

@@ -13,8 +13,8 @@ include_indirect_annotations	True	p
 indirect_annotations_max_depth	-1
 target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
 ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
-#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
 evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
 gorth_ortholog_fetch_for_indefinitive_orthologs	True
 gorth_ortholog_refetch	False
 fisher_test_use_online_query	False
@@ -43,10 +43,10 @@ cellular_component	False
 ###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
 GO:0006954	chronic_inflammation	+	1	inflammatory response
 GO:0160006	chronic_inflammation	+	1	Fc receptor-mediated immune complex endocytosis
-GO:0050866	chronic_inflammation	-	1	negative regulation of cell activation
-GO:0050867	chronic_inflammation	+	1	positive regulation of cell activation
 GO:0031342	chronic_inflammation	-	1	negative regulation of cell killing
 GO:0031343	chronic_inflammation	+	1	positive regulation of cell killing
+GO:0050866	chronic_inflammation	-	1	negative regulation of cell activation
+GO:0050867	chronic_inflammation	+	1	positive regulation of cell activation
 GO:2000146	chronic_inflammation	-	1	negative regulation of cell motility
 GO:2000147	chronic_inflammation	+	1	positive regulation of cell motility
 GO:1900038	chronic_inflammation	-	1	negative regulation of cellular response to hypoxia

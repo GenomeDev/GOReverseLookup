@@ -107,20 +107,7 @@ class ReverseLookup:
             if self.model_settings.destination_dir is None:
                 self.model_settings.destination_dir = os.path.dirname(os.path.realpath(input_filepath))
         
-        """
-        if destination_dir is not None:
-            self.destination_dir = destination_dir
-        
-        if destination_dir is None:
-            appdata_dir = os.path.join(os.getenv("APPDATA"), "goreverselookup")
-            appdata_dir.replace("\\", "/")
-            self.destination_dir = appdata_dir
-        """
-                
-        # placeholder to populate after perform_statistical_analysis is called
         self.statistically_relevant_products = statistically_relevant_products
-
-        # GO categories - determines which categories of GO terms are chosen during the Fisher score computation (either from the GO Annotations File or from a gene id to GO Terms API query)
         self.go_categories = go_categories
 
         self.goaf = GOAnnotationsFile(
@@ -129,20 +116,17 @@ class ReverseLookup:
             valid_evidence_codes=model_settings.valid_evidence_codes, 
             evidence_codes_to_ecoids=model_settings.evidence_codes_to_ecoids
         )
-        
         if self.goaf is None:
             logger.warning("MODEL COULD NOT CREATE A GO ANNOTATIONS FILE!")
             logger.warning(f"  - goa_human = {self.model_settings.get_datafile_path('goa_human')}")
 
-        self.go_api = GOApi() # this enables us to use go_api inside Metrics.py, as importing GOApi inside Metrics.py creates circular imports.
-
+        self.go_api = GOApi()
         if self.GO_api_version is None:
             self.GO_api_version = self.go_api.get_GO_version()
 
         if obo_parser is not None:
             self.obo_parser = obo_parser
         else:
-            # obo parser is none
             if (
                 self.model_settings.datafile_paths.get("go_obo") is not None
                 and self.model_settings.datafile_paths["go_obo"]["local_filepath"] != ""
