@@ -2,7 +2,7 @@
 crash_products.json
 app/goreverselookup/data_files/*
 bugs/*
-research_models/*
+research_models/chronic-inflammation_cancer*
 research_models/test*
 research_models/haries-test*
 data_files/*

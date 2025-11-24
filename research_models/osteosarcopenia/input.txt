@@ -1,0 +1,499 @@
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.00000005
+multiple_correction_method	fdr_bh
+two_tailed	True
+include_indirect_annotations	True	p
+indirect_annotations_max_depth	3
+target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	False
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
+osteoporosis	+
+sarcopenia	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	False
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+#Bone biology (keyword: bone, remodeling)	
+#GO:0060348	osteoporosis	-	1	Bone development
+GO:1903011	osteoporosis	+	1	negative regulation of bone development	
+GO:1903012	osteoporosis	-	1	positive regulation of bone development
+#GO:0046849	osteoporosis	+	1	Bone remodeling
+GO:0046851	osteoporosis	-	1	Negative regulation of bone remodeling
+GO:0046852	osteoporosis	+	1	Positive regulation of bone remodeling
+GO:0043932	osteoporosis	-	1	ossification involved in bone remodeling
+#GO:0045453	osteoporosis	+	1	Bone resorption
+GO:0045779	osteoporosis	-	1	negative regulation of bone resorption
+GO:0045780	osteoporosis	+	1	positive regulation of bone resorption
+#GO:0060346	osteoporosis	-	1	Bone trabecula formation
+GO:1900155	osteoporosis	+	1	negative regulation of bone trabecula formation
+GO:1900156	osteoporosis	-	1	positive regulation of bone trabecula formation
+GO:0060349	osteoporosis	-	1	Bone morphogenesis
+GO:0061971	osteoporosis	-	1	Replacement bone morphogenesis
+GO:0060350	osteoporosis	-	1	endochondral bone morphogenesis
+GO:1904770	osteoporosis	-	1	intramembranous bone morphogenesis
+GO:0098868	osteoporosis	-	1	bone growth
+GO:0098867	osteoporosis	-	1	intramembranous bone growth
+GO:0003416	osteoporosis	-	1	endochondral bone growth
+#GO:0001503	osteoporosis	-	1	Ossification
+GO:0045778	osteoporosis	-	1	positive regulation of ossification
+GO:0030279	osteoporosis	+	1	negative regulation of ossification
+GO:0036075	osteoporosis	-	1	replacement ossification
+GO:0070977	osteoporosis	-	1	bone maturation
+GO:0043931	osteoporosis	-	1	Ossification involved in bone maturation
+GO:1990523	osteoporosis	-	1	Bone regeneration #zadna
+#Bone cells, process involving bone cells (keyword: osteoblast, osteoclast, osteocyte)		
+GO:0002076	osteoporosis	-	1	Osteoblast development #zadna
+GO:0002051	osteoporosis	-	1	Osteoblast fate commitment
+#GO:0001649	osteoporosis	-	1	Osteoblast differentiation
+GO:0045668	osteoporosis	+	1	Negative regulation of osteoblast differentiation
+GO:0045669	osteoporosis	-	1	positive regulation of osteoblast differentiation
+#GO:0033687	osteoporosis	-	1	osteoblast proliferation
+GO:0033690	osteoporosis	-	1	positive regulation of osteoblast proliferation
+GO:0033689	osteoporosis	+	1	negative regulation of osteoblast proliferation
+#GO:0036035	osteoporosis	-	1	osteoclast development
+GO:2001205	osteoporosis	-	1	Negative regulation of osteoclast development
+GO:2001206	osteoporosis	+	1	Positive regulation of osteoclast development
+#GO:0002158	osteoporosis	+	1	osteoclast proliferation
+GO:0090290	osteoporosis	+	1	positive regulation of osteoclast proliferation
+GO:0090291	osteoporosis	-	1	negative regulation of osteoclast proliferation
+GO:0036179	osteoporosis	+	1	osteoclast maturation #zadna
+#GO:0030316	osteoporosis	+	1	Osteoclast differentiation
+GO:0045672	osteoporosis	+	1	positive regulation of osteoclast differentiation
+GO:0045671	osteoporosis	-	1	negative regulation of osteoclast differentiation
+GO:1900034	osteoporosis	+	1	Regulation of osteoclast differentiation by cytokine
+GO:0072674	osteoporosis	+	1	multinuclear osteoclast differentiation
+GO:0072675	osteoporosis	+	1	osteoclast fusion
+#Mechanotransduction (keyword: mechanical)				
+GO:0009612	osteoporosis	-	1	Response to mechanical stimulus
+GO:0071260	osteoporosis	-	1	Cellular response to mechanical stimulus
+#Endocrine & hormonal regulation of bone (keyword: estrogen, PTH, glucocorticoid, vitamin D, )	
+#estrogen
+GO:1904078	osteoporosis	-	1	positive regulation of estrogen biosynthetic process
+GO:1904077	osteoporosis	+	1	negative regulation of estrogen biosynthetic process
+GO:0033148	osteoporosis	-	1	positive regulation of intracellular estrogen receptor signaling pathway
+GO:0033147	osteoporosis	+	1	negative regulation of intracellular estrogen receptor signaling pathway
+GO:0030520	osteoporosis	-	1	estrogen receptor signaling pathway
+GO:0006711	osteoporosis	+	1	estrogen catabolic process
+GO:0099130	osteoporosis	-	1	estrogen binding
+GO:1903924	osteoporosis	-	1	estradiol binding
+GO:2000866	osteoporosis	-	1	positive regulation of estradiol secretion
+GO:2000868	osteoporosis	+	1	negative regulation of estrone secretion
+GO:2000869	osteoporosis	-	1	positive regulation of estrone secretion
+GO:2000862	osteoporosis	+	1	negative regulation of estrogen secretion
+GO:2000863	osteoporosis	-	1	positive regulation of estrogen secretion
+GO:2000865	osteoporosis	+	1	negative regulation of estradiol secretion
+#PTH (both functions - resorption and )
+GO:0035898	osteoporosis	+	1	parathyroid hormone secretion
+GO:2000830	osteoporosis	+	1	positive regulation of parathyroid hormone secretion
+GO:2000829	osteoporosis	-	1	negative regulation of parathyroid hormone secretion
+GO:0031856	osteoporosis	+	1	parathyroid hormone receptor binding
+GO:0031856	osteoporosis	-	1	parathyroid hormone receptor binding
+GO:0031857	osteoporosis	+	1	type 1 parathyroid hormone receptor binding
+GO:0031857	osteoporosis	-	1	type 1 parathyroid hormone receptor binding
+GO:0004991	osteoporosis	+	1	parathyroid hormone receptor activity
+GO:0004991	osteoporosis	-	1	parathyroid hormone receptor activity
+GO:0071107	osteoporosis	+	1	response to parathyroid hormone
+GO:0071374	osteoporosis	+	1	cellular response to parathyroid hormone stimulus
+GO:0071107	osteoporosis	-	1	response to parathyroid hormone
+GO:0071374	osteoporosis	-	1	cellular response to parathyroid hormone stimulus
+#glucocorticoid
+#GO:0006713	osteoporosis	-	1	glucocorticoid catabolic process
+GO:0031950	osteoporosis	+	1	negative regulation of glucocorticoid catabolic process
+GO:0031951	osteoporosis	-	1	positive regulation of glucocorticoid catabolic process
+#GO:0006704	osteoporosis	+	1	glucocorticoid biosynthetic process
+GO:0031947	osteoporosis	-	1	negative regulation of glucocorticoid biosynthetic process
+GO:0031948	osteoporosis	+	1	positive regulation of glucocorticoid biosynthetic process
+#GO:0035933	osteoporosis	+	1	glucocorticoid secretion
+GO:2000851	osteoporosis	+	1	positive regulation of glucocorticoid secretion
+GO:2000850	osteoporosis	-	1	negative regulation of glucocorticoid secretion
+GO:0071385	osteoporosis	+	1	cellular response to glucocorticoid stimulus
+GO:0004883	osteoporosis	+	1	nuclear glucocorticoid receptor activity
+GO:0051384	osteoporosis	+	1	response to glucocorticoid
+#GO:0042921	osteoporosis	+	1	nuclear receptor-mediated glucocorticoid signaling pathway
+GO:2000324	osteoporosis	+	1	positive regulation of nuclear receptor-mediated glucocorticoid signaling pathway
+GO:2000323	osteoporosis	-	1	negative regulation of nuclear receptor-mediated glucocorticoid signaling pathway	
+GO:0035259	osteoporosis	+	1	nuclear glucocorticoid receptor binding
+#vitamin D
+GO:0060557	osteoporosis	-	1	positive regulation of vitamin D biosynthetic process
+GO:0010957	osteoporosis	+	1	negative regulation of vitamin D biosynthetic process
+GO:0070563	osteoporosis	+	1	negative regulation of vitamin D receptor signaling pathway	
+GO:0070564	osteoporosis	-	1	positive regulation of vitamin D receptor signaling pathway	
+#Inflammaging
+GO:1903970	osteoporosis	-	1	negative regulation of response to macrophage colony-stimulating factor
+GO:1903971	osteoporosis	+	1	positive regulation of response to macrophage colony-stimulating factor
+GO:1901257	osteoporosis	-	1	negative regulation of macrophage colony-stimulating factor production
+GO:1901258	osteoporosis	+	1	positive regulation of macrophage colony-stimulating factor production
+GO:2000309	osteoporosis	+	1	positive regulation of tumor necrosis factor ligand superfamily member 11 production
+GO:2000308	osteoporosis	-	1	negative regulation of tumor necrosis factor ligand superfamily member 11 production
+GO:0045591	osteoporosis	-	1	positive regulation of regulatory T cell differentiation	
+GO:0045590	osteoporosis	+	1	negative regulation of regulatory T cell differentiation
+GO:1902482	osteoporosis	+	1	regulatory T cell apoptotic process
+GO:2000318	osteoporosis	+	1	positive regulation of T-helper 17 type immune response	
+GO:2000317	osteoporosis	-	1	negative regulation of T-helper 17 type immune response	
+GO:0072540	osteoporosis	+	1	T-helper 17 cell lineage commitment	
+GO:0072538	osteoporosis	+	1	T-helper 17 type immune response	
+#Gut microbiome (keyword: short chain fatty acid, )
+GO:0051790	osteoporosis	-	1	short-chain fatty acid biosynthetic process	
+GO:0015913	osteoporosis	-	1	short-chain fatty acid transmembrane transport	
+GO:0015912	osteoporosis	+	1	short-chain fatty acid transport	
+GO:0046459	osteoporosis	-	1	short-chain fatty acid metabolic process	
+GO:0019626	osteoporosis	+	1	short-chain fatty acid catabolic process
+#Cellular senescence pathways (keyword: senescence, apoptosis, necroptosis)	
+GO:2000774	osteoporosis	+	1	positive regulation of cellular senescence	
+GO:2000773	osteoporosis	-	1	negative regulation of cellular senescence	
+GO:0090403	osteoporosis	+	1	oxidative stress-induced premature senescence	
+GO:1904728	osteoporosis	+	1	positive regulation of replicative senescence	
+GO:1904727	osteoporosis	-	1	negative regulation of replicative senescence
+GO:2000774	osteoporosis	+	1	positive regulation of cellular senescence
+GO:2000773	osteoporosis	-	1	negative regulation of cellular senescence
+GO:2001238	osteoporosis	+	1	positive regulation of extrinsic apoptotic signaling pathway
+GO:2001237	osteoporosis	-	1	negative regulation of extrinsic apoptotic signaling pathway
+GO:2001235	osteoporosis	+	1	positive regulation of apoptotic signaling pathway
+GO:2001234	osteoporosis	-	1	negative regulation of apoptotic signaling pathway
+GO:2001244	osteoporosis	+	1	positive regulation of intrinsic apoptotic signaling pathway
+GO:2001243	osteoporosis	-	1	negative regulation of intrinsic apoptotic signaling pathway
+GO:0097468	osteoporosis	+	1	programmed cell death in response to reactive oxygen species
+GO:0090403	osteoporosis	+	1	oxidative stress-induced premature senescence
+GO:1903428	osteoporosis	+	1	positive regulation of reactive oxygen species biosynthetic process
+GO:1903427	osteoporosis	-	1	negative regulation of reactive oxygen species biosynthetic process
+GO:1903984	osteoporosis	+	1	positive regulation of TRAIL-activated apoptotic signaling pathway
+GO:1903122	osteoporosis	-	1	negative regulation of TRAIL-activated apoptotic signaling pathway
+GO:0097527	osteoporosis	+	1	necroptotic signaling pathway	
+GO:0060545	osteoporosis	+	1	positive regulation of necroptotic process	
+GO:0060546	osteoporosis	+	1	negative regulation of necroptotic process
+GO:0090091	osteoporosis	+	1	positive regulation of extracellular matrix disassembly
+GO:0010716	osteoporosis	-	1	negative regulation of extracellular matrix disassembly
+GO:1902073	osteoporosis	-	1	positive regulation of hypoxia-inducible factor-1alpha signaling pathway
+GO:1902072	osteoporosis	+	1	negative regulation of hypoxia-inducible factor-1alpha signaling pathway
+#Key signalling pathways (RANK/RANKL/OPG, Wnt/beta-catenin/Sclerostin, MNF-kappaB/MAPK, M-CSF, TGF-beta/BMP, Notch)
+GO:1902227	osteoporosis	-	1	negative regulation of macrophage colony-stimulating factor signaling pathway
+GO:1902228	osteoporosis	+	1	positive regulation of macrophage colony-stimulating factor signaling pathway
+GO:0090090	osteoporosis	+	1	negative regulation of canonical Wnt signaling pathway
+GO:0090263	osteoporosis	-	1	positive regulation of canonical Wnt signaling pathway
+GO:0030178	osteoporosis	+	1	negative regulation of Wnt signaling pathway
+GO:0030177	osteoporosis	-	1	positive regulation of Wnt signaling pathway
+GO:2000052	osteoporosis	+	1	positive regulation of non-canonical Wnt signaling pathway
+GO:2000051	osteoporosis	-	1	negative regulation of non-canonical Wnt signaling pathway
+GO:1902255	osteoporosis	+	1	positive regulation of intrinsic apoptotic signaling pathway by p53 class mediator
+GO:1902254	osteoporosis	-	1	negative regulation of intrinsic apoptotic signaling pathway by p53 class mediator
+GO:0043517	osteoporosis	+	1	positive regulation of DNA damage response, signal transduction by p53 class mediator
+GO:0043518	osteoporosis	-	1	negative regulation of DNA damage response, signal transduction by p53 class mediator
+GO:0051092	osteoporosis	+	1	positive regulation of NF-kappaB transcription factor activity
+GO:0032088	osteoporosis	-	1	negative regulation of NF-kappaB transcription factor activity
+GO:1901224	osteoporosis	+	1	positive regulation of non-canonical NF-kappaB signal transduction
+GO:1901223	osteoporosis	-	1	negative regulation of non-canonical NF-kappaB signal transduction
+GO:1903846	osteoporosis	-	1	positive regulation of cellular response to transforming growth factor beta stimulus
+GO:1903845	osteoporosis	+	1	negative regulation of cellular response to transforming growth factor beta stimulus
+GO:0030511	osteoporosis	-	1	positive regulation of transforming growth factor beta receptor signaling pathway
+GO:0030512	osteoporosis	+	1	negative regulation of transforming growth factor beta receptor signaling pathway
+GO:0032914	osteoporosis	-	1	positive regulation of transforming growth factor beta1 production
+GO:0032911	osteoporosis	+	1	negative regulation of transforming growth factor beta1 production
+GO:0071636	osteoporosis	+	1	positive regulation of transforming growth factor beta production
+GO:0071635	osteoporosis	+	1	negative regulation of transforming growth factor beta production
+GO:0045746	osteoporosis	+	1	negative regulation of Notch signaling pathway
+GO:0045747	osteoporosis	-	1	positive regulation of Notch signaling pathway
+#SARCOPENIA
+#Muscle tissue processes (keyword: muscle)
+GO:0003299	sarcopenia	-	1	muscle hypertrophy in response to stress
+GO:0003298	sarcopenia	-	1	physiological muscle hypertrophy
+GO:1904205	sarcopenia	+	1	negative regulation of skeletal muscle hypertrophy
+GO:1904206	sarcopenia	-	1	positive regulation of skeletal muscle hypertrophy
+GO:0014888	sarcopenia	-	1	striated muscle adaptation
+GO:0043501	sarcopenia	-	1	skeletal muscle adaptation
+GO:0014891	sarcopenia	+	1	striated muscle atrophy
+GO:0043403	sarcopenia	-	1	skeletal muscle tissue regeneration
+GO:0043417	sarcopenia	+	1	negative regulation of skeletal muscle tissue regeneration
+GO:0043415	sarcopenia	-	1	positive regulation of skeletal muscle tissue regeneration
+GO:0014730	sarcopenia	-	1	skeletal muscle regeneration at neuromuscular junction
+GO:0014739	sarcopenia	-	1	positive regulation of muscle hyperplasia
+GO:0014740	sarcopenia	+	1	negative regulation of muscle hyperplasia
+GO:0048743	sarcopenia	-	1	positive regulation of skeletal muscle fiber development
+GO:1904395	sarcopenia	-	1	positive regulation of skeletal muscle acetylcholine-gated channel clustering
+GO:1904394	sarcopenia	+	1	negative regulation of skeletal muscle acetylcholine-gated channel clustering
+GO:0048636	sarcopenia	-	1	positive regulation of muscle organ development
+GO:0048635	sarcopenia	+	1	negative regulation of muscle organ development
+GO:0048633	sarcopenia	-	1	positive regulation of skeletal muscle tissue growth
+GO:0048643	sarcopenia	-	1	positive regulation of skeletal muscle tissue development
+GO:0048642	sarcopenia	+	1	negative regulation of skeletal muscle tissue development
+GO:0048632	sarcopenia	+	1	negative regulation of skeletal muscle tissue growth
+GO:1902810	sarcopenia	+	1	negative regulation of skeletal muscle fiber differentiation
+GO:1902811	sarcopenia	-	1	positive regulation of skeletal muscle fiber differentiation
+GO:0014811	sarcopenia	+	1	negative regulation of skeletal muscle contraction by regulation of release of sequestered calcium ion
+GO:0014810	sarcopenia	-	1	positive regulation of skeletal muscle contraction by regulation of release of sequestered calcium ion
+GO:0045988	sarcopenia	+	1	negative regulation of striated muscle contraction
+GO:0045989	sarcopenia	-	1	positive regulation of striated muscle contraction
+GO:0014741	sarcopenia	+	1	negative regulation of muscle hypertrophy
+GO:0014737	sarcopenia	+	1	positive regulation of muscle atrophy
+GO:0014736	sarcopenia	-	1	negative regulation of muscle atrophy
+GO:0014745	sarcopenia	+	1	negative regulation of muscle adaptation
+GO:0014744	sarcopenia	-	1	positive regulation of muscle adaptation
+GO:0014742	sarcopenia	-	1	positive regulation of muscle hypertrophy
+GO:0045933	sarcopenia	-	1	positive regulation of muscle contraction
+GO:0045932	sarcopenia	+	1	negative regulation of muscle contraction
+GO:1901862	sarcopenia	+	1	negative regulation of muscle tissue development
+GO:1901863	sarcopenia	-	1	positive regulation of muscle tissue development
+GO:0031451	sarcopenia	-	1	positive regulation of slow-twitch skeletal muscle fiber contraction
+GO:0031450	sarcopenia	+	1	negative regulation of slow-twitch skeletal muscle fiber contraction
+GO:0031448	sarcopenia	-	1	positive regulation of fast-twitch skeletal muscle fiber contraction
+GO:0031447	sarcopenia	+	1	negative regulation of fast-twitch skeletal muscle fiber contraction
+#Muscle cells (keyword: skeletal muscle cell, satelite cell, myoblast, myotube)
+GO:0035914	sarcopenia	-	1	skeletal muscle cell differentiation
+GO:0010658	sarcopenia	+	1	striated muscle cell apoptotic process
+GO:0010664	sarcopenia	-	1	negative regulation of striated muscle cell apoptotic process
+GO:0010663	sarcopenia	+	1	positive regulation of striated muscle cell apoptotic process
+GO:1902726	sarcopenia	-	1	positive regulation of skeletal muscle satellite cell differentiation
+GO:0014719	sarcopenia	-	1	skeletal muscle satellite cell activation
+GO:0014901	sarcopenia	-	1	satellite cell activation involved in skeletal muscle regeneration
+GO:1901667	sarcopenia	+	1	negative regulation of skeletal muscle satellite cell activation involved in skeletal muscle regeneration
+GO:0014718	sarcopenia	-	1	positive regulation of satellite cell activation involved in skeletal muscle regeneration
+GO:0014856	sarcopenia	-	1	skeletal muscle cell proliferation
+GO:0014859	sarcopenia	+	1	negative regulation of skeletal muscle cell proliferation
+GO:1902723	sarcopenia	+	1	negative regulation of skeletal muscle satellite cell proliferation
+GO:1902724	sarcopenia	-	1	positive regulation of skeletal muscle satellite cell proliferation
+GO:1902727	sarcopenia	+	1	negative regulation of growth factor dependent skeletal muscle satellite cell proliferation
+GO:1902728	sarcopenia	-	1	positive regulation of growth factor dependent skeletal muscle satellite cell proliferation
+GO:0051450	sarcopenia	-	1	myoblast proliferation
+GO:0045445	sarcopenia	-	1	myoblast differentiation
+GO:0048627	sarcopenia	-	1	myoblast development
+GO:0048628	sarcopenia	-	1	myoblast maturation
+GO:0014835	sarcopenia	-	1	myoblast differentiation involved in skeletal muscle regeneration
+GO:0014836	sarcopenia	-	1	myoblast fate commitment involved in skeletal muscle regeneration
+GO:0014838	sarcopenia	-	1	myoblast fate specification involved in skeletal muscle regeneration
+GO:0014837	sarcopenia	-	1	myoblast fate determination involved in skeletal muscle regeneration
+GO:0045663	sarcopenia	-	1	positive regulation of myoblast differentiation
+GO:1901741	sarcopenia	-	1	positive regulation of myoblast fusion
+GO:1901740	sarcopenia	+	1	negative regulation of myoblast fusion
+GO:0014905	sarcopenia	-	1	myoblast fusion involved in skeletal muscle regeneration
+GO:0014844	sarcopenia	-	1	myoblast proliferation involved in skeletal muscle regeneration
+GO:0014906	sarcopenia	-	1	myotube cell development involved in skeletal muscle regeneration
+GO:0014908	sarcopenia	-	1	myotube differentiation involved in skeletal muscle regeneration
+GO:0010831	sarcopenia	-	1	positive regulation of myotube differentiation
+GO:0010832	sarcopenia	+	1	negative regulation of myotube differentiation
+GO:0110124	sarcopenia	-	1	positive regulation of myotube cell migration
+GO:0110125	sarcopenia	+	1	negative regulation of myotube cell migration
+GO:0014834	sarcopenia	-	1	skeletal muscle satellite cell maintenance involved in skeletal muscle regeneration
+GO:0098731	sarcopenia	-	1	skeletal muscle satellite stem cell maintenance involved in skeletal muscle regeneration
+GO:0014716	sarcopenia	-	1	skeletal muscle satellite stem cell asymmetric division involved in skeletal muscle regeneration
+GO:2000818	sarcopenia	+	1	negative regulation of myoblast proliferation
+GO:1902725	sarcopenia	+	1	negative regulation of satellite cell differentiation
+GO:0014839	sarcopenia	-	1	myoblast migration involved in skeletal muscle regeneration
+GO:0045662	sarcopenia	+	1	negative regulation of myoblast differentiation
+GO:0046716	sarcopenia	-	1	muscle cell cellular homeostasis
+GO:0014816	sarcopenia	-	1	skeletal muscle satellite cell differentiation
+GO:0051148	sarcopenia	+	1	negative regulation of muscle cell differentiation
+GO:0051149	sarcopenia	-	1	positive regulation of muscle cell differentiation
+GO:0051154	sarcopenia	+	1	negative regulation of striated muscle cell differentiation
+GO:0051155	sarcopenia	-	1	positive regulation of striated muscle cell differentiation
+GO:0010656	sarcopenia	-	1	negative regulation of muscle cell apoptotic process
+GO:0010661	sarcopenia	+	1	positive regulation of muscle cell apoptotic process
+GO:0045599	sarcopenia	-	1	negative regulation of fat cell differentiation
+GO:0045600	sarcopenia	+	1	positive regulation of fat cell differentiation
+GO:0070345	sarcopenia	-	1	negative regulation of fat cell proliferation
+GO:0070346	sarcopenia	+	1	positive regulation of fat cell proliferation
+#Tendon-related (keyword: tendon)
+GO:2001050	sarcopenia	+	1	negative regulation of tendon cell differentiation
+GO:2001051	sarcopenia	-	1	positive regulation of tendon cell differentiation
+#Motor neurons / NMJ (keyword: motor neuron, neuromuscular junction)
+GO:1905485	sarcopenia	-	1	positive regulation of motor neuron migration
+GO:1905484	sarcopenia	+	1	negative regulation of motor neuron migration
+GO:2000672	sarcopenia	-	1	negative regulation of motor neuron apoptotic process
+GO:2000673	sarcopenia	+	1	positive regulation of motor neuron apoptotic process
+GO:1904398	sarcopenia	-	1	positive regulation of neuromuscular junction development
+GO:1904397	sarcopenia	+	1	negative regulation of neuromuscular junction development
+GO:1904395	sarcopenia	-	1	positive regulation of skeletal muscle acetylcholine-gated channel clustering
+GO:1904394	sarcopenia	+	1	negative regulation of skeletal muscle acetylcholine-gated channel clustering
+GO:0045887	sarcopenia	-	1	positive regulation of synaptic assembly at neuromuscular junction
+GO:0045886	sarcopenia	+	1	negative regulation of synaptic assembly at neuromuscular junction
+GO:2000672	sarcopenia	-	1	negative regulation of motor neuron apoptotic process
+GO:2000673	sarcopenia	+	1	positive regulation of motor neuron apoptotic process
+GO:1905485	sarcopenia	-	1	positive regulation of motor neuron migration
+GO:1905484	sarcopenia	+	1	negative regulation of motor neuron migration
+GO:1905814	sarcopenia	-	1	positive regulation of motor neuron axon guidance
+GO:1905813	sarcopenia	+	1	negative regulation of motor neuron axon guidance
+#Protein-homeostasis pathways (keyword: ubiquitin, proteasom)
+#Ubiquitin-proteasome system
+GO:2000059	sarcopenia	-	1	negative regulation of ubiquitin-dependent protein catabolic process	
+GO:0032435	sarcopenia	-	1	negative regulation of proteasomal ubiquitin-dependent protein catabolic process	
+GO:2000060	sarcopenia	+	1	positive regulation of ubiquitin-dependent protein catabolic process	
+GO:0032436	sarcopenia	+	1	positive regulation of proteasomal ubiquitin-dependent protein catabolic process
+GO:1905898	sarcopenia	+	1	positive regulation of response to endoplasmic reticulum stress
+GO:1903573	sarcopenia	-	1	negative regulation of response to endoplasmic reticulum stress
+GO:1903899	sarcopenia	+	1	positive regulation of PERK-mediated unfolded protein response
+GO:1903898	sarcopenia	-	1	negative regulation of PERK-mediated unfolded protein response
+GO:1900103	sarcopenia	+	1	positive regulation of endoplasmic reticulum unfolded protein response
+GO:1900102	sarcopenia	-	1	negative regulation of endoplasmic reticulum unfolded protein response
+GO:1902237	sarcopenia	+	1	positive regulation of ER-stress-induced intrinsic apoptotic signaling pathway
+GO:1902236	sarcopenia	-	1	negative regulation of ER-stress-induced intrinsic apoptotic signaling pathway
+#Autophagy (keyword: autophagy)
+GO:0010508	sarcopenia	-	1	positive regulation of autophagy
+GO:0010507	sarcopenia	+	1	negative regulation of autophagy
+GO:0016239	sarcopenia	-	1	positive regulation of macroautophagy
+GO:0016242	sarcopenia	+	1	negative regulation of macroautophagy
+GO:0034263	sarcopenia	-	1	positive regulation of autophagy in response to ER overload
+GO:1903599	sarcopenia	-	1	positive regulation of autophagy of mitochondrion
+GO:1903147	sarcopenia	+	1	negative regulation of autophagy of mitochondrion
+GO:1904094	sarcopenia	+	1	positive regulation of autophagic cell death
+GO:1904093	sarcopenia	-	1	negative regulation of autophagic cell death
+GO:1904716	sarcopenia	-	1	positive regulation of chaperone-mediated autophagy
+GO:1904715	sarcopenia	+	1	negative regulation of chaperone-mediated autophagy
+#Mitohondrial dysfunction and ROS (keyword: mitochondrium, reactive oxygen species)
+GO:1903427	sarcopenia	-	1	negative regulation of reactive oxygen species biosynthetic process	
+GO:1903428	sarcopenia	+	1	positive regulation of reactive oxygen species biosynthetic process	
+GO:1901033	sarcopenia	+	1	positive regulation of response to reactive oxygen species	
+GO:1901032	sarcopenia	-	1	negative regulation of response to reactive oxygen species	
+GO:2000379	sarcopenia	+	1	positive regulation of reactive oxygen species metabolic process	
+GO:2000378	sarcopenia	-	1	negative regulation of reactive oxygen species metabolic process
+GO:1902958	sarcopenia	-	1	positive regulation of mitochondrial electron transport, NADH to ubiquinone
+GO:1902957	sarcopenia	+	1	negative regulation of mitochondrial electron transport, NADH to ubiquinone
+GO:0090297	sarcopenia	-	1	positive regulation of mitochondrial DNA replication
+GO:0090298	sarcopenia	+	1	negative regulation of mitochondrial DNA replication
+GO:0000962	sarcopenia	+	1	positive regulation of mitochondrial RNA catabolic process
+GO:0000961	sarcopenia	-	1	negative regulation of mitochondrial RNA catabolic process
+GO:0070131	sarcopenia	-	1	positive regulation of mitochondrial translation
+GO:0070130	sarcopenia	+	1	negative regulation of mitochondrial translation
+GO:0070134	sarcopenia	-	1	positive regulation of mitochondrial translational initiation
+GO:0070133	sarcopenia	+	1	negative regulation of mitochondrial translational initiation
+GO:0010892	sarcopenia	-	1	positive regulation of mitochondrial translation in response to stress
+GO:0010636	sarcopenia	-	1	positive regulation of mitochondrial fusion
+GO:0010637	sarcopenia	+	1	negative regulation of mitochondrial fusion
+GO:0090258	sarcopenia	-	1	negative regulation of mitochondrial fission
+GO:0090141	sarcopenia	+	1	positive regulation of mitochondrial fission
+GO:1901526	sarcopenia	-	1	positive regulation of mitophagy
+GO:1901525	sarcopenia	+	1	negative regulation of mitophagy
+GO:1903599	sarcopenia	-	1	positive regulation of autophagy of mitochondrion
+GO:1903147	sarcopenia	+	1	negative regulation of autophagy of mitochondrion
+GO:1905091	sarcopenia	-	1	positive regulation of type 2 mitophagy
+GO:1905090	sarcopenia	+	1	negative regulation of type 2 mitophagy
+GO:0035795	sarcopenia	-	1	negative regulation of mitochondrial membrane permeability
+GO:0035794	sarcopenia	+	1	positive regulation of mitochondrial membrane permeability
+GO:0051562	sarcopenia	-	1	negative regulation of mitochondrial calcium ion concentration
+GO:0051561	sarcopenia	+	1	positive regulation of mitochondrial calcium ion concentration
+GO:1901029	sarcopenia	-	1	negative regulation of mitochondrial outer membrane permeabilization involved in apoptotic signaling pathway
+GO:1901030	sarcopenia	+	1	positive regulation of mitochondrial outer membrane permeabilization involved in apoptotic signaling pathway
+GO:1902109	sarcopenia	-	1	negative regulation of mitochondrial membrane permeability involved in apoptotic process
+GO:1902110	sarcopenia	+	1	positive regulation of mitochondrial membrane permeability involved in apoptotic process
+GO:1903638	sarcopenia	-	1	positive regulation of protein insertion into mitochondrial outer membrane
+GO:1903637	sarcopenia	+	1	negative regulation of protein insertion into mitochondrial outer membrane
+#Endocrine and Hormonal reuglation (keyword: testosteron, androgen, insulin, IGF-1, vitamin D, insulin)
+#IGF-1
+GO:0043568	sarcopenia	-	1	positive regulation of insulin-like growth factor receptor signaling pathway
+GO:0043569	sarcopenia	+	1	negative regulation of insulin-like growth factor receptor signaling pathway
+#Androgens / Testosterone 
+GO:0060766	sarcopenia	+	1	negative regulation of androgen receptor signaling pathway
+GO:2000845	sarcopenia	-	1	positive regulation of testosterone secretion
+GO:2000844	sarcopenia	+	1	negative regulation of testosterone secretion
+GO:2000836	sarcopenia	-	1	positive regulation of androgen secretion
+GO:2000835	sarcopenia	+	1	negative regulation of androgen secretion
+GO:2000225	sarcopenia	+	1	negative regulation of testosterone biosynthetic process
+GO:2000180	sarcopenia	+	1	negative regulation of androgen biosynthetic process
+GO:2000655	sarcopenia	+	1	negative regulation of cellular response to testosterone stimulus
+#Insulin signalling & secretion 
+GO:0046628	sarcopenia	-	1	positive regulation of insulin receptor signaling pathway
+GO:0046627	sarcopenia	+	1	negative regulation of insulin receptor signaling pathway
+GO:0038015	sarcopenia	-	1	positive regulation of insulin receptor signaling pathway by insulin receptor internalization
+GO:0038014	sarcopenia	+	1	negative regulation of insulin receptor signaling pathway by insulin receptor internalization
+GO:1900078	sarcopenia	-	1	positive regulation of cellular response to insulin stimulus
+GO:1900077	sarcopenia	+	1	negative regulation of cellular response to insulin stimulus
+GO:0035774	sarcopenia	-	1	positive regulation of insulin secretion involved in cellular response to glucose stimulus
+GO:0061179	sarcopenia	+	1	negative regulation of insulin secretion involved in cellular response to glucose stimulus
+#Key signaling pathways (keyword: PI3K, AMPK, Wnt, NF-kB, p38, Notch)
+GO:0051897	sarcopenia	-	1	positive regulation of phosphatidylinositol 3-kinase/protein kinase B signal transduction
+GO:0051898	sarcopenia	+	1	negative regulation of phosphatidylinositol 3-kinase/protein kinase B signal transduction
+GO:1905291	sarcopenia	-	1	positive regulation of CAMKK-AMPK signaling cascade
+GO:1905290	sarcopenia	+	1	negative regulation of CAMKK-AMPK signaling cascade
+GO:0051092	sarcopenia	+	1	positive regulation of NF-kappaB transcription factor activity
+GO:0043123	sarcopenia	+	1	positive regulation of canonical NF-kappaB signal transduction
+GO:1901224	sarcopenia	+	1	positive regulation of non-canonical NF-kappaB signal transduction
+GO:0032088	sarcopenia	-	1	negative regulation of NF-kappaB transcription factor activity
+GO:0043124	sarcopenia	-	1	negative regulation of canonical NF-kappaB signal transduction
+GO:1901223	sarcopenia	-	1	negative regulation of non-canonical NF-kappaB signal transduction
+GO:1900745	sarcopenia	+	1	positive regulation of p38MAPK cascade
+GO:1903753	sarcopenia	-	1	negative regulation of p38MAPK cascade
+GO:0030514	sarcopenia	+	1	negative regulation of BMP signaling pathway	
+GO:0030513	sarcopenia	-	1	positive regulation of BMP signaling pathway
+#Immune and cytokine (keyword: IL1, IL6, IL15, TNF, cytokine)
+GO:0032738	sarcopenia	-	1	positive regulation of interleukin-15 production	
+GO:0032698	sarcopenia	+	1	negative regulation of interleukin-15 production
+GO:0060907	sarcopenia	+	1	positive regulation of macrophage cytokine production
+GO:0010936	sarcopenia	-	1	negative regulation of macrophage cytokine production
+GO:0032731	osteoporosis	+	1	positive regulation of interleukin-1 beta production
+GO:0032691	osteoporosis	-	1	negative regulation of interleukin-1 beta production
+GO:0032715	osteoporosis	-	1	negative regulation of interleukin-6 production
+GO:0032755	osteoporosis	+	1	positive regulation of interleukin-6 production
+GO:0032720	osteoporosis	-	1	negative regulation of tumor necrosis factor production
+GO:0032760	osteoporosis	+	1	positive regulation of tumor necrosis factor production
+#other 
+#GO:0072535	osteoporosis	+	1	tumor necrosis factor (ligand) superfamily member 11 production
+#GO:1903556	osteoporosis	-	1	negative regulation of tumor necrosis factor superfamily cytokine production
+#GO:1903557	osteoporosis	+	1	positive regulation of tumor necrosis factor superfamily cytokine production
+#GO:0032700	osteoporosis	-	1	negative regulation of interleukin-17 production
+#GO:0032740	osteoporosis	+	1	positive regulation of interleukin-17 production
+#GO:0038145	osteoporosis	+	1	macrophage colony-stimulating factor signaling pathway
+#GO:0036005	osteoporosis	+	1	response to macrophage colony-stimulating factor
+#GO:0036006	osteoporosis	+	1	cellular response to macrophage colony-stimulating factor stimulus
+#GO:1903973	osteoporosis	-	1	negative regulation of cellular response to macrophage colony-stimulating factor stimulus
+#GO:1903974	osteoporosis	+	1	positive regulation of cellular response to macrophage colony-stimulating factor stimulus
+#GO:1903265	osteoporosis	+	1	positive regulation of tumor necrosis factor-mediated signaling pathway
+#GO:0010804	osteoporosis	-	1	negative regulation of tumor necrosis factor-mediated signaling pathway
+#GO:0032720	osteoporosis	-	1	negative regulation of tumor necrosis factor production
+#GO:0032760	osteoporosis	+	1	positive regulation of tumor necrosis factor production
+#GO:0032715	osteoporosis	-	1	negative regulation of interleukin-6 production
+#GO:0032755	osteoporosis	+	1	positive regulation of interleukin-6 production
+#GO:0032700	osteoporosis	-	1	negative regulation of interleukin-17 production
+#GO:0032740	osteoporosis	+	1	positive regulation of interleukin-17 production
+#Extracellular matrix connected to bone	(keyword: collagen, ECM)
+#GO:1904028	osteoporosis	-	1	positive regulation of collagen fibril organization
+#GO:1904027	osteoporosis	+	1	negative regulation of collagen fibril organization
+#GO:0010711	osteoporosis	-	1	negative regulation of collagen catabolic process
+#GO:0120158	osteoporosis	+	1	positive regulation of collagen catabolic process
+#GO:0032967	osteoporosis	-	1	Positive regulation of collagen biosynthetic process
+#GO:0032966	osteoporosis	-	1	negative regulation of collagen biosynthetic process
+#GO:1905050	osteoporosis	+	1	Positive regulation of metallopeptidase activity
+#GO:1905049	osteoporosis	-	1	Negative regulation of metallopeptidase activity
+#GO:1902730	osteoporosis	-	1	Positive regulation of proteoglycan biosynthetic process
+#GO:1902729	osteoporosis	+	1	Negative regulation of proteoglycan biosynthetic process
+#GO:0018149	osteoporosis	-	1	Peptide cross-linking
+#GO:1904599	osteoporosis	+	1	Advanced glycation end-product binding
+#GO:0050650	osteoporosis	-	1	chondroitin sulfate proteoglycan biosynthetic process
+#GO:0005518	osteoporosis	-	1	collagen binding
+#GO:0005178	osteoporosis	-	1	integrin binding
+#GO:0030020	osteoporosis	-	1	ECM structural constituent conferring tensile strength
+#GO:0006027	osteoporosis	+	1	Glycosaminoglycan catabolic process
+#Chondrocyte and cartlidge (keyword: cartilage, chondrocyte)				
+#GO:0032331	osteoporosis	+	1	Negative regulation of chondrocyte differentiation
+#GO:0032332	osteoporosis	-	1	Positive regulation of chondrocyte differentiation
+#GO:1902731	osteoporosis	+	1	Negative regulation of chondrocyte proliferation
+#GO:1902732	osteoporosis	-	1	Positive regulation of chondrocyte proliferation
+#GO:0061914	osteoporosis	+	1	Negative regulation of growth plate cartilage chondrocyte proliferation
+#GO:0061913	osteoporosis	-	1	Positive regulation of growth plate cartilage chondrocyte proliferation
+#GO:0051216	osteoporosis	-	1	Cartilage development
+#GO:0061037	osteoporosis	+	1	Negative regulation of cartilage development
+#GO:0061036	osteoporosis	-	1	Positive regulation of cartilage development
