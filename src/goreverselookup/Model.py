@@ -1358,7 +1358,6 @@ class ReverseLookup:
                         product.scores[_score_class.name] = _score_class.metric(product)
 
         # calculate Benjamini-Hochberg FDR correction
-        
         for _score_class in score_classes:
             if isinstance(_score_class, basic_mirna_score):
                 # score miRNAs holistically here, see # NOTE
@@ -1367,27 +1366,45 @@ class ReverseLookup:
 
             i = 0
             p_values = []
-            if (
-                _score_class.name == "fisher_test"
-                or _score_class.name == "binomial_test"
-            ):
-                for product in self.products:
-                    for SOI in self.target_SOIs:
-                        for direction in ["+", "-"]:
-                            if "error" in product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]:  # check if there is "error" key
-                                continue
-                            p_values.append(product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]["pvalue"])
-                
-                # apply multiple testing correction
-                if len(p_values) > 0:
-                    reject, p_corrected, _, _ = multipletests(p_values, alpha=0.05, method=self.model_settings.multiple_correction_method)
-                    for product in self.products:
-                        for SOI in self.target_SOIs:
-                            for direction in ["+", "-"]:
-                                if "error" in product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]:  # check if there is "error" key
-                                    continue
-                                product.scores[_score_class.name][f"{SOI['SOI']}{direction}"]["pvalue_corr"] = p_corrected[i]
-                                i += 1
+            score_cells = []  # list of dicts that will receive "pvalue_corr"
+
+            for product in self.products:
+                # product.scores might not contain this metric at all
+                metric_scores = product.scores.get(_score_class.name)
+                if not isinstance(metric_scores, dict):
+                    continue
+
+                for SOI in self.target_SOIs:
+                    for direction in ["+", "-"]:
+                        key = f"{SOI['SOI']}{direction}"
+
+                        # Some products simply won't have this SOI+direction key
+                        cell = metric_scores.get(key)
+                        if not isinstance(cell, dict):
+                            continue
+
+                        # If the cell has an "error" key, skip it
+                        if cell.get("error"):
+                            continue
+
+                        # If there's no p-value, nothing to correct
+                        if "pvalue" not in cell:
+                            continue
+
+                        p_values.append(cell["pvalue"])
+                        score_cells.append(cell)
+
+            # apply multiple testing correction
+            if len(p_values) > 0:
+                reject, p_corrected, _, _ = multipletests(
+                    p_values,
+                    alpha=0.05,
+                    method=self.model_settings.multiple_correction_method,
+                )
+
+                # assign corrected p-values back to the score cells
+                for cell, p_corr in zip(score_cells, p_corrected):
+                    cell["pvalue_corr"] = p_corr
 
         if "score_products" not in self.execution_times:
             self.execution_times["score_products"] = self.timer.get_elapsed_formatted()

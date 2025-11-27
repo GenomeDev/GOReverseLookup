@@ -1,0 +1,80 @@
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+multiple_correction_method	fdr_bh
+two_tailed	False
+include_indirect_annotations	True	p
+indirect_annotations_max_depth	-1
+target_organism	zea_mays|UniProtKB|NCBITaxon:4577 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	marchantia_polymorpha|UniProtKB|NCBITaxon:3197,chlamydomonas_reinhardtii|UniProtKB|NCBITaxon:3055,oryza_sativa|UniProtKB|NCBITaxon:4530,nicotiana_tabacum|UniProtKB|NCBITaxon:4097,solanum_tuberosum|UniProtKB|NCBITaxon:4113,Arabidopsis_thaliana|UniProtKB|NCBITaxon:3702
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	True
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
+draught_response	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+GO:0009414	draught_response	+	1	response to water deprivation
+GO:0042631	draught_response	+	1	cellular response to water deprivation
+GO:0009269	draught_response	+	1	response to desiccation
+GO:0071465	draught_response	+	1	cellular response to desiccation
+GO:1902584	draught_response	+	1	positive regulation of response to water deprivation
+GO:0006970	draught_response	+	1	response to osmotic stress
+GO:0071470	draught_response	+	1	cellular response to osmotic stress
+GO:0071474	draught_response	+	1	cellular hyperosmotic response
+GO:0071475	draught_response	+	1	cellular hyperosmotic salinity response
+GO:0042538	draught_response	+	1	hyperosmotic salinity response
+GO:1902219	draught_response	+	1	negative regulation of intrinsic apoptotic signaling pathway in response to osmotic stress
+GO:1902239	draught_response	+	1	negative regulation of intrinsic apoptotic signaling pathway in response to osmotic stress by p53 class mediator
+
+# ABA signalling
+GO:0009737	draught_response	+	1	response to abscisic acid
+GO:0071215	draught_response	+	1	cellular response to abscisic acid stimulus
+GO:0008431	draught_response	+	1	abscisic acid-activated signaling pathway
+GO:1905114	draught_response	+	1	positive regulation of abscisic acid-activated signaling pathway
+GO:1903703	draught_response	+	1	positive regulation of response to abscisic acid
+
+# stomatal closure
+GO:0090332	draught_response	+	1	regulation of stomatal closure
+GO:1903726	draught_response	+	1	positive regulation of stomatal closure
+GO:1903727	draught_response	+	1	positive regulation of stomatal movement
+
+# cuticle, wax and cell wall reinforcement
+GO:0042335	draught_response	+	1	cuticle development
+GO:0042302	draught_response	+	1	structural constituent of cuticle
+GO:0010025	draught_response	+	1	wax biosynthetic process
+GO:0033384	draught_response	+	1	cuticular wax biosynthetic process
+GO:0042632	draught_response	+	1	leaf water loss prevention
+
+# root architecture, water acquisition 
+GO:0048767	draught_response	+	1	root hair elongation
+GO:0048364	draught_response	+	1	root development
+GO:2000038	draught_response	+	1	positive regulation of root development
+GO:1905336	draught_response	+	1	positive regulation of auxin efflux (key for drought root remodeling)
+GO:0009733	draught_response	+	1	response to auxin (auxin helps drought root adaptation)

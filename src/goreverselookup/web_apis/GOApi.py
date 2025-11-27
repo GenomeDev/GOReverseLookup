@@ -447,6 +447,27 @@ class GOApi:
             if derived_taxa:
                 approved_taxa = derived_taxa
 
+        # Build cache key
+        categories_key = ",".join(sorted(go_categories))
+        taxa_key = ",".join(sorted(approved_taxa)) if approved_taxa else "None"
+        if model_settings is not None and getattr(model_settings, "valid_evidence_codes", None):
+            evidence_key = ",".join(sorted(model_settings.valid_evidence_codes))
+        else:
+            evidence_key = "None"
+        data_key = (
+        f"[{self.__class__.__name__}]"
+        f"[{self.get_goterms.__name__}]"
+        f"[gene_id={gene_id}]"
+        f"[categories={categories_key}]"
+        f"[taxa={taxa_key}]"
+        f"[evidence={evidence_key}]"
+        )
+        # Cache previous data
+        prev_data = Cacher.get_data("go", data_key=data_key)
+        if prev_data is not None:
+            logger.debug(f"Found cached GO term data for {gene_id} (key={data_key})")
+            return prev_data
+    
         if response.status_code == 200:
             response_json = response.json()
             total_assoc = len(response_json["associations"])
@@ -469,6 +490,7 @@ class GOApi:
                         if go_id is not None:
                             result_go_terms.append(go_id)
             logger.debug(f"Querying GO terms for: {gene_id}, approved_taxa: {approved_taxa}. Total associations count: {total_assoc}, accepted associations count: {len(result_go_terms)}")
+            Cacher.store_data("go", data_key=data_key, data_value=result_go_terms)
             return result_go_terms
         else:
             logger.warning(f"Response error when querying GO Terms for {gene_id}!")
