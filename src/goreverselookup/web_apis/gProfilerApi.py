@@ -262,11 +262,16 @@ class gProfilerUtil:
         results = None  # Initialize results
     
         if prev_response is None:
-            r = requests.get(url)
+            try:
+                r = requests.get(url, timeout=100)
+            except requests.exceptions.RequestException as e:
+                logger.error("Error contacting g:Profiler organisms_list endpoint: %s", e)
+                logger.debug("Returning None for taxon %s due to request exception.", taxon)
+                return None
             if not r.ok:
                 logger.error("gProfiler organisms_list returned status %s; body: %.500s", r.status_code, r.text)
                 logger.debug("Returning None.")
-                return None
+                return None  
             results = r.json()
             Cacher.store_data("gprofiler", data_key=url, data_value=results)
         else:

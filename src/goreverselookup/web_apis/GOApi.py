@@ -432,22 +432,43 @@ class GOApi:
         To carry out the query request, the following url is used:
             http://api.geneontology.org/api/bioentity/gene/{gene_id}/function
         """
+        
         url = f"http://api.geneontology.org/api/bioentity/gene/{gene_id}/function"
         response = requests.get(url, params=request_params)
         result_go_terms = []
 
+        # If model settings is passed, override the target organism taxon with approved_taxa. It must be the full taxon!!!
+        if model_settings is not None:
+            derived_taxa = []
+            if model_settings.target_organism is not None:
+                # must be full taxon, e.g. "NCBITaxon:9606"
+                if getattr(model_settings.target_organism, "ncbi_id_full", None):
+                    derived_taxa.append(model_settings.target_organism.ncbi_id_full)
+            if derived_taxa:
+                approved_taxa = derived_taxa
+
         if response.status_code == 200:
             response_json = response.json()
+            total_assoc = len(response_json["associations"])
             for assoc in response_json["associations"]:
                 # if evidence is not confirmed, continue to next iteration
                 evidence_confirmed, evidence_code_eco_id = GOApi.check_GO_association_evidence_code_validity(assoc, model_settings.valid_evidence_codes)
                 if not evidence_confirmed:
                     continue
+                
+                _d_assoc_subject_taxon_id = assoc["subject"]["taxon"]["id"]
+                _d_assoc_object_category0 = assoc["object"]["category"][0]
+                _d_goid = assoc["object"]["id"]
+                logger.debug(f"    assoc[subject][taxon][id] = {_d_assoc_subject_taxon_id}")
+                logger.debug(f"    assoc[object][category][0] = {_d_assoc_object_category0}")
+                logger.debug(f"    goid: {_d_goid}")
+
                 if assoc["subject"]["taxon"]["id"] in approved_taxa:
                     if assoc["object"]["category"][0] in go_categories:
                         go_id = assoc["object"]["id"]
                         if go_id is not None:
                             result_go_terms.append(go_id)
+            logger.debug(f"Querying GO terms for: {gene_id}, approved_taxa: {approved_taxa}. Total associations count: {total_assoc}, accepted associations count: {len(result_go_terms)}")
             return result_go_terms
         else:
             logger.warning(f"Response error when querying GO Terms for {gene_id}!")

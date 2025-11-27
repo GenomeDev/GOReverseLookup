@@ -123,6 +123,39 @@ class EnsemblUtil():
         """
         Maps a NCBITaxon (e.g. NCBITaxon:9606) to an Ensembl stable id prefix (e.g. 'ENS')
         """
-        if "NCBITaxon:" in taxon:
-            taxon = taxon.replace("NCBITaxon:", "")
-        return WebsiteParser.ensembl_species_to_ids_to_taxons[taxon].get('stable_id_prefix')
+         # Normalize to plain numeric string, e.g. "NCBITaxon:3702" -> "3702"
+        taxon_str = str(taxon)
+        if ":" in taxon_str:
+            taxon_str = taxon_str.split(":", 1)[1]
+
+        mapping = WebsiteParser.ensembl_species_to_ids_to_taxons
+
+        # 1) Direct lookup by numeric string key
+        if taxon_str in mapping:
+            prefix = mapping[taxon_str].get("stable_id_prefix")
+            if prefix:
+                return prefix
+
+        # 2) Direct lookup by original key (in case mapping uses int or full string)
+        if taxon in mapping:
+            prefix = mapping[taxon].get("stable_id_prefix")
+            if prefix:
+                return prefix
+
+        # 3) Fallback: search by taxonomy_id field in the values
+        for key, data in mapping.items():
+            try:
+                if str(data.get("taxonomy_id")) == taxon_str:
+                    prefix = data.get("stable_id_prefix")
+                    if prefix:
+                        return prefix
+            except AttributeError:
+                # data is not a dict or has unexpected structure
+                continue
+
+        # If we get here, we have no mapping for this taxon
+        print(
+            "No Ensembl stable ID prefix found for taxon %s in ensembl_species_to_ids_to_taxons.",
+            taxon,
+        )
+        return None

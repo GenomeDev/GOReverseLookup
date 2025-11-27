@@ -659,7 +659,12 @@ class UniProtApi:
                     Cacher.store_data("url", url, response_json)
                 # except(requests.exceptions.RequestException, TimeoutError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, aiohttp.ServerDisconnectedError, aiohttp.ClientResponseError) as e:
                 except Exception as e:
-                    logger.warning(f"Exception when querying info for {uniprot_id}. Exception: {str(e)}")
+                    logger.warning(
+                        "Exception when querying info for UniProt ID %s: [%s] %s",
+                        uniprot_id,
+                        type(e).__name__,
+                        str(e) if str(e) else "<no message>"
+                    )
                     self.uniprot_query_exceptions.append({f"{uniprot_id}": f"{str(e)}"})
                     await asyncio.sleep(self.async_request_sleep_delay)  # sleep before retrying
                     continue

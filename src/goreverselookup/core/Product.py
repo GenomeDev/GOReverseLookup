@@ -432,7 +432,37 @@ class Product:
             # get the stable id prefix of the target organism. If target organism is zebrafish, then stable id prefix is "ENSDAR".
             # If the Ensembl id of this product is already the same as stable id prefix (in our case, ENSDAR), then don't query ortholog.
 
-            target_organism_stable_id_prefix = WebsiteParser.get_ensembl_stable_id_prefixes_table()[f"{target_organism_id_num}"]['stable_id_prefix'] # ex. "ENSDAR" for danio rerio, "ENS" for human
+            prefix_table = WebsiteParser.get_ensembl_stable_id_prefixes_table()
+            target_key = str(target_organism_id_num)
+            target_organism_stable_id_prefix = None
+            if target_key in prefix_table:
+                target_organism_stable_id_prefix = prefix_table[target_key].get("stable_id_prefix")
+
+            if not target_organism_stable_id_prefix:
+                logger.warning(
+                    "No Ensembl stable ID prefix configured for target taxon %s; "
+                    "skipping Ensembl-based ortholog queries for product %s.",
+                    target_organism_id_num,
+                    self.id_synonyms[0] if self.id_synonyms else "<no_id>",
+                )
+                comments.append(
+                    f"No Ensembl stable_id_prefix for target taxon {target_organism_id_num}; "
+                    "Ensembl ortholog lookup skipped."
+                )
+
+                # record that we *did* attempt, but cannot use Ensembl for this product
+                ModelStats.product_ortholog_query_results[self.id_synonyms[0]] = {
+                    "initial_state": starting_state.to_json(),
+                    "end_state": self.to_json(),
+                    "delta_genename": self.genename if initial_genename != self.genename else False,
+                    "delta_uniprot_id": self.uniprot_id if initial_uniprot_id != self.uniprot_id else False,
+                    "delta_ensg_id": self.ensg_id if initial_ensg_id != self.ensg_id else False,
+                    "ortholog_query_pathway": ortholog_query_pathway or "None (no Ensembl stable_id_prefix)",
+                    "comments": comments,
+                }
+                self.had_orthologs_computed = False
+                return None
+
             if self.ensg_id is not None:
                 current_organism_stable_id_prefix = EnsemblUtil.split_ensembl_id(self.ensg_id)['stable_id_prefix']
                 stable_id_prefix_match = (target_organism_stable_id_prefix == current_organism_stable_id_prefix)
