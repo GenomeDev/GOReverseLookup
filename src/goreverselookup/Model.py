@@ -492,15 +492,12 @@ class ReverseLookup:
         """
         logger.info(f"Creating products from GO Terms. Num goterms = {len(self.goterms)}")
         self.timer.set_start_time()
-
         # Create an empty set to store unique products
         products_set = set()
-
         # determine target taxon
         target_taxon = None
         if self.model_settings is not None:
             target_taxon = self.model_settings.target_organism.ncbi_id_full
-
         # Iterate over each GOTerm object in the go_term set and retrieve the set of products associated with that GOTerm
         # object. Add these products to the products_set.
         for term in self.goterms:
@@ -511,8 +508,9 @@ class ReverseLookup:
             for product in term.products:
                 if product not in products_set:
                     products_set.update(product)
+                    genename = term.products_gene_names_dict.get(product)
                     if ":" in product:
-                        product_object = Product.from_dict({"id_synonyms": [product], "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
+                        product_object = Product.from_dict({"id_synonyms": [product], "genename": genename, "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
                     else:
                         product_object = Product.from_dict({"id_synonyms": [product], "genename": product, "taxon": term.products_taxa_dict[product], "target_taxon": target_taxon})
                     self.products.append(product_object)

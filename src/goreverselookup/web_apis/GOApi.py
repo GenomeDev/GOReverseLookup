@@ -85,9 +85,10 @@ class GOApi:
 
         The request uses this link: http://api.geneontology.org/api/bioentity/function/{term_id}/genes
 
-        Returns: a list of two elements
-          - [0]: (string as json) data: a json string, representing the api request response
-          - [1]: (dict) products_taxa_dict
+        Returns: a list
+        - [0]: products (list of product IDs)
+        - [1]: products_taxa_dict (dict: product_id -> taxon_id)
+        - [2]: products_gene_names_dict (dict: product_id -> gene_name / label)
         """
         if model_settings.target_organism is None:
             raise Exception("Target organism was not specified in input.txt. Make sure to specify a target organism in the 'settings' section of input.txt!")
@@ -102,6 +103,7 @@ class GOApi:
         data_key = f"[{self.__class__.__name__}][{self.get_products.__name__}][go_id={term_id}][target_organism={model_settings.target_organism.ncbi_id_full}][orthologs={model_settings.ortholog_organisms_ncbi_full_ids}]"
         prev_data = Cacher.get_data("go", data_key=data_key)
         previous_data_taxa_dict = Cacher.get_data("go", f"{data_key}_products-taxa-dict")
+        previous_data_genename_dict = Cacher.get_data("go", f"{data_key}_products-gene-names-dict")
 
         if prev_data is not None and previous_data_taxa_dict is not None:
             logger.debug(f"Found cached previous product fetch data for {term_id}")
@@ -111,6 +113,7 @@ class GOApi:
         approved_dbs_and_taxa = {} # databases are keys, taxon ids are associated lists
         approved_dbs_and_taxa['UniProtKB'] = [] # create uniprotkb by default
         products_taxa_dict = {}
+        products_gene_names_dict = {}
 
         # add target organism
         if model_settings.target_organism.database in approved_dbs_and_taxa:
@@ -178,14 +181,17 @@ class GOApi:
                                 product_id = assoc['subject']['id']
                                 products_set.add(product_id)
                                 products_taxa_dict[product_id] = assoc['subject']['taxon']['id']
+                                products_label = assoc['subject']['label']
+                                products_gene_names_dict[product_id] = products_label
                 
                 products = list(products_set)
                 logger.info(f"{term_id}: fetched {len(products)} products.")
                 Cacher.store_data(data_location="go", data_key=data_key, data_value=products)
                 Cacher.store_data("go", f"{data_key}_products-taxa-dict", products_taxa_dict)
+                Cacher.store_data("go", f"{data_key}_products-gene-names-dict", products_gene_names_dict)
                 ModelStats.goterm_product_query_results[term_id] = products
-                return [products, products_taxa_dict]
-            
+                return [products, products_taxa_dict, products_gene_names_dict]
+
             except (requests.exceptions.RequestException, JSONDecodeError) as e:
                 if i == (max_retries - 1):  # this was the last http request, it failed
                     logger.error(f"Experienced an http exception or a JSONDecodeError while fetching products for {term_id}")

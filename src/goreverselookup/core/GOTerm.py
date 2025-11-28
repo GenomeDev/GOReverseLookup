@@ -38,6 +38,7 @@ class GOTerm:
         self.num_products = 0
         self.products = products
         self.products_taxa_dict = {} # a link between a gene id and a belonging taxon
+        self.products_gene_names_dict = {} # a link between a gene id and a belonging gene name
         self.http_error_codes = {} # used for errors happening during server querying; for example, a dict pair 'products': "HTTP Error ..." signifies an http error when querying for GO Term's products
         self.category = category
         self.parent_term_ids = parent_term_ids
@@ -236,9 +237,10 @@ class GOTerm:
         
         # data key is in the format [class_name][function_name][function_params]
         data_key = f"[{self.__class__.__name__}][{self.fetch_products_async_v3.__name__}][go_id={self.id}][target_organism={model_settings.target_organism.ncbi_id_full}][orthologs={model_settings.ortholog_organisms_ncbi_full_ids}]"
-        
         previous_data_taxa_dict = Cacher.get_data("go", f"{data_key}_products-taxa-dict")
+        previous_data_genename_dict = Cacher.get_data("go", f"{data_key}_products-gene-names-dict")
         self.products_taxa_dict = previous_data_taxa_dict
+        self.products_gene_names_dict = previous_data_genename_dict
         
         previous_data = Cacher.get_data("go", data_key)
         if previous_data != None:
@@ -316,6 +318,7 @@ class GOTerm:
             
         products_set = set()
         products_taxa_dict = {}
+        products_gene_names_dict = {}
         _d_unique_dbs = set() # unique databases of associations; eg. list of all unique assoc['subject']['id']
         
         associations = data.get('associations', []) if data is not None else []
@@ -336,6 +339,8 @@ class GOTerm:
                         product_id = assoc['subject']['id']
                         products_set.add(product_id)
                         products_taxa_dict[product_id] = assoc['subject']['taxon']['id']
+                        products_label = assoc['subject']['label']
+                        products_gene_names_dict[product_id] = products_label
         
         products = list(products_set)
         if products == []:
@@ -347,10 +352,12 @@ class GOTerm:
         self.products.sort() # alphabetically order
         self.num_products = len(products)
         self.products_taxa_dict = products_taxa_dict
+        self.products_gene_names_dict = products_gene_names_dict
         # logger.debug(f"Active session connections: {len(session.connector._conns)}")
         logger.info(f"Fetched {len(self.products)} products for GO term {self.id} from {len(_d_unique_dbs)} unique databases ({_d_unique_dbs})")
         Cacher.store_data("go", data_key, products)
         Cacher.store_data("go", f"{data_key}_products-taxa-dict", self.products_taxa_dict)
+        Cacher.store_data("go", f"{data_key}_products-gene-names-dict", self.products_gene_names_dict)
         ModelStats.goterm_product_query_results[self.id] = self.products
         return products
 
