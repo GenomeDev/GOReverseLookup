@@ -349,6 +349,17 @@ It is highly advisable to leave this setting set to False, otherwise, the timing
 
 During testing, it has been observed that the offline pathway usually results in more gene names found, besides being much faster. Thus, it is advisable to leave this setting set to False, both to increase speed and accuracy. If it is set to True, then gene names will be queried from the UniProtKB servers.
 
+**Asynchronous settings**
+Several settings influence the speed of asynchronous web requests being sent to the servers. If the speed exceeds server thresholds, however, the server may start to block incoming requests from your computer. Thus, if you experience blocking, the suggested asynchronous settings parameters are the following:
+```
+goterm_name_fetch_async	False
+goterm_gene_fetch_async	False
+goterm_name_fetch_req_delay	1.5
+goterm_name_fetch_max_connections	5
+goterm_gene_fetch_req_delay	0.8
+goterm_gene_fetch_max_connections	5
+```
+
 #### Filepaths section
 The filepaths section specifies several files that will be used during the program's runtime. Each file is represented in a single line by four parameters: (1) the file label (e.g. `goa_human`), (2) relative path to the file (e.g. `data_files/goa_human.gaf`), (3) the file download url (e.g. `http://geneontology.org/gene-associations/goa_human.gaf.gz`) and (4) the organism label pertaining to the file (e.g. `homo_sapiens`). We suggest beginner users NOT to change anything in the filepaths section. An example filepaths section is:
 ```
