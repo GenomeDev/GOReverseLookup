@@ -5,6 +5,9 @@ bugs/*
 research_models/chronic-inflammation_cancer*
 research_models/test*
 research_models/haries-test*
+research_models/BT_fish-growth/results/*
+research_models/BT_lactation/results/*
+research_models/BT_plant-draught/results/*
 data_files/*
 src/goreverselookup/cache/*
 data_files/*

@@ -440,8 +440,6 @@ class GOApi:
         """
         
         url = f"http://api.geneontology.org/api/bioentity/gene/{gene_id}/function"
-        response = requests.get(url, params=request_params)
-        result_go_terms = []
 
         # If model settings is passed, override the target organism taxon with approved_taxa. It must be the full taxon!!!
         if model_settings is not None:
@@ -471,7 +469,10 @@ class GOApi:
         if prev_data is not None:
             logger.debug(f"Found cached GO term data for {gene_id} (key={data_key})")
             return prev_data
-    
+        
+        # Send a request
+        response = requests.get(url, params=request_params)
+        result_go_terms = []
         if response.status_code == 200:
             response_json = response.json()
             total_assoc = len(response_json["associations"])
