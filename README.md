@@ -133,6 +133,12 @@ uniprotkb_genename_online_query	False
 goterm_gene_query_timeout	240
 goterm_gene_query_max_retries	3
 exclude_opposite_regulation_direction_check	False
+goterm_name_fetch_async	True
+goterm_gene_fetch_async	True
+goterm_name_fetch_req_delay	1.5
+goterm_name_fetch_max_connections	5
+goterm_gene_fetch_req_delay	0.8
+goterm_gene_fetch_max_connections	5
 ###filepaths
 go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
 goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
