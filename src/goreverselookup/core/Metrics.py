@@ -458,8 +458,8 @@ class fisher_exact_test(Metrics):
     terms in the “general” set (containing all existing GO terms - 10000 GO terms).
     
     Note:
-    - study count = num_goterms_product_SOI
-    - study set = num_goterms_all_SOI
+    - interest count = num_goterms_product_SOI
+    - interest set = num_goterms_all_SOI
     - population count = num_goterms_product_general
     - population set = num_goterms_all_general
 
@@ -653,6 +653,12 @@ class fisher_exact_test(Metrics):
                     # if children are computed for goterms, then also increase num_goterms_all_SOI, to prevent negative values in the contingency table (specifically upper-right quadrant: num_goterms_all_SOI-num_goterms_product_SOI) 
                     # don't run this if indirect annotations are already computed for num_goterms_all_proces
                     num_goterms_all_SOI += num_indirect_annotations
+
+                # THIS IS A HARD FIX TO PREVENT NEGATIVE VALUES IN THE CONTINGENCY TABLE
+                # When using indirect annotations, the interest count (num_goterms_product_SOI) is increased.
+                # However, when querying the population count (num_goterms_product_general), the indirect annotations are not included -> resulting in negative values in contingency table
+                if num_goterms_product_SOI > num_goterms_product_general:
+                    num_goterms_product_general = num_goterms_product_SOI + 1  # +1 to prevent zero division errors later on
 
                 cont_table = [
                     [

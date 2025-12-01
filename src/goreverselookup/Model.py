@@ -7,6 +7,7 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 import json
 import os
+import pandas as pd
 from statsmodels.stats.multitest import multipletests
 
 from .core.ModelSettings import ModelSettings, OrganismInfo
@@ -71,7 +72,8 @@ class ReverseLookup:
         input_filepath:str = None,
         GO_api_version:str = None,
         OBO_version_info:dict = None,
-        defined_SOIs: List[Dict[str,str]] = None
+        defined_SOIs: List[Dict[str,str]] = None,
+        invalid_goterms: List[str] = None
     ):
         """
         A class representing a reverse lookup for gene products and their associated Gene Ontology terms.
@@ -90,8 +92,10 @@ class ReverseLookup:
             model_settings: used for saving and loading model settings
             obo_parser: Used for parsing the Gene Ontology's .obo file. If it isn't supplied, it will be automatically created
             defined_SOIs (list): A list of all target SOIs and, if defined, their reverse SOIs
+            invalid_goterms (list): A list of GO terms that were specified, but were found to be invalid (e.g. wrong specified ID)
         """
         self.goterms = goterms
+        self.invalid_goterms = invalid_goterms
         self.products = products
         self.target_SOIs = target_SOIs
         self.defined_SOIs = defined_SOIs
@@ -151,7 +155,27 @@ class ReverseLookup:
 
         WebsiteParser.init()
 
+        if len(self.invalid_goterms) > 0:
+            logger.warning(f"Model initialized with {len(self.invalid_goterms)} invalid GO terms.")
+            for g in self.invalid_goterms:
+                logger.warning(f"  - {g}")
+            self._remove_invalid_goterms()
 
+    def _remove_invalid_goterms(self):
+        """
+        Removes all invalid goterms from self.goterms
+        """
+        if self.invalid_goterms is None or len(self.invalid_goterms) == 0:
+            return
+        n_before = len(self.goterms)
+        valid_goterms = []
+        for goterm in self.goterms:
+            if goterm.id not in self.invalid_goterms:
+                valid_goterms.append(goterm)
+        self.goterms = valid_goterms
+        n_after = len(self.goterms)
+        logger.info(f"Removed {n_before - n_after} invalid GO terms from model. Total GO terms now: {n_after}")
+    
     def set_model_settings(self, model_settings: ModelSettings):
         """
         Sets self.model_settings to the model settings supplied in the parameter.
@@ -1030,23 +1054,6 @@ class ReverseLookup:
         req_delay=0.5,
         semaphore_connections=10,
     ):
-        """
-        code: [TODO: delete this after testing is done]
-        connector = aiohttp.TCPConnector(limit=max_connections,limit_per_host=max_connections) # default is 100
-        async with aiohttp.ClientSession(connector=connector) as session:
-            tasks = []
-            for goterm in self.goterms:
-                task = goterm.fetch_products_async_v3(session, request_params=request_params, req_delay=req_delay)
-                    --- ---
-                    url = f"http://api.geneontology.org/api/bioentity/function/{self.id}/genes"
-                    asyncio.sleep(req_delay)
-                    response = await session.get(url, params=params)
-                    ...
-                    --- ---
-                tasks.append(task)
-            # perform multiple tasks at once asynchronously
-            await asyncio.gather(*tasks)
-        """
         third_party_db_files = self.model_settings.get_datafile_paths("ALL")
         third_party_db_urls = self.model_settings.get_datafile_urls("ALL")
         human_ortholog_finder = HumanOrthologFinder(
@@ -1723,6 +1730,7 @@ class ReverseLookup:
         data["model_settings"] = self.model_settings.to_json()
         data["miRNA_overlap_treshold"] = self.miRNA_overlap_treshold
         data["execution_times"] = self.execution_times
+        data["invalid_goterms"] = JsonUtil._to_jsonable(self.invalid_goterms)
 
         # save goterms
         for goterm in self.goterms:
@@ -1738,6 +1746,35 @@ class ReverseLookup:
 
         logger.info(f"Saving model to: {filepath}")
         JsonUtil.save_json(data, filepath)
+        
+    def export_goterms(self, filepath: str="input_goterms.xlsx", use_dest_dir: bool = False) -> None:
+        """
+        Exports only the GO Terms of the model to an XLSX file.
+        The xlsx file has the following columns: goterm id, name
+        """
+        if ".xlsx" not in filepath:
+            filepath = f"{filepath}.xlsx"
+        if use_dest_dir:
+            # use destination dir in project settings - this should be set to True for production-ready code
+            # for development, set 'use_dest_dir' to False, so files are saved relatively to filepath branching out from project root directory.
+            dest_dir = f"{self.model_settings.destination_dir}"
+            filepath = os.path.join(dest_dir, filepath).replace("\\","/")
+        FileUtil.check_path(filepath)
+        logger.info(f"Exporting GO Terms to: {filepath}")
+        
+        # create a pandas dataframe and export
+        # goterm_ids = self.goterms (extract ids)
+        # goterm names = self.goterms (extract names)
+       
+        pdata = {
+            "goterms": [],
+            "names": [],
+        }
+        for goterm in self.goterms:
+            pdata["goterms"].append(goterm.id)
+            pdata["names"].append(goterm.name)
+        df = pd.DataFrame(pdata)
+        df.to_excel(filepath, index=True, header=True)
 
     def compare_to(
         self,
@@ -2437,6 +2474,9 @@ class ReverseLookup:
         if "execution_times" in data:
             execution_times = data["execution_times"]
 
+        if "invalid_goterms" in data:
+            invalid_goterms = data["invalid_goterms"]
+
         if "statistically_relevant_products" in data:
             statistically_relevant_products = data["statistically_relevant_products"]
         else:
@@ -2511,7 +2551,8 @@ class ReverseLookup:
             input_filepath=input_filepath,
             GO_api_version=GO_api_version,
             OBO_version_info=OBO_version_info,
-            defined_SOIs=defined_SOIs
+            defined_SOIs=defined_SOIs,
+            invalid_goterms=invalid_goterms
         )
 
     @classmethod
@@ -2534,6 +2575,7 @@ class ReverseLookup:
         target_SOIs = []
         go_categories = []
         go_terms = []
+        invalid_goterms = set()
         settings = ModelSettings()
         settings.destination_dir = destination_dir
         
@@ -2831,14 +2873,13 @@ class ReverseLookup:
                 for goterm in tqdm(go_terms, desc="Compute indirect nodes"):
                     assert isinstance(goterm, GOTerm)
                     if goterm.parent_term_ids == [] or goterm.parent_term_ids is None:
-                        # TODO: IMPLEMENT CHECK HERE
-                        # If Obo file is too old, obo_parser.all_goterms might not have a newly defined goterm
-                        # -> Warn the user
-                        # -> Reinstall obo file
-                        # As of 05 June 2025, this has not yet been implemented!
-                        goterm_obo = GOTerm.from_dict(obo_parser.all_goterms[goterm.id].__dict__)  # obo representation of this goterm
-                        goterm.update(goterm_obo)  # update current goterm with information from .obo file
-
+                        if goterm.id in obo_parser.all_goterms:
+                            goterm_obo = GOTerm.from_dict(obo_parser.all_goterms[goterm.id].__dict__)  # obo representation of this goterm
+                            goterm.update(goterm_obo)  # update current goterm with information from .obo file
+                        else:
+                            invalid_goterms.update({goterm.id})
+                            continue
+                                
                         goterm_parent_ids = obo_parser.get_parent_terms(goterm.id)  # calculate parent term ids for this goterm
                         goterm_children_ids = obo_parser.get_child_terms(goterm.id)  # calculdate child term ids for this goterm
                         goterm.parent_term_ids = goterm_parent_ids  # update parent term ids
@@ -2876,7 +2917,8 @@ class ReverseLookup:
             go_categories=go_categories,
             model_settings=settings,
             obo_parser=obo_parser,
-            input_filepath=filepath
+            input_filepath=filepath,
+            invalid_goterms=invalid_goterms
         )
 
     @classmethod

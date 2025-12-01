@@ -454,7 +454,6 @@ class GOApi:
                 approved_taxa = derived_taxa
 
         # Build cache key
-        categories_key = ",".join(sorted(go_categories))
         taxa_key = ",".join(sorted(approved_taxa)) if approved_taxa else "None"
         if model_settings is not None and getattr(model_settings, "valid_evidence_codes", None):
             evidence_key = ",".join(sorted(model_settings.valid_evidence_codes))
@@ -464,7 +463,6 @@ class GOApi:
         f"[{self.__class__.__name__}]"
         f"[{self.get_goterms.__name__}]"
         f"[gene_id={gene_id}]"
-        f"[categories={categories_key}]"
         f"[taxa={taxa_key}]"
         f"[evidence={evidence_key}]"
         )

@@ -3,6 +3,13 @@ import os
 from types import SimpleNamespace
 import platform
 
+from dataclasses import is_dataclass, asdict
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+
+from attrs import asdict
+
 from .FileUtil import FileUtil
 
 import logging
@@ -74,6 +81,33 @@ class JsonUtil:
                 # append to json_data result dict
                 json_data[attr_name] = attr_value
         return json_data
+    
+    @classmethod
+    def _to_jsonable(cls, obj):
+        # primitives
+        if obj is None or isinstance(obj, (bool, int, float, str)):
+            return obj
+
+        # common troublesome types
+        if isinstance(obj, (set, tuple)):
+            return [cls._to_jsonable(x) for x in list(obj)]
+        if isinstance(obj, list):
+            return [cls._to_jsonable(x) for x in obj]
+        if isinstance(obj, dict):
+            return {str(k): cls._to_jsonable(v) for k, v in obj.items()}
+        if is_dataclass(obj):
+            return cls._to_jsonable(asdict(obj))
+        if isinstance(obj, Enum):
+            return obj.value
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, Path):
+            return str(obj)
+        if hasattr(obj, "__dict__"):
+            return cls._to_jsonable(vars(obj))
+
+        # last resort: string
+        return str(obj)
 
 
 class JsonToClass:

@@ -1,0 +1,94 @@
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+multiple_correction_method	fdr_bh
+two_tailed	False
+include_indirect_annotations	True	p
+indirect_annotations_max_depth	-1
+target_organism	salmo_salar|UniProtKB|NCBITaxon:8030 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	danio_rerio|UniProtKB|NCBITaxon:7955,oreochromis_niloticus|UniProtKB|NCBITaxon:8128,cyprinus_carpio|UniProtKB|NCBITaxon:7962,oncorhynchus_mykiss|UniProtKB|NCBITaxon:8022,oryzias_latipes|UniProtKB|NCBITaxon:8090
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	True
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
+fish_growth	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+# Endocrine regulation of growth
+GO:0008284	fish_growth	+	1	Positive regulation of cell proliferation
+GO:0040008	fish_growth	+	1	Regulation of growth
+GO:0005159	fish_growth	+	1	Insulin-like growth factor binding
+GO:0005159	fish_growth	+	1	insulin-like growth factor receptor binding
+GO:0043567	fish_growth	+	1	Regulation of insulin-like growth factor receptor signaling pathway
+GO:0038187	fish_growth	+	1	Fibroblast growth factor receptor signaling pathway
+GO:0043568	fish_growth	+	1	positive regulation of insulin-like growth factor receptor signaling pathway
+GO:0031994	fish_growth	+	1	insulin receptor signaling pathway via PI3K
+GO:0060416	fish_growth	+	1	response to growth hormone
+
+# Muscle development & hypertrophy
+GO:0007517	fish_growth	+	1	Muscle organ development
+GO:0014883	fish_growth	+	1	Muscle cell differentiation
+GO:0030239	fish_growth	+	1	Myofibril assembly
+GO:0014733	fish_growth	+	1	Skeletal muscle hypertrophy
+GO:0048747	fish_growth	+	1	muscle fiber development
+GO:0014888	fish_growth	+	1	myotube differentiation
+GO:0010463	fish_growth	+	1	regulation of gene expression involved in muscle cell differentiation
+GO:0007519	fish_growth	+	1	skeletal muscle tissue development
+GO:0035914	fish_growth	+	1	skeletal muscle cell differentiation
+GO:2001016	fish_growth	+	1	positive regulation of skeletal muscle cell differentiation
+
+# Energy metabolism
+# Use case: Fish with more efficient ATP production show improved feed conversion ratio (FCR).
+GO:0006123	fish_growth	+	1	mitochondrial electron transport, cytochrome c to oxygen
+GO:0006006	fish_growth	+	1	glucose metabolic process
+GO:0032000	fish_growth	+	1	positive regulation of fatty acid beta-oxidation
+
+# Nutrient uptake, digestion and absorption
+GO:0007586	fish_growth	+	1	Digestion
+GO:0015766	fish_growth	+	1	neutral amino acid transport
+GO:0042886	fish_growth	+	1	bile acid transport
+GO:0106079	fish_growth	+	1	peptide uptake
+GO:0140056	fish_growth	+	1	intestinal absorption
+
+# Apetite
+GO:0032094	fish_growth	+	1	response to food
+
+# Stress resilience
+# Fish that wase less energy on stress grow faster. 
+GO:1902882	fish_growth	+	1	negative regulation of response to oxidative stress
+GO:0036473	fish_growth	+	1	negative regulation of oxidative stress-induced intrinsic apoptotic signaling pathway
+GO:0042632	fish_growth	+	1	cholesterol homeostasis
+GO:1905819	fish_growth	+	1	ositive regulation of cholesterol efflux # helps prevent stress-linked dysregulation
+GO:1900034	fish_growth	+	1	negative regulation of response to heat
+GO:1900036	fish_growth	+	1	positive regulation of protein folding chaperone activity # adaptive buffering
+GO:0071483	fish_growth	+	1	positive regulation of cellular response to light intensity
+
+
+
+

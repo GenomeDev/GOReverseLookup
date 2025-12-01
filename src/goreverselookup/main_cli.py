@@ -280,7 +280,6 @@ def main(input_file: str, destination_dir: str = None, report: bool = False, mod
         two_tailed=model.model_settings.two_tailed
     )
     model.save_model("results/data.json", use_dest_dir=True)
-    generate_report("results/statistically_relevant_genes.json", "results/data.json")
     return model
 
 # ---------------------------
@@ -367,6 +366,10 @@ for idx, f in enumerate(input_files):
         model_data_filepath=model_data_fp_for_this_run,
         rescore_model=static_rescore_model
     )
+    
+    dest_results = os.path.join(model.destination_dir, "results", "statistically_relevant_genes.json")
+    dest_data = os.path.join(model.destination_dir, "results", "data.json")
+    generate_report(results_file=dest_results, model_data=dest_data)
 
     if rescore and idx == 0:
         static_rescore_model = model

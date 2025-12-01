@@ -1,0 +1,75 @@
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+multiple_correction_method	fdr_bh
+two_tailed	False
+include_indirect_annotations	True	p
+indirect_annotations_max_depth	-1
+target_organism	bos_taurus|UniProtKB|NCBITaxon:9913 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	mus_musculus|UniProtKB|NCBITaxon:10090,rattus_norvegicus|UniProtKB|NCBITaxon:10116,capra_hircus|UniProtKB|NCBITaxon:9925,ovis_aries|UniProtKB|NCBITaxon:9940
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	True
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
+lactation	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+
+# Overall
+GO:0060590	lactation	+	1	Positive regulation of milk protein biosynthetic process
+
+# Mammary Gland Development
+GO:0030879	lactation	+	1	Mammary gland development
+GO:0030878	lactation	+	1	Mammary gland morphogenesis
+GO:0060749	lactation	+	1	Mammary gland alveolus development
+GO:0008283	lactation	+	1	Cell proliferation #(in alveolar epithelium) 
+GO:0060644	lactation	+	1	Mammary gland epithelial cell proliferation
+GO:0033568	lactation	+	1	Regulation of water homeostasis via aquaporins #(important for milk volume)
+GO:2001233	lactation	+	1	Positive regulation of epithelial cell differentiation involved in mammary gland development
+
+# Milk secretion
+GO:0010585	lactation	+	1	Milk protein secretion
+GO:0050714	lactation	+	1	Positive regulation of protein secretion
+GO:1903532	lactation	+	1	Positive regulation of secretion by cell
+GO:1903536	lactation	+	1	Positive regulation of cellular protein localization #(promotes movement of proteins into secretory pathway)
+GO:0060122	lactation	+	1	Positive regulation of lactation
+GO:0010585	lactation	+	1	Milk protein secretion
+
+# Prolactin, hormonal aspect
+GO:2000678	lactation	+	1	Positive regulation of prolactin secretion
+GO:0071378	lactation	+	1	Cellular response to prolactin
+GO:0036003	lactation	+	1	Prolactin signaling pathway
+GO:0030073	lactation	+	1	Insulin secretion #(insulin strongly regulates milk synthesis)
+GO:0004925	lactation	+	1	prolactin receptor activity
+GO:0038161	lactation	+	1	prolactin signaling pathway
+
+# Based on GHR (DOI: 10.1093/jn/111.9.1662)
+GO:0004903	lactation	+	1	growth hormone receptor activity
+GO:0060396	lactation	+	1	growth hormone receptor signaling pathway
+

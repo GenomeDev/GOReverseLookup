@@ -380,37 +380,39 @@ class Product:
             # UniProtKB ids don't work with ensembl_api.get_ortholog_async. If UniProtKB id is the sole id in id_synonyms, attempt
             # to find corresponding ENSG id
             if any("UniProtKB" in syn for syn in self.id_synonyms):
-                if len(self.id_synonyms) == 1:
-                    # UniProtKB is the only id synonym -> attempt ENSG
-                    if self.ensg_id is not None:
-                        initial_gene_id = self.ensg_id
-                    else:
-                        # attempt to convert uniprot id to ensembl
-                        if self.gorth_ortholog_status != "none":
-                            uniprot_lookup = await uniprot_api.get_uniprot_info_async(self.id_synonyms[0], session=session, organism_taxon_id_num=self.taxon)
-                            if uniprot_lookup is None or uniprot_lookup == {}: # if conversion unsuccessful (and uniprotkb is the only id), dont query ortholog, because it will fail
-                                return None
-                            else: # if conversion was successful -> scoop data from dict
-                                self.set_genename(uniprot_lookup.get("genename"))
-                                self.description = uniprot_lookup.get("description")
-                                self.ensg_id = uniprot_lookup.get("ensg_id")
-                                self.enst_id = uniprot_lookup.get("enst_id")
-                                self.refseq_nt_id = uniprot_lookup.get("refseq_nt_id")
-                                if self.ensg_id is None:
-                                    # if ensg_id wasn't found (and uniprotkb is the only id), dont' query ortholog, because it will fail
+                for syn in self.id_synonyms:
+                    if "UniProtKB" in syn:
+                        # UniProtKB is the only id synonym -> attempt ENSG
+                        if self.ensg_id is not None:
+                            initial_gene_id = self.ensg_id
+                        else:
+                            # attempt to convert uniprot id to ensembl
+                            if self.gorth_ortholog_status != "none":
+                                uniprot_lookup = await uniprot_api.get_uniprot_info_async(self.id_synonyms[0], session=session, organism_taxon_id_num=self.taxon)
+                                if uniprot_lookup is None or uniprot_lookup == {}: # if conversion unsuccessful (and uniprotkb is the only id), dont query ortholog, because it will fail
                                     return None
-                                else:
-                                    # if ensg_id was found, use it to query ortholog
-                                    initial_gene_id = self.ensg_id
-                else:
-                    # pick id synonym other than UniProtKB
-                    for id_syn in self.id_synonyms:
-                        if "UniProtKB" not in id_syn:
-                            initial_gene_id = id_syn
-                            break
+                                else: # if conversion was successful -> scoop data from dict
+                                    self.set_genename(uniprot_lookup.get("genename"))
+                                    self.description = uniprot_lookup.get("description")
+                                    self.ensg_id = uniprot_lookup.get("ensg_id")
+                                    self.enst_id = uniprot_lookup.get("enst_id")
+                                    self.refseq_nt_id = uniprot_lookup.get("refseq_nt_id")
+                                    if self.ensg_id is None:
+                                        # if ensg_id wasn't found (and uniprotkb is the only id), dont' query ortholog, because it will fail
+                                        return None
+                                    else:
+                                        # if ensg_id was found, use it to query ortholog
+                                        initial_gene_id = self.ensg_id
+                        break
             else:
                 # autopick the first id synonym
                 initial_gene_id = self.id_synonyms[0]
+                
+                # pick ENS synonym other than UniProtKB
+                for id_syn in self.id_synonyms:
+                    if "ENS" in id_syn:
+                        initial_gene_id = id_syn
+                        break            
             
             # check gOrth ortholog query status (gOrth batch ortholog query can be performed prior to a regular ortholog query)
             # if gOrth didn't discover ortholog, and model_settings.gorth_ortholog_refetch is False, then don't query ortholog
