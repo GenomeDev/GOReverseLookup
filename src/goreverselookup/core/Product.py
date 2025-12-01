@@ -59,7 +59,7 @@ class Product:
         self.id_synonyms = id_synonyms
         self.taxon = taxon
         self.target_taxon = target_taxon
-        self.genename = genename  # NOTE: genename indicates a successful ortholog fetch operation !!!
+        self.genename = genename
         self.description = description
         self.uniprot_id = uniprot_id
         self.ensg_id = ensg_id
@@ -78,6 +78,17 @@ class Product:
         for id_syn in self.id_synonyms:
             if "UniProt" in id_syn:
                 self.uniprot_id = id_syn
+
+    def set_genename(self, genename: str):
+        """
+        Sets the genename of the product.
+
+        Args:
+            genename (str): The genename to set.
+        """
+        if genename is not None:
+            logger.debug(f"Set genename: {self.genename} -> {genename}")
+            self.genename = genename
 
     def update(self, other_product):
         """
@@ -151,7 +162,7 @@ class Product:
             if len(self.id_synonyms) == 1 and "UniProtKB" in self.id_synonyms[0]:
                 # find the DB Object Symbol in the GOAF. This is the third line element. Example: UniProtKB	Q8NI77	KIF18A	located_in	GO:0005737	PMID:18680169	IDA		C	Kinesin-like protein KIF18A	KIF18A|OK/SW-cl.108	protein	taxon:9606	20090818	UniProt -> KIF18A
                 if goaf is not None:
-                    self.genename = goaf.get_uniprotkb_genename(self.id_synonyms[0])
+                    self.set_genename(goaf.get_uniprotkb_genename(self.id_synonyms[0]))
                 else:
                     logger.warning(
                         "GOAF wasn't supplied as parameter to the"
@@ -161,8 +172,7 @@ class Product:
                 # do a file-based ortholog search using HumanOrthologFinder
                 human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(self.id_synonyms[0])
                 offline_queried_ortholog = human_ortholog_gene_id  # this is used for acceleration so as not to repeat find_human_ortholog in the online algorithm section
-                if human_ortholog_gene_id is not None:
-                    self.genename = human_ortholog_gene_id
+                self.set_genename(human_ortholog_gene_id)
 
         # *** online and 3rd-party-database-file based analysis ***
         if _d_compare_goaf is True or prefer_goaf is False:
@@ -194,7 +204,7 @@ class Product:
                             " type = uniprot query"
                         )
                 else:
-                    self.genename = info_dict.get("genename")
+                    self.set_genename(info_dict.get("genename"))
 
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
                 if offline_queried_ortholog is None:  # if algorithm enters this section due to _d_compare_goaf == True, then this accelerates code, as it prevents double calculations
@@ -236,7 +246,7 @@ class Product:
                                     f" {self.genename}, type = ensembl query"
                                 )
                         else:
-                            self.genename = enst_dict.get("genename")
+                            self.set_genename(enst_dict.get("genename"))
                             # update 19.08.2023: attempt to obtain as many values as possible for this Product already from
                             # the ortholog fetch to avoid duplicating requests with (EnsemblAPI).get_info
                             if self.ensg_id == "" or self.ensg_id is None:
@@ -260,8 +270,7 @@ class Product:
                                 f" ({human_ortholog_gene_id}) for {self.id_synonyms}"
                             )
                     else:
-                        self.genename = human_ortholog_gene_id
-
+                        self.set_genename(human_ortholog_gene_id)
         self.had_orthologs_computed = True
 
     async def fetch_ortholog_async(
@@ -360,7 +369,7 @@ class Product:
                 info_dict = await uniprot_api.get_uniprot_info_async(uniprot_id=uniprot_id, session=session, organism_taxon_id_num=self.taxon)
             else:
                 info_dict = {"genename": goaf.get_uniprotkb_genename(uniprot_id)} # TODO: implement goafmaster -> human!!!
-            self.genename = info_dict.get("genename")
+            self.set_genename(info_dict.get("genename"))  
             # TODO: query other data from info_dict, if it exists !
         else:
             # checked here are: UniProtKB not from the homo sapiens taxon, ZFIN, MGI, RGD, Xenbase, etc.
@@ -382,7 +391,7 @@ class Product:
                             if uniprot_lookup is None or uniprot_lookup == {}: # if conversion unsuccessful (and uniprotkb is the only id), dont query ortholog, because it will fail
                                 return None
                             else: # if conversion was successful -> scoop data from dict
-                                self.genename = uniprot_lookup.get("genename")
+                                self.set_genename(uniprot_lookup.get("genename"))
                                 self.description = uniprot_lookup.get("description")
                                 self.ensg_id = uniprot_lookup.get("ensg_id")
                                 self.enst_id = uniprot_lookup.get("enst_id")
@@ -499,8 +508,7 @@ class Product:
                 if stable_id_prefix_match == True:
                     ortholog_query_pathway += f" + EnsemblApi (get_info: {ortholog_gene_ensg_id})"
                     enst_dict = await ensembl_api.get_info_async(ortholog_gene_ensg_id, taxon=self.taxon, session=session)
-                    self.genename = enst_dict.get("genename")
-
+                    self.set_genename(enst_dict.get("genename"))
                     if self.ensg_id == "" or self.ensg_id is None:
                         self.ensg_id = enst_dict.get("ensg_id")
                     if self.description == "" or self.description is None:
@@ -514,7 +522,6 @@ class Product:
                         if uniprot_id is not None and uniprot_id != "":
                             self.uniprot_id = enst_dict.get("uniprot_id")
                 else:
-                    # self.genename = ortholog_gene_ensg_id
                     pass
 
         ModelStats.product_ortholog_query_results[self.id_synonyms[0]] = {

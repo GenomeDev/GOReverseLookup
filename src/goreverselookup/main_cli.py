@@ -122,7 +122,8 @@ def generate_report(results_file: str, model_data):
     separator = "\t"
 
     pdata = {  # data for pandas export to excel
-        'genename': []
+        'genename': [],
+        'id_synonym': []
     }
 
     # table header text
@@ -133,6 +134,17 @@ def generate_report(results_file: str, model_data):
     for sr_gene in stat_rev_genes:
         genename = sr_gene['genename']
         pdata['genename'].append(genename)
+    
+        id_synonyms = sr_gene.get('id_synonyms', [])
+        if isinstance(id_synonyms, list) and len(id_synonyms) > 0:
+            first_id_synonym = id_synonyms[0]
+        elif isinstance(id_synonyms, str):
+            # in case it is already a single string for some reason
+            first_id_synonym = id_synonyms
+        else:
+            first_id_synonym = "/"
+        pdata['id_synonym'].append(first_id_synonym)
+        
         pvalues = []
         for SOI in SOIs:
             if SOI in sr_gene['scores']['fisher_test']:
@@ -250,12 +262,12 @@ def main(input_file: str, destination_dir: str = None, report: bool = False, mod
     Cacher.save_data()
     model.create_products_from_goterms()
     model.products_perform_idmapping()
-    Cacher.save_data()
     model.fetch_orthologs_products_batch_gOrth(target_taxon_number=f"{model.model_settings.target_organism.ncbi_id}")  # TODO: change!
     model.fetch_ortholog_products(run_async=True, max_connections=15, semaphore_connections=7, req_delay=0.1)
     model.prune_products()
     model.bulk_ens_to_genename_mapping()
     model.save_model("results/data.json", use_dest_dir=True)
+    Cacher.save_data()
 
     # Perform scoring
     model = ReverseLookup.load_model("results/data.json", destination_dir=destination_dir)
@@ -267,14 +279,9 @@ def main(input_file: str, destination_dir: str = None, report: bool = False, mod
         use_dest_dir=True,
         two_tailed=model.model_settings.two_tailed
     )
-    # TODO: fetch info for stat relevant genes here
     model.save_model("results/data.json", use_dest_dir=True)
-
-    # TODO
-    # generate_report("results/statistically_relevant_genes.json", "results/data.json")
-
+    generate_report("results/statistically_relevant_genes.json", "results/data.json")
     return model
-
 
 # ---------------------------
 # CLI

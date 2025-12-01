@@ -1297,8 +1297,7 @@ class ReverseLookup:
                 p = ensid_to_product_dict[ens_id]
                 if p.genename is None:
                     number_updated_genenames += 1
-                p.genename = genename
-        
+                    p.set_genename(genename)
         logger.info(f"Finished batch Ensembl to genename mapping. Out of {num_results} mappings, parsed a total of {num_genenames} genenames. Number of updated gene names: {number_updated_genenames}")
 
     def score_products(
