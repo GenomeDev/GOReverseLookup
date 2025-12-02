@@ -34,7 +34,9 @@ class Product:
         had_orthologs_computed: bool = False,
         had_fetch_info_computed: bool = False,
         gorth_ortholog_exists: bool = None,
-        gorth_ortholog_status: str = None
+        gorth_ortholog_status: str = None,
+        annotations:list=None, # this is not yet implemented (potential implementation from GOApi.get_goterms)
+        annotations_ids_accepted:list=None # this is implemented in Metrics.py
     ):
         """
         A class representing a product (e.g. a gene or protein).
@@ -55,6 +57,8 @@ class Product:
             had_fetch_info_computed (bool): If this Product instance has had the fetch_info function called already.
             gorth_ortholog_exists (bool): True, if gOrth (from gProfiler) finds either 1 or multiple ortholog ids, otherwise false (if no orthologs are found via gOrth). None if gOrth query wasn't performed.
             gorth_ortholog_status (str): "definitive" for definitive gOrth orthologs (gOrth returns only one ortholog), "indefinitive" (gOrth returns multiple orthologs) or "none" if gOrth returns no orthologs
+            annotations: A list of raw-text annotations (e.g. goterms) to this product
+            annotations_ids: A list of accepted annotation ids (goterms) in the context of this study (used in statistical analysis)
         """
         self.id_synonyms = id_synonyms
         self.taxon = taxon
@@ -73,6 +77,8 @@ class Product:
         self._d_offline_online_ortholog_mismatch_values = ""
         self.gorth_ortholog_exists = gorth_ortholog_exists
         self.gorth_ortholog_status = gorth_ortholog_status
+        self.annotations = annotations
+        self.annotations_ids_accepted = annotations_ids_accepted
 
         # see if UniProtKB id is already in id_synonyms:
         for id_syn in self.id_synonyms:
@@ -799,6 +805,10 @@ class Product:
                 if "had_fetch_info_computed" in d
                 else False
             ),
+            d.get("gorth_ortholog_exists") if "gorth_ortholog_exists" in d else None,
+            d.get("gorth_ortholog_status") if "gorth_ortholog_status" in d else None,
+            d.get("annotations") if "annotations" in d else None,
+            d.get("annotations_ids_accepted") if "annotations_ids_accepted" in d else None
         )
     
     def to_json(self):

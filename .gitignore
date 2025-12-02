@@ -8,6 +8,9 @@ research_models/haries-test*
 research_models/BT_fish-growth/results/*
 research_models/BT_lactation/results/*
 research_models/BT_plant-draught/results/*
+research_models/BT_fish-growth/direct_annotations/*
+research_models/BT_fish-growth/indirect_annotations/*
+research_models/BT_grape/results/*
 data_files/*
 src/goreverselookup/cache/*
 data_files/*

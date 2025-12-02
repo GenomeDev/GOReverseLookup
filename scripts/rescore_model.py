@@ -1,4 +1,4 @@
-# Rescores a model under a new threshold
+# Rescores a model under a new p-value threshold
 
 import os
 import sys
@@ -24,7 +24,7 @@ ModelStats.init()
 WebsiteParser.init()
 
 P_THRESHOLD = 0.00000005
-MODEL_FILEPATH = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\BT_fish-growth\\results_run02\\data.json"
+MODEL_FILEPATH = "research_models\\BT_fish-growth\\direct_annotations\\0.05\\results\\data.json"
 model = ReverseLookup.load_model(MODEL_FILEPATH)
 model.model_settings.pvalue = P_THRESHOLD
 

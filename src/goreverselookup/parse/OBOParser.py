@@ -218,6 +218,12 @@ class OboParser:
 
         Returns: A list of parent GO Terms (either ids or classes)
         """
+        # protection against missing data
+        if not self.dag.has_node(term_id):
+            logger.warning(f"GO term {term_id} not in OBO DAG; skipping indirect annotations.")
+            self.previously_computed_parents_cache[term_id] = []
+            return []
+    
         # attempt to cache old data
         if term_id in self.previously_computed_parents_cache:
             return self.previously_computed_parents_cache[term_id]
@@ -285,6 +291,12 @@ class OboParser:
         As we can see, the program returns only the children terms of GO:0003924 that are quatified with the
         'is_a_relation' relationship. It correctly queries the children, even the nested children.
         """
+        # protection against missing data
+        if not self.dag.has_node(term_id):
+            logger.warning(f"GO term {term_id} not in OBO DAG; skipping indirect annotations.")
+            self.previously_computed_parents_cache[term_id] = []
+            return []
+        
         # attempt to cache old data
         if term_id in self.previously_computed_children_cache:
             return self.previously_computed_children_cache[term_id]

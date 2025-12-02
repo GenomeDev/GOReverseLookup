@@ -1,0 +1,92 @@
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+multiple_correction_method	fdr_bh
+two_tailed	False
+include_indirect_annotations	True	p
+indirect_annotations_max_depth	-1
+target_organism	vitis_vinifera|UniProtKB|NCBITaxon:29760 # format: organism_label|organism_database|ncbi_taxon
+ortholog_organisms	
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	True
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+goterm_name_fetch_async	False
+goterm_gene_fetch_async	False
+goterm_name_fetch_req_delay	1.5
+goterm_name_fetch_max_connections	5
+goterm_gene_fetch_req_delay	0.8
+goterm_gene_fetch_max_connections	5
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
+aromatic_synthesis	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+
+# Phenylpropanoid & Benzenoid Pathway (aromatic volatiles, stilbenes, volatile phenols)
+GO:0009698	aromatic_synthesis	+	1	Phenylpropanoid metabolic process
+GO:0009805	aromatic_synthesis	+	1	Coumarin biosynthetic process
+GO:0009800	aromatic_synthesis	+	1	Cinnamic acid biosynthetic process
+GO:0009718	aromatic_synthesis	+	1	Phenylpropanoid catabolic process
+GO:0009813	aromatic_synthesis	+	1	Flavonoid biosynthetic process
+GO:0046271	aromatic_synthesis	+	1	Phenylpropanoid catabolic process to aromatic compounds
+GO:0046274	aromatic_synthesis	+	1	Lignin catabolic process #(precursor availability)
+GO:0031408	aromatic_synthesis	+	1	Oxidoreductase activity on phenolic substrates #(key for volatile phenols)
+
+# Terpenoid / Monoterpene / Norisoprenoid Aroma Production
+GO:0016114	aromatic_synthesis	+	1	Terpenoid biosynthetic process
+GO:0050898	aromatic_synthesis	+	1	Monoterpenoid biosynthetic process
+GO:1901362	aromatic_synthesis	+	1	Monoterpenoid metabolic process
+GO:1901617	aromatic_synthesis	+	1	Diterpenoid biosynthetic process
+GO:0046240	aromatic_synthesis	+	1	Geraniol biosynthetic process
+GO:0016106	aromatic_synthesis	+	1	Monoterpene metabolic process
+GO:0009652	aromatic_synthesis	+	1	Carotenoid biosynthetic process
+GO:0016117	aromatic_synthesis	+	1	Carotenoid catabolic process
+
+# Fatty Acid Lipoxygenase Pathway (C6 'green' aromas)
+# C6 aldehydes, alcohols and esters contributing to fresh, fruity aroma.
+GO:0016042	aromatic_synthesis	+	1	Lipoxygenase pathway
+GO:0016290	aromatic_synthesis	+	1	Lipoxygenase activity
+GO:0006631	aromatic_synthesis	+	1	Fatty acid metabolic process
+GO:0045329	aromatic_synthesis	+	1	Long-chain fatty acid metabolic process
+GO:1901564	aromatic_synthesis	+	1	Fatty acid derivative metabolic process
+GO:0042369	aromatic_synthesis	+	1	C6-alcohol biosynthetic process
+GO:0042371	aromatic_synthesis	+	1	C6-aldehyde biosynthetic process
+
+# Alcohol, Ester & Aroma Conjugation Pathways
+GO:0006066	aromatic_synthesis	+	1	Alcohol metabolic process
+GO:1902221	aromatic_synthesis	+	1	Alcohol biosynthetic process
+GO:0006633	aromatic_synthesis	+	1	Fatty acid biosynthetic process
+GO:0016836	aromatic_synthesis	+	1	Hydroxy acid ester hydrolase activity
+GO:0004034	aromatic_synthesis	+	1	Alcohol O-acyltransferase activity
+
+# Regulation & Transport of Aromatic Compounds
+GO:0010200	aromatic_synthesis	+	1	Response to chitosan #(induces phenylpropanoid aromas)
+GO:0034755	aromatic_synthesis	+	1	Regulation of secondary metabolite biosynthetic process
+GO:1901615	aromatic_synthesis	+	1	Organic hydroxy compound transport
+GO:0042908	aromatic_synthesis	+	1	Xenobiotic transporter activity #(transports many aromatic metabolites)
+

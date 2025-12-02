@@ -544,26 +544,33 @@ class fisher_exact_test(Metrics):
             #   - can be queried either via online or offline pathway (determined by model_settings.fisher_test_use_online_query)
             #   - can have all parnet or child terms (indirectly associated terms) added to the count (besides only directly associated GO terms) - determined by model_settings.include_indirect_annotations and it's optional sub-setting 'p' or 'c', which determinds model_settings.indirect_annotations_direction
             if self.reverse_lookup.model_settings.fisher_test_use_online_query is True:  # online pathway: get goterms associated with this product via a web query
-                goterms_product_general = self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories, model_settings=self.reverse_lookup.model_settings)
-                if goterms_product_general is not None:
-                    num_goterms_product_general = len(goterms_product_general)
-                else:
-                    # skip iteration, there was an error with querying goterms associated with a product
-                    logger.warning(f"Online query for GO Terms associated with {product.uniprot_id} failed! Product: {json.dumps(product.__dict__)}")
-                    continue
-                # num_goterms_product_general = len(self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories, model_settings=self.reverse_lookup.model_settings))
-                logger.debug(f"Fisher test online num_goterms_product_general query: {num_goterms_product_general}")
+                # In rescoring: Product will already have product.annotations_ids_accepted - no need to fetch again
+                if product.annotations_ids_accepted is None:
+                    goterms_product_general = self.online_query_api.get_goterms(product.uniprot_id, go_categories=self.reverse_lookup.go_categories, model_settings=self.reverse_lookup.model_settings)
+                    product.annotations_ids_accepted = goterms_product_general
+                    if goterms_product_general is not None:
+                        num_goterms_product_general = len(goterms_product_general)
+                    else:
+                        # skip iteration, there was an error with querying goterms associated with a product
+                        logger.warning(f"Online query for GO Terms associated with {product.uniprot_id} failed! Product: {json.dumps(product.__dict__)}")
+                        continue
+                else: 
+                    num_goterms_product_general = len(product.annotations_ids_accepted)
             else:  # offline pathway: get goterms from GOAF
-                if self.reverse_lookup.model_settings.include_indirect_annotations == True:
-                    goterms_product_general = self.goaf.get_all_terms_for_product(product.genename, model_settings=self.reverse_lookup.model_settings, indirect_annotations=True, obo_parser=self.reverse_lookup.obo_parser)
+                if product.annotations_ids_accepted is None:
+                    if self.reverse_lookup.model_settings.include_indirect_annotations == True:
+                        goterms_product_general = self.goaf.get_all_terms_for_product(product.genename, model_settings=self.reverse_lookup.model_settings, indirect_annotations=True, obo_parser=self.reverse_lookup.obo_parser)
+                    else:
+                        goterms_product_general = self.goaf.get_all_terms_for_product(product.genename)
+                    product.annotations_ids_accepted = goterms_product_general
+                    num_goterms_product_general = len(goterms_product_general) # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
                 else:
-                    goterms_product_general = self.goaf.get_all_terms_for_product(product.genename)
-                num_goterms_product_general = len(goterms_product_general)  # all GO Terms associated with the current input Product instance (genename) from the GO Annotation File
-
+                    num_goterms_product_general = len(product.annotations_ids_accepted)
+                
             # find the number of indirect annotations for num_goterms_product_general
             if self.reverse_lookup.model_settings.include_indirect_annotations is True:
                 # include all indirect annotations for num_goterms_product_general
-                directly_associated_goterms = list(goterms_product_general) # calling list constructor creates two separate entities, which prevents infinite looping !
+                directly_associated_goterms = list(product.annotations_ids_accepted) # calling list constructor creates two separate entities, which prevents infinite looping !
                 for directly_associated_goterm in directly_associated_goterms:  # WARNING: don't iterate over goterms_product_general, since this list is being updated in the for loop !!
                     # obtain either child or parent goterms based on model_settings.indirect_annotations_direction (this is autoset from include_indirect_annotation optionals)
                     indirect_annotation_goterms = self.reverse_lookup.obo_parser.get_indirect_annotations(
@@ -571,10 +578,11 @@ class fisher_exact_test(Metrics):
                         indirect_annotations_direction=self.reverse_lookup.model_settings.indirect_annotations_direction,
                         max_depth = self.reverse_lookup.model_settings.indirect_annotations_max_depth
                     )
-                    goterms_product_general += indirect_annotation_goterms  # expand goterms_product_general by the child goterms
+                    product.annotations_ids_accepted += indirect_annotation_goterms  # expand goterms_product_general by the child goterms
                 # delete duplicate indirect annotations by converting a list to set
-                goterms_product_general = set(goterms_product_general)
-                num_goterms_product_general = len(goterms_product_general)  # calculate new num_goterms_product_general
+                product.annotations_ids_accepted = set(product.annotations_ids_accepted)
+                product.annotations_ids_accepted = list(product.annotations_ids_accepted)
+                num_goterms_product_general = len(product.annotations_ids_accepted)  # calculate new num_goterms_product_general
     
             for direction in ["+", "-"]:
                 # num_goterms_product_SOI= sum(1 for goterm in SOI_goterms_list if (any(goterm_SOI['direction'] == direction for goterm_SOI in goterm.SOIs) and (any(product_id in goterm.products for product_id in product.id_synonyms) or product.genename in goterm.products)))
@@ -585,6 +593,9 @@ class fisher_exact_test(Metrics):
                 for goterm in SOI_goterms_list:  # iterate through each GO Term associated with the current SOI
                     for goterm_SOI in goterm.SOIs:  # goterm.SOIs holds which states of interest (eg. {'SOI': "cancer", 'direction': "-"}) the GO Term is associated with (this is determined by the user in the input.txt file)
                         if goterm_SOI["direction"] == direction:
+                            if goterm.products is None:
+                                logger.warning(f"GO term {goterm.id} has products set to None in the scoring phase. Error?")
+                                continue
                             if product.genename in goterm.products:  # attemp genename search first
                                 num_goterms_product_SOI += 1
                                 goterms_product_SOI.append(f"{goterm.id}: {goterm.name}")

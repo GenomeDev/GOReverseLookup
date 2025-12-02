@@ -366,9 +366,13 @@ for idx, f in enumerate(input_files):
         model_data_filepath=model_data_fp_for_this_run,
         rescore_model=static_rescore_model
     )
-    
-    dest_results = os.path.join(model.destination_dir, "results", "statistically_relevant_genes.json")
-    dest_data = os.path.join(model.destination_dir, "results", "data.json")
+
+    # if destination_dir is none, make it the directory of the input file (f)
+    if destination_dir is None:
+        destination_dir = os.path.dirname(f)
+
+    dest_results = os.path.join(destination_dir, "results", "statistically_relevant_genes.json")
+    dest_data = os.path.join(destination_dir, "results", "data.json")
     generate_report(results_file=dest_results, model_data=dest_data)
 
     if rescore and idx == 0:

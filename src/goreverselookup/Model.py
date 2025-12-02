@@ -554,7 +554,8 @@ class ReverseLookup:
         # Iterate over each GOTerm object in the go_term set and retrieve the set of products associated with that GOTerm
         # object. Add these products to the products_set.
         for term in self.goterms:
-            products_set.update(term.products)
+            if term.products is not None:
+                products_set.update(term.products)
 
         # Iterate over each product in the products_set and create a new Product object from the product ID using the
         # Product.from_dict() classmethod. Add the resulting Product objects to the ReverseLookup object's products list.

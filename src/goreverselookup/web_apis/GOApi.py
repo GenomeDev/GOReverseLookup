@@ -438,6 +438,11 @@ class GOApi:
         To carry out the query request, the following url is used:
             http://api.geneontology.org/api/bioentity/gene/{gene_id}/function
         """
+
+        if gene_id is None or len(gene_id) == 1:
+            # this is a bug
+            logger.warning(f"Gene id of length 1 encountered: {gene_id}")
+            return None
         
         url = f"http://api.geneontology.org/api/bioentity/gene/{gene_id}/function"
 
