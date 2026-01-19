@@ -105,7 +105,7 @@ class Product:
         Adds an ID synonym to the product.id_synonyms list.
         """
         if id_synonym not in self.id_synonyms:
-            logger.debug(f"Adding id synonym: {id_synonym}")
+            logger.debug(f"Added id synonym {id_synonym} to: genename={self.genename}, id_synonyms={self.id_synonyms}")
             self.id_synonyms.append(id_synonym)
             
     def add_id_synonyms(self, id_synonyms: List[str]):
@@ -136,7 +136,7 @@ class Product:
         for attr_name in dir(self):
             if not callable(getattr(self, attr_name)) and not attr_name.startswith("__"):
                 if attr_name == "id_synonyms": # extend and skip loop to prevent resetting previous values
-                    self.id_synonyms.extend(other_product.id_synonyms)
+                    self.add_id_synonyms(other_product.id_synonyms)
                     continue
                 if getattr(self, attr_name) is None:
                     setattr(self, attr_name, getattr(other_product, attr_name))
@@ -200,10 +200,7 @@ class Product:
                 if goaf is not None:
                     self.set_genename(goaf.get_uniprotkb_genename(self.id_synonyms[0]))
                 else:
-                    logger.warning(
-                        "GOAF wasn't supplied as parameter to the"
-                        " (Product).fetch_ortholog function!"
-                    )
+                    logger.warning("GOAF wasn't supplied as parameter to the (Product).fetch_ortholog function!")
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
                 # do a file-based ortholog search using HumanOrthologFinder
                 human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(self.id_synonyms[0])
