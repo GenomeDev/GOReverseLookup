@@ -60,7 +60,7 @@ class Product:
             annotations: A list of raw-text annotations (e.g. goterms) to this product
             annotations_ids: A list of accepted annotation ids (goterms) in the context of this study (used in statistical analysis)
         """
-        self.id_synonyms = id_synonyms
+        self.id_synonyms = self.add_id_synonyms(id_synonyms) if isinstance(id_synonyms, list) else [id_synonyms]
         self.taxon = taxon
         self.target_taxon = target_taxon
         self.genename = genename
@@ -84,7 +84,30 @@ class Product:
         for id_syn in self.id_synonyms:
             if "UniProt" in id_syn:
                 self.uniprot_id = id_syn
+                
+        self.clear_duplicate_id_synonyms()
 
+    def clear_duplicate_id_synonyms(self):
+        """
+        Clears duplicate id synonyms from the id_synonyms list.
+        """
+        self.id_synonyms = list(set(self.id_synonyms))
+        
+    def add_id_synonym(self, id_synonym: str):
+        """
+        Adds an ID synonym to the product.id_synonyms list.
+        """
+        if id_synonym not in self.id_synonyms:
+            logger.debug(f"Adding id synonym: {id_synonym}")
+            self.id_synonyms.append(id_synonym)
+            
+    def add_id_synonyms(self, id_synonyms: List[str]):
+        """
+        Adds multiple ID synonyms to the product.id_synonyms list.
+        """
+        for id_synonym in id_synonyms:
+            self.add_id_synonym(id_synonym)
+        
     def set_genename(self, genename: str):
         """
         Sets the genename of the product.

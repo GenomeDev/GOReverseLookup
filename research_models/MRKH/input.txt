@@ -1,0 +1,93 @@
+###evidence_code_groups
+experimental	EXP_ECO:0000269,IDA_ECO:0000314,IPI_ECO:0000353,IMP_ECO:0000315,IGI_ECO:0000316,IEP_ECO:0000270,HTP_ECO:0006056,HDA_ECO:0007005,HMP_ECO:0007001,HGI_ECO:0007003,HEP_ECO:0007007
+phylogenetic	IBA_ECO:0000318,IBD_ECO:0000319,IKR_ECO:0000320,IRD_ECO:0000321
+computational_analysis	ISS_ECO:0000250,ISO_ECO:0000266,ISA_ECO:0000247,ISM_ECO:0000255,IGC_ECO:0000317,RCA_ECO:0000245
+author_statement	TAS_ECO:0000304,NAS_ECO:0000303
+curator_statement	IC_ECO:0000305,ND_ECO:0000307
+electronic	IEA_ECO:0000501
+###settings
+pvalue	0.05
+multiple_correction_method	fdr_bh
+two_tailed	False
+include_indirect_annotations	True	p
+indirect_annotations_max_depth	-1
+target_organism	homo_sapiens|UniProtKB|NCBITaxon:9606
+ortholog_organisms	danio_rerio|ZFIN|NCBITaxon:7955,rattus_norvegicus|RGD|NCBITaxon:10116,mus_musculus|MGI|NCBITaxon:10090,xenopus_tropicalis|Xenbase|NCBITaxon:8364
+evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),!electronic(~)
+#evidence_codes	experimental(~),phylogenetic(~),computational_analysis(~),author_statement(TAS),!curator_statement(ND),electronic(~)
+gorth_ortholog_fetch_for_indefinitive_orthologs	True
+gorth_ortholog_refetch	False
+fisher_test_use_online_query	True
+uniprotkb_genename_online_query	False
+goterm_gene_query_timeout	240
+goterm_gene_query_max_retries	3
+exclude_opposite_regulation_direction_check	False
+goterm_name_fetch_async	False
+goterm_gene_fetch_async	False
+goterm_name_fetch_req_delay	1.5
+goterm_name_fetch_max_connections	5
+goterm_gene_fetch_req_delay	0.8
+goterm_gene_fetch_max_connections	5
+###filepaths
+go_obo	data_files/go.obo	https://purl.obolibrary.org/obo/go.obo	all
+goa_human	data_files/goa_human.gaf	http://geneontology.org/gene-associations/goa_human.gaf.gz	homo_sapiens
+#goa_zfin TODO
+#goa_rgd TODO
+#goa_mgi TODO
+#goa_xenbase TODO
+ortho_mapping_zfin_human	data_files/zfin_human_ortholog_mapping.txt	https://zfin.org/downloads/human_orthos.txt	danio_rerio
+ortho_mapping_mgi_human	data_files/mgi_human_ortholog_mapping.txt	https://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt	mus_musculus
+ortho_mapping_rgd_human	data_files/rgd_human_ortholog_mapping.txt	https://download.rgd.mcw.edu/data_release/HUMAN/ORTHOLOGS_HUMAN.txt	rattus_norvegicus
+ortho_mapping_xenbase_human	data_files/xenbase_human_ortholog_mapping.txt	https://download.xenbase.org/xenbase/GenePageReports/XenbaseGeneHumanOrthologMapping.txt	xenopus
+###states_of_interest [SOI name] [to be expressed + or suppressed -]
+MRKH	+
+###categories [category] [True / False]
+biological_process	True
+molecular_activity	True
+cellular_component	False
+###GO_terms [GO id] [process] [upregulated + or downregulated - or general 0] [weight 0-1] [GO term name - optional] [GO term description - optional]
+GO:0061205	MRKH	+	1	paramesonephric duct development
+GO:0060065	MRKH	+	1	uterus development
+GO:0061038	MRKH	+	1	uterus morphogenesis
+GO:0060068	MRKH	+	1	vagina development
+GO:0048608	MRKH	+	1	reproductive structure development
+GO:0060067	MRKH	+	1	cervix development
+GO:0060066	MRKH	+	1	oviduct development
+GO:0048807	MRKH	+	1	female genitalia morphogenesis
+GO:0030540	MRKH	+	1	female genitalia development
+GO:0001655	MRKH	+	1	urogenital system development
+GO:0035260	MRKH	+	1	internal genitalia morphogenesis
+GO:0048389	MRKH	+	1	intermediate mesoderm development
+GO:0048390	MRKH	+	1	intermediate mesoderm morphogenesis
+GO:0001822	MRKH	+	1	kidney development
+GO:0060993	MRKH	+	1	kidney morphogenesis
+GO:0061005	MRKH	+	1	cell differentiation involved in kidney development
+GO:0035787	MRKH	+	1	cell migration involved in kidney development
+GO:0061004	MRKH	+	1	pattern specification invovled in kidney development
+GO:0001656	MRKH	+	1	metanephros development
+GO:0001823	MRKH	+	1	mesonephros development
+GO:0001657	MRKH	+	1	ureteric bud development
+GO:0060676	MRKH	+	1	ureteric bud formation
+GO:0060675	MRKH	+	1	ureteric bud morphogenesis
+GO:0072001	MRKH	+	1	renal system development
+GO:0061053	MRKH	+	1	somite development
+GO:0061056	MRKH	+	1	sclerotome development
+GO:0001756	MRKH	+	1	somitogenesis
+GO:0001501	MRKH	+	1	skeletal system development
+GO:0060348	MRKH	+	1	bone development
+GO:0048705	MRKH	+	1	skeletal system morphogenesis
+GO:0030903	MRKH	+	1	notochord development
+GO:0048339	MRKH	+	1	paraxial mesoderm development
+GO:0048340	MRKH	+	1	paraxial mesoderm morphogenesis
+GO:0048352	MRKH	+	1	paraxial mesoderm structural organisation
+GO:0030326	MRKH	+	1	embryonic limb morphogenesis
+GO:0048839	MRKH	+	1	inner ear development
+GO:0090103	MRKH	+	1	cochlea morphogenesis
+GO:0048752	MRKH	+	1	semicircular canal morphogenesis
+GO:0007507	MRKH	+	1	heart development
+GO:0003007	MRKH	+	1	heart morphogenesis
+GO:0035050	MRKH	+	1	embryonic heart tube development
+GO:0003205	MRKH	+	1	cardiac chamber development
+GO:0003170	MRKH	+	1	heart valve development
+GO:0003157	MRKH	+	1	endocardium development
+GO:0003197	MRKH	+	1	endocardial cushion development

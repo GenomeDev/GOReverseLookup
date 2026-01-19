@@ -31,7 +31,8 @@ WebsiteParser.init()
 # input_file = "input_files/inputOS2-2.txt"
 # input_file = "research_models\\test_models\\two_tailed_test-rhart\\input_rhartritis_ortho_singletail.txt"
 #input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\test_models\\rhart_aug25\\orthologs\\input.txt"
-input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\haries-test\\input3.txt"
+# input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\BT_fish-growth\\input.txt"
+input_file = "C:\\Aljosa\\Development\\GOReverseLookup\\research_models\\MRKH\\input.txt"
 
 # load the model from input file and query relevant data from the web
 model = ReverseLookup.from_input_file(input_file)
@@ -52,7 +53,7 @@ if 'goterm_gene_fetch_max_connections' in model.model_settings.__dict__:
 model.fetch_all_go_term_names_descriptions(run_async=True, req_delay=GOTERM_NAME_FETCH_REQ_DELAY, max_connections=GOTERM_NAME_FETCH_MAX_CONNECTIONS) 
 model.fetch_all_go_term_products(web_download=True, run_async=True, delay=GOTERM_GENE_FETCH_REQ_DELAY, max_connections=GOTERM_GENE_FETCH_MAX_CONNECTIONS, request_params = {"rows": 10000000})
 model.create_products_from_goterms()
-model.products_perform_idmapping() # TODO: reimplement this after fixing the bug !!!
+model.products_perform_idmapping()
 Cacher.save_data()
 model.fetch_orthologs_products_batch_gOrth(target_taxon_number="9606")
 model.fetch_ortholog_products(run_async=True, max_connections=10, semaphore_connections=5, req_delay=0.5)
