@@ -60,7 +60,14 @@ class Product:
             annotations: A list of raw-text annotations (e.g. goterms) to this product
             annotations_ids: A list of accepted annotation ids (goterms) in the context of this study (used in statistical analysis)
         """
-        self.id_synonyms = self.add_id_synonyms(id_synonyms) if isinstance(id_synonyms, list) else [id_synonyms]
+        self.id_synonyms: List[str] = []
+        if id_synonyms is None:
+            pass
+        elif isinstance(id_synonyms, list):
+            self.add_id_synonyms(id_synonyms)
+        else:
+            self.add_id_synonym(id_synonyms)
+            
         self.taxon = taxon
         self.target_taxon = target_taxon
         self.genename = genename
