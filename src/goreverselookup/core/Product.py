@@ -105,7 +105,8 @@ class Product:
         Adds an ID synonym to the product.id_synonyms list.
         """
         if id_synonym not in self.id_synonyms:
-            logger.debug(f"Added id synonym {id_synonym} to: genename={self.genename}, id_synonyms={self.id_synonyms}")
+            if hasattr(self, "genename") and hasattr(self, "id_synonyms"):
+                logger.debug(f"Added id synonym {id_synonym} to: genename={self.genename}, id_synonyms={self.id_synonyms}")
             self.id_synonyms.append(id_synonym)
             
     def add_id_synonyms(self, id_synonyms: List[str]):
