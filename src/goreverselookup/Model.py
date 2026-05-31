@@ -627,7 +627,7 @@ class ReverseLookup:
                     if ens_stable_id_prefix == target_organism_stable_id_prefix:
                         product.ensg_id = ensembl_id
                     else:
-                        product.id_synonyms.append(ensembl_id)
+                        product.add_id_synonym(ensembl_id)
     
     def products_perform_idmapping(
         self,
@@ -640,6 +640,7 @@ class ReverseLookup:
 
         The allowed from_databases and to_db values can be found using the link: https://rest.uniprot.org/configure/idmapping/fields?content-type=application/json
         """
+        logger.info(f"Performing product id mapping from databases {from_databases} to {to_db}.")
         uniprot_api = UniProtApi()
 
         if self.products == [] or self.products is None:
@@ -670,14 +671,20 @@ class ReverseLookup:
                 logger.debug(f"KeyError when trying to search for {p_id_db} in non_uniprot_dbs_product_dict. This is benign.")
         
         # convert sets to lists
+        logger.debug(f"Printing all non uniprot dbs product dict before cache exclusion.")
         for db, db_set in non_uniprot_dbs_product_dict.items():
             non_uniprot_dbs_product_dict[db] = list(db_set)
+            logger.debug(f"{non_uniprot_dbs}")
         
         # exclude cached mappings
         for db, db_list in non_uniprot_dbs_product_dict.items():
             start_count = len(db_list)
             new_ids = []
+            removed_successful = []
+            removed_failed = []
             
+            logger.debug(f"Starting cache exclusion for DB '{db}' with {start_count} IDs")
+
             for id in db_list:
                 id = id.split(":")[1]
                 data_key_successful = f"product_idmapping[id={id},from_db={db},to_db={to_db}]"
@@ -688,9 +695,13 @@ class ReverseLookup:
                 is_new = True
                 if prev_data_successful is not None:
                     non_uniprot_product_dict_cached_successful.append(prev_data_successful)
+                    removed_successful.append(id)
+                    logger.debug(f"Found previously successful mapping for id {id} from db {db}. Skipping.")
                     is_new = False
                 if prev_data_failed is not None:
                     non_uniprot_product_dict_cached_failed.append(prev_data_failed.get("id"))
+                    removed_failed.append(id)
+                    logger.debug(f"Found previously failed mapping for id {id} from db {db}. Skipping.")
                     is_new = False
                 
                 if is_new:
@@ -699,8 +710,10 @@ class ReverseLookup:
             non_uniprot_dbs_product_dict[db] = new_ids
             end_count = len(non_uniprot_dbs_product_dict[db])
             logger.info(f"Cached {start_count-end_count} ids for idmapping for database {db}. Start count: {start_count}, end_count (these will be queried): {end_count}")
+            logger.debug(f"New ids to be queried for db {db}: {non_uniprot_dbs_product_dict[db]}")
         
         # perform batch id mapping
+        logger.debug(f"Performing batch id mappings.")
         for db, db_ids_list in non_uniprot_dbs_product_dict.items():
             if db_ids_list == []:
                 logger.info(f"Skipping {db}, as there are no associated genes.")
@@ -715,6 +728,7 @@ class ReverseLookup:
             successful_mappings = idmappings['results']
             failed_mappings = idmappings['failedIds']
             logger.info(f"{db} id mapping conversion to UniProtKB: {len(successful_mappings)} successful mappings, {len(failed_mappings)} failed mappings.")
+            
             for idmap in successful_mappings:
                 initial_id = idmap['from']
                 uniprot_id = idmap['to']['primaryAccession']
@@ -736,8 +750,12 @@ class ReverseLookup:
                 for product in self.products:
                     if len(product.id_synonyms) == 0:
                         continue
-                    if initial_id in product.id_synonyms[0] and db in product.id_synonyms[0]:
-                        product.uniprot_id = uniprot_id_full
+                    for syn in product.id_synonyms:
+                        if initial_id in syn and db in syn:
+                            if product.uniprot_id is not None and product.uniprot_id != uniprot_id_full:
+                                logger.debug(f"Product {product.id_synonyms[0]} already has a UniProtKB id assigned ({product.uniprot_id}). Overwriting with new mapping {uniprot_id_full}.")
+                            product.uniprot_id = uniprot_id_full
+                            logger.debug(f"Mapped id to UniprotKB id: {initial_id} -> {uniprot_id_full} (from db: {db})")
             
             # store failed ids in cache
             for id in failed_mappings:
@@ -752,6 +770,7 @@ class ReverseLookup:
                 )
         
         # also process cached ids
+        logger.debug(f"Processing cached successful id mappings.")
         for element in non_uniprot_product_dict_cached_successful:
             initial_id = element['from_id']
             mapped_id = element['to_id']
@@ -763,7 +782,8 @@ class ReverseLookup:
                 for syn in product.id_synonyms: # check all synonyms for a match
                     if initial_id in syn and db in syn:
                         if "UniProtKB" in mapped_id_full:
-                            product.uniprot_id = mapped_id_full         
+                            product.uniprot_id = mapped_id_full
+                            logger.debug(f"(Cached) Mapped id to UniprotKB id: {initial_id} -> {mapped_id_full} (from db: {db})")         
         
         ### Run 2: attempt Ensembl gene mappings
         self.fetch_uniprot_product_ensg_ids()
@@ -886,7 +906,7 @@ class ReverseLookup:
 
                     if autoselect_first_among_multiple_ensg_orthologs:
                         if p.ensg_id is not None: # move existing ensembl id among id synonyms
-                            p.id_synonyms.append(p.ensg_id)
+                            p.add_id_synonym(p.ensg_id)
                         p.ensg_id = ortholog_results[0]
                         # logger.warning(f"Autoselected ortholog {p.ensg_id} among {len(ortholog_results)}, but it MAY NOT have the highest percentage identity!")
                         # TODO: this only takes the first ENS id. Implement perc_id (percentage identity) checks!!
@@ -896,7 +916,7 @@ class ReverseLookup:
                     p.gorth_ortholog_exists = True
                     p.gorth_ortholog_status = "definitive"
                     if p.ensg_id is not None: # move existing ensembl id among id synonyms
-                        p.id_synonyms.append(p.ensg_id)
+                        p.add_id_synonym(p.ensg_id)
                     p.ensg_id = ortholog_results[0]
             logger.info(f"    elapsed: {timer.get_elapsed_formatted('milliseconds')}")
         
@@ -1150,25 +1170,6 @@ class ReverseLookup:
 
                 # Create a new product with the collected information and add it to the product list
                 self.products.append(combined_product)
-                """
-                self.products.append(
-                    Product(
-                        id_synonyms=id_synonyms,
-                        taxon=product_list[0].taxon,
-                        genename=product_list[0].genename,
-                        uniprot_id=product_list[0].uniprot_id,
-                        description=product_list[0].description,
-                        ensg_id=product_list[0].ensg_id,
-                        enst_id=product_list[0].enst_id,
-                        refseq_nt_id=product_list[0].refseq_nt_id,
-                        mRNA=product_list[0].mRNA,
-                        scores=product_list[0].scores,
-                        had_orthologs_computed=product_list[0].had_orthologs_computed,
-                        had_fetch_info_computed=product_list[0].had_fetch_info_computed,
-                        gorth_ortholog_exists=product_list[0].gorth_ortholog_exists
-                    )
-                )
-                """
         
         end_prod_count = len(self.products)
         logger.info(f"Completed product prune operation. Pruned {end_prod_count - start_prod_count} products. Start product count: {start_prod_count} -> End product count: {end_prod_count}")

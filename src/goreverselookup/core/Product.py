@@ -60,7 +60,14 @@ class Product:
             annotations: A list of raw-text annotations (e.g. goterms) to this product
             annotations_ids: A list of accepted annotation ids (goterms) in the context of this study (used in statistical analysis)
         """
-        self.id_synonyms = id_synonyms
+        self.id_synonyms: List[str] = []
+        if id_synonyms is None:
+            pass
+        elif isinstance(id_synonyms, list):
+            self.add_id_synonyms(id_synonyms)
+        else:
+            self.add_id_synonym(id_synonyms)
+            
         self.taxon = taxon
         self.target_taxon = target_taxon
         self.genename = genename
@@ -84,7 +91,31 @@ class Product:
         for id_syn in self.id_synonyms:
             if "UniProt" in id_syn:
                 self.uniprot_id = id_syn
+                
+        self.clear_duplicate_id_synonyms()
 
+    def clear_duplicate_id_synonyms(self):
+        """
+        Clears duplicate id synonyms from the id_synonyms list.
+        """
+        self.id_synonyms = list(set(self.id_synonyms))
+        
+    def add_id_synonym(self, id_synonym: str):
+        """
+        Adds an ID synonym to the product.id_synonyms list.
+        """
+        if id_synonym not in self.id_synonyms:
+            if hasattr(self, "genename") and hasattr(self, "id_synonyms"):
+                logger.debug(f"Added id synonym {id_synonym} to: genename={self.genename}, id_synonyms={self.id_synonyms}")
+            self.id_synonyms.append(id_synonym)
+            
+    def add_id_synonyms(self, id_synonyms: List[str]):
+        """
+        Adds multiple ID synonyms to the product.id_synonyms list.
+        """
+        for id_synonym in id_synonyms:
+            self.add_id_synonym(id_synonym)
+        
     def set_genename(self, genename: str):
         """
         Sets the genename of the product.
@@ -106,7 +137,7 @@ class Product:
         for attr_name in dir(self):
             if not callable(getattr(self, attr_name)) and not attr_name.startswith("__"):
                 if attr_name == "id_synonyms": # extend and skip loop to prevent resetting previous values
-                    self.id_synonyms.extend(other_product.id_synonyms)
+                    self.add_id_synonyms(other_product.id_synonyms)
                     continue
                 if getattr(self, attr_name) is None:
                     setattr(self, attr_name, getattr(other_product, attr_name))
@@ -170,10 +201,7 @@ class Product:
                 if goaf is not None:
                     self.set_genename(goaf.get_uniprotkb_genename(self.id_synonyms[0]))
                 else:
-                    logger.warning(
-                        "GOAF wasn't supplied as parameter to the"
-                        " (Product).fetch_ortholog function!"
-                    )
+                    logger.warning("GOAF wasn't supplied as parameter to the (Product).fetch_ortholog function!")
             elif len(self.id_synonyms) == 1 and "UniProtKB" not in self.id_synonyms[0]:
                 # do a file-based ortholog search using HumanOrthologFinder
                 human_ortholog_gene_id = human_ortholog_finder.find_human_ortholog(self.id_synonyms[0])
