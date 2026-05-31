@@ -313,15 +313,33 @@ class FileUtil:
         download_path = "data_files/goa_human_test.gaf"
         FileUtil.download_zip_file(download_path, download_url, "rt")
         """
-        temp_file, _ = urllib.request.urlretrieve(download_url)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-        # read the contents of the gzip file and save it to the txt file
-        with gzip.open(temp_file, "rt") as f_in, open(filepath, "w") as f_out:
-            for line in f_in:
-                f_out.write(line)
+        request = urllib.request.Request(
+            download_url,
+            headers={
+                "User-Agent": "GOReverseLookup/1.0",
+                "Accept": "application/gzip, application/octet-stream, */*",
+            },
+        )
 
-        # delete the temporary file
-        os.remove(temp_file)
+        temp_file = filepath + ".gz"
+
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                with open(temp_file, "wb") as f_out:
+                    shutil.copyfileobj(response, f_out)
+
+            # read the contents of the gzip file and save it to the target file
+            with gzip.open(temp_file, zip_specifier) as f_in, open(filepath, "w", encoding="utf-8") as f_out:
+                for line in f_in:
+                    f_out.write(line)
+
+            logger.info(f"Successfully downloaded {download_url} to {filepath}")
+
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
     
     @classmethod
     def backtrace(cls, filepath:str, backtrace:int, file_separator:str="/"):
